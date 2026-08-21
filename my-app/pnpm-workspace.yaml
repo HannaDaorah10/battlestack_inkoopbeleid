@@ -1,0 +1,8 @@
+allowBuilds:
+    '@parcel/watcher': true
+    esbuild: true
+    lefthook: true
+    sharp: true
+    unrs-resolver: true
+    vue-demi: true
+minimumReleaseAge: 0 # 0 day(s), managed by battlestack

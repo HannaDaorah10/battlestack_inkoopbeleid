@@ -1,0 +1,502 @@
+# my-app conventions
+
+Stack: Nuxt 4 via `battlestack`.
+Template: `nuxt4-ai`.
+
+## Enabled features
+
+- `nuxt4:nuxt4:scaffold` v1.2.0: Scaffold Nuxt project
+- `nuxt4:nuxt4:gitignore` v1.4.0: Enforce ignore patterns (git, Nuxt, ESLint)
+- `nuxt4:shared:formatting` v1.1.0: Formatting + .dockerignore
+- `nuxt4:shared:package-policy` v1.0.4: Supply-chain release-age policy
+- `nuxt4:nuxt4:naming` v1.0.0: Set package.json name
+- `nuxt4:nuxt4:essentials` v1.0.3: Nuxt essentials (eslint, fonts, image, iconify, datepicker, nodemailer)
+- `nuxt4:nuxt4:nuxt-ui` v1.2.0: Nuxt UI v4 + Tailwind v4
+- `nuxt4:nuxt4:landing-shell` v1.3.1: Landing shell (layouts, public landing page)
+- `nuxt4:nuxt4:vitest` v1.0.5: Vitest config + scripts
+- `nuxt4:nuxt4:i18n` v1.1.0: i18n (Dutch + English)
+- `nuxt4:nuxt4:database` v1.5.0: PostgreSQL + Drizzle ORM (Docker)
+- `nuxt4:nuxt4:auth` v1.10.0: Session-based auth (argon2id)
+- `nuxt4:nuxt4:dashboard-shell` v1.3.1: Authenticated app shell (/dashboard/*)
+- `nuxt4:nuxt4:mastra` v2.0.0: Mastra AI runtime
+- `nuxt4:nuxt4:chat` v1.2.0: Streaming chat (Mastra)
+- `nuxt4:nuxt4:health` v1.2.0: Health endpoint (/api/health)
+- `nuxt4:nuxt4:pinia` v1.0.0: Pinia + persisted-state
+- `nuxt4:shared:docker` v1.0.3: Production Dockerfile + prod commands
+- `nuxt4:shared:github` v2.2.0: GitHub Actions workflows
+- `nuxt4:shared:security` v1.0.3: Security headers (nuxt-security)
+- `nuxt4:shared:ai-tool-config` v1.1.7: AI coding tool config
+- `nuxt4:nuxt4:docs` v1.0.10: Generate AGENTS.md + CLAUDE.md + README.md
+- `nuxt4:shared:env` v1.0.3: Write .env / .env.example
+- `nuxt4:shared:install` v1.2.0: package.json + install
+- `nuxt4:nuxt4:finalize` v1.0.0: Write project manifest
+- `nuxt4:nuxt4:audit-log` v1.0.1: Audit log (security events)
+- `nuxt4:nuxt4:user-admin` v1.0.3: User administration (admin-gated CRUD)
+- `nuxt4:nuxt4:auth-passkeys` v1.1.2: Passkeys (WebAuthn)
+- `nuxt4:nuxt4:auth-recovery` v1.1.2: Password recovery
+- `nuxt4:nuxt4:auth-2fa` v1.2.1: Two-factor auth (TOTP)
+- `nuxt4:nuxt4:storage` v1.2.3: Object storage (RustFS dev / S3 prod)
+- `nuxt4:nuxt4:redis` v1.0.0: Redis rate limiting (dedicated backend)
+- `nuxt4:nuxt4:rag` v1.4.0: RAG (Mastra + pgvector)
+- `nuxt4:nuxt4:prompts` v1.1.2: AI prompt management
+- `nuxt4:nuxt4:pwa` v1.0.2: Progressive Web App
+- `nuxt4:shared:ci` v1.1.0: Git hooks (lefthook)
+- `nuxt4:shared:playwright` v1.0.1: Playwright MCP + test deps
+
+## Nuxt modules
+
+Modules already registered in `nuxt.config.ts#modules` by the boilerplate. **Do not** re-add them via `npx nuxi module add`; the scaffold already wired them up at install time, and `battlestack pull` keeps the list in sync as features are added or removed.
+
+- `@nuxt/eslint`: registered by `nuxt4:nuxt4:essentials`
+- `@nuxt/fonts`: registered by `nuxt4:nuxt4:essentials`
+- `@nuxt/image`: registered by `nuxt4:nuxt4:essentials`
+- `@nuxt/ui`: registered by `nuxt4:nuxt4:nuxt-ui`
+- `@nuxtjs/i18n`: registered by `nuxt4:nuxt4:i18n`
+- `nuxt-auth-utils`: registered by `nuxt4:nuxt4:auth`
+- `@pinia/nuxt`: registered by `nuxt4:nuxt4:pinia`
+- `pinia-plugin-persistedstate/nuxt`: registered by `nuxt4:nuxt4:pinia`
+- `nuxt-security`: registered by `nuxt4:shared:security`
+- `@vite-pwa/nuxt`: registered by `nuxt4:nuxt4:pwa`
+
+## Docker (production image)
+
+Multi-stage build at `Dockerfile`. Build stage installs deps + compiles Nitro; runtime stage ships only `.output/` and runs as the unprivileged `node` user on port 3000.
+
+A profile-gated `app` service lives in the existing `docker-compose.yml` (only activated via `--profile prod`, so `battlestack dev`/`battlestack up` ignore it). `battlestack prod` builds the image, starts db + app, and exposes the app on the project's allocated port.
+
+```bash
+battlestack prod         # build + up -d
+battlestack prod:logs    # tail app logs
+battlestack prod:down    # stop
+```
+
+## GitHub Actions
+
+`.github/workflows/lint-test-sonarqube.yml` runs lint, typecheck, test coverage, a dependency audit, and a SonarQube scan on pushes/PRs (plus a weekly scheduled run). Runs on `ubuntu-latest` by default, so it needs no self-hosted runner.
+
+Lint, typecheck, test and the dependency audit need no configuration: they pass on a fresh clone or a fork. Only the SonarQube scan talks to a service this repo can't provide, so it is skipped unless `vars.SONAR_HOST_URL` is set. Set the variable and the step turns itself on (nothing to uncomment).
+
+Dependency scanning comes in two layers. `pnpm audit` runs on every push as an **advisory** step: it never fails the build, and its counts are written to the job summary so a non-blocking result is still visible without expanding a log. On pull requests, `dependency-review-action` is the **blocking** gate: it diffs the PR against its base and refuses anything the PR newly introduces at high severity or above.
+
+Know the limits of that blocking claim before you rely on it. `dependency-review-action` is free on public repositories but needs GitHub Advanced Security on private ones, and it only runs on `pull_request` events. **A private scaffold, or a push straight to a branch with no open PR, therefore has no blocking dependency gate at all**, only the advisory audit. If that matters to you, add `--audit-level=critical` to the audit step and remove its `continue-on-error`.
+
+A freshly scaffolded project's `pnpm audit` will report findings in transitive dependencies of the AI and framework stack. That is the npm-ecosystem baseline for an unpinned dependency tree, not a defect the scaffold introduced, and not something this project can unilaterally clear. The CI gate is shaped around that fact: `dependency-review-action` blocks vulnerabilities your changes *introduce*, while the audit step reports the standing baseline without failing the build.
+
+To run it on a self-hosted runner instead, set the repo/org variable `CI_RUNNER` to your runner's label; no template edit needed. If that runner's image is missing packages `ubuntu-latest` already has, set `CI_RUNNER_APT_PACKAGES` (space-separated) to have the workflow `apt-get install` them first; leave it unset to skip that step entirely.
+
+Variables: `SONAR_HOST_URL`; secrets: `SONAR_TOKEN`, plus any Docker build secrets declared by enabled features (see the Docker section for the exact env var names). The SonarQube static config lives in `sonar-project.properties` (sources, coverage exclusions, lcov report path).
+
+This feature ships no deploy workflow. A plugin that contributes a deploy target adds its own `.github/workflows/*.yml` pipeline for it and documents its own deploy secrets.
+
+## Git hooks
+
+Lefthook at `lefthook.yml` wires pre-commit (eslint on staged files). Install hooks once: `lefthook install`. Typecheck (`nuxi typecheck`) runs in CI rather than on push to keep local cycles fast.
+
+CI/CD runs on GitHub Actions. Deploy pipelines and the lint/test/SonarQube quality gate live under `.github/workflows/` (see the GitHub Actions section).
+
+## Testing
+
+Vitest with three project layout (`unit`, `nuxt`, `e2e`) per the Nuxt testing docs.
+
+- `test/unit/`: node env, pure logic
+- `test/nuxt/`: Nuxt env (happy-dom), components + auto-imports
+- `test/e2e/`: hits a live dev server (`await setup({ server: true })`)
+
+Run: `battlestack test`. It probes `/api/health` first and warns if `battlestack dev` isn't running (the e2e suite needs a live server, otherwise every e2e block self-skips). Pass extra flags after `--`: `battlestack test -- --coverage` / `battlestack test -- --watch`. Use `pnpm test` directly if you want to skip the guard.
+
+## Datepicker
+
+Use `@vuepic/vue-datepicker` for all date/calendar needs. The Nuxt UI calendar is **not** used in this codebase: its keyboard semantics and locale support are too thin for our forms.
+
+Reference component: `app/components/ExampleCalendar.vue` shows the canonical wiring. Copy from there when adding a new date input.
+
+## Search engine indexing
+
+`public/robots.txt` blocks all crawlers by default (`Disallow: /`), because these apps are internal/back-office, not public sites. If a project should be indexed, edit (or delete) `public/robots.txt`.
+
+## Health
+
+`GET /api/health` returns `{ status, version, checks }`. Container-orchestrator liveness + readiness probes target this route.
+
+- 200 when ok; 503 when degraded AND `runtimeConfig.health.failOnDegraded` is true (default).
+- DB ping (when `nuxt4:database` is enabled) is bounded by `runtimeConfig.health.dbTimeoutMs` (default 1000ms).
+- Override per env via `NUXT_HEALTH_FAIL_ON_DEGRADED` and `NUXT_HEALTH_DB_TIMEOUT_MS`.
+
+## State (Pinia)
+
+`@pinia/nuxt` + `pinia-plugin-persistedstate/nuxt` are pre-wired. Use `useUiStore()` from `app/stores/ui.ts` as the worked example. Stores opt into cookie-backed persistence with `persist: true` on the store definition; cookies are the Nuxt module default so SSR renders match the client without a flash. Remove the `persist` line for non-persisted state.
+
+## Security headers
+
+`nuxt-security` ships sensible defaults: CSP (same-origin scripts, inline styles allowed for Nuxt UI), HSTS (1-year, prod-only), X-Frame-Options DENY, X-Content-Type-Options nosniff, Referrer-Policy strict-origin-when-cross-origin, Permissions-Policy default-deny for camera/microphone/geolocation.
+
+When `nuxt:mastra` is enabled the script-src is widened with `wasm-unsafe-eval` so the AI SDK's WebAssembly tokenisers can run. Drop the directive if you remove Mastra after scaffold.
+
+`strict` is left at its default (`false`), which gives `nuxt-security` the leeway to skip directives that would break common app patterns out of the box. Flip to `true` in `nuxt.config.ts#security` once your CSP and headers are stable; the module will then refuse to silently downgrade them.
+
+Override individual fields by editing the `security: {...}` block in `nuxt.config.ts`; that file is yours post-scaffold and `battlestack pull` will not clobber it.
+
+## Nuxt UI design tokens
+
+Component color aliases (`primary`, `secondary`, `neutral`, etc.) live in `app/app.config.ts` under `ui.colors`. This is the runtime-overridable variant: change a value and every component using that alias updates without rebuild.
+
+Tailwind utilities + design CSS variables come from `app/assets/css/main.css` (`@import "tailwindcss"` + `@import "@nuxt/ui"`). Custom Tailwind tokens go above the `@nuxt/ui` import so they win precedence.
+
+Root layout wraps `<UApp>` in `app/app.vue`, which is required for `useToast()`, `<UTooltip>`, and other components that need a portal target.
+
+Document title: `app/app.vue` defines a `titleTemplate` that renders `"<page title> - <app name>"`. Set a per-page title with `useHead({ title: () => t('...') })` (function form keeps it reactive on locale switch); pages without a title fall back to just the app name. The app name comes from `runtimeConfig.public.appName` (defaults to the project name; override with `NUXT_PUBLIC_APP_NAME` or in `nuxt.config.ts`).
+
+Datepicker stays on `@vuepic/vue-datepicker` (`nuxt4:essentials`): the Nuxt UI `<UCalendar>` keyboard semantics + locale support are too thin for our forms.
+
+## Database
+
+PostgreSQL 18 in Docker, Drizzle ORM. Schema lives in `server/database/schema/`.
+
+Common commands (run from project root):
+
+```bash
+battlestack db:up        # start postgres
+battlestack db:push      # apply schema (dev)
+battlestack db:generate  # emit SQL migration files (prod)
+battlestack db:migrate   # apply SQL migrations (prod)
+battlestack db:seed      # seed admin + reference data
+battlestack db:studio    # open drizzle studio
+battlestack db:psql      # interactive psql shell
+```
+
+Every `battlestack db:*` task wraps a `db:*` script in `package.json`. If `battlestack` is not on
+your PATH (e.g. CI, AI agents), run the script directly: `pnpm run db:generate`,
+`pnpm run db:migrate`, `pnpm run db:push`, `pnpm run db:seed`.
+
+**AI agents:** after editing any file in `server/database/schema/`, you MUST run
+`pnpm run db:generate` and commit the emitted SQL + `meta/_journal.json` alongside the
+schema change. Do not stop at the TypeScript edit; see the schema-change workflow below.
+
+### Dev vs prod workflow
+
+Production deploys are the source of truth for **schema**: whatever runs the container
+executes `node /app/server/migrate.mjs` against the prod database before traffic is routed
+to it. It is safe to run from every replica at once: the script takes a Postgres advisory
+lock before reading what has been applied (shared with `server/plugins/00-db-migrate-on-boot.ts`),
+so exactly one caller migrates and the rest block, then no-op.
+
+Seeding is **not** part of a deploy. It creates and mutates accounts, so nothing wires it
+into container startup automatically; a deployed environment is seeded by running the
+command deliberately, per project. `seed.mjs` also refuses to run when `NODE_ENV=production`
+is actually set (override with `SEED_ALLOW_PRODUCTION=true`), but treat that as a courtesy
+trip-wire, not the real safety net: nothing in this Dockerfile or the k8s manifests sets
+`NODE_ENV`, so in a real container this check likely never fires. What actually makes an
+accidental or concurrent run harmless is the DB-side marker (`drizzle.__battlestack_seeded`)
+plus the advisory lock around it: a second/unexpected invocation no-ops instead of
+re-seeding, regardless of whether the `NODE_ENV` check ever triggered.
+
+| Stage | Local dev | Production |
+| --- | --- | --- |
+| Schema | `battlestack db:push` (direct sync) | `migrate.mjs` applies the SQL files committed to `server/database/migrations/` |
+| Admin seed | `battlestack db:seed` (runs `server/database/seed.ts`: admin + reference data) | manual only, via `seed.mjs`, gated by `SEED_ALLOW_PRODUCTION` |
+
+### Shipping a schema change to production
+
+1. Edit `server/database/schema/*.ts`
+2. `battlestack db:generate` (or `pnpm run db:generate`): drizzle-kit emits a new `NNNN_*.sql` file in `server/database/migrations/`
+3. Review + commit the SQL file and the updated `meta/_journal.json`
+4. Push: your deploy pipeline builds the image (bundles `tools/migrate.mjs` + the migrations dir into `/app/server/`)
+5. Your deploy platform rolls the new image; the `migrate` step applies the new migration before the app starts
+   (a deploy-target plugin, if you have one, documents the exact rollout mechanics)
+
+`migrate.mjs` is idempotent: applied migrations are tracked in `drizzle.__drizzle_migrations`
+so reruns are no-ops. Compatible with `drizzle-kit migrate` if you ever want to run it directly.
+
+Push-vs-migrate drift is auto-baselined: if the journal is empty but the schema already has
+tables (synced via `db:push` before migrations existed), both the boot migrator and `migrate.mjs`
+record the committed migrations as applied instead of replaying them: no DDL runs, no data touched.
+
+### Migrate on boot
+
+`server/plugins/00-db-migrate-on-boot.ts` applies pending migrations every time the
+server boots (the same way under `nuxt dev` and in the production container), guarded
+by a Postgres advisory lock so only one process migrates at a time (multi-replica
+rollouts block, then no-op). It locates the SQL files at `server/database/migrations`
+in dev and `/app/migrations` in the container. Set `NUXT_DISABLE_DB_MIGRATE_ON_BOOT=true`
+on read-only replicas pointed at a follower.
+
+### Reference-data seeds (non-admin)
+
+`seed.mjs` in the runtime image handles ONLY the admin bootstrap (raw SQL, no TS runtime needed).
+Reference-data seeds (`server/database/seeds/NNN-*.ts` from features like `nuxt4:prompts`,
+`nuxt4:mastra-admin`) only run via `battlestack db:seed` in the app container; they need the full
+Nitro alias resolution. For production rollouts run `battlestack db:seed` as a one-shot job (or
+exec into the running container) after the initial deploy.
+
+## Audit log
+
+Append-only `audit_events` table. Auth-relevant events (login, signup, role change, TOTP toggle, passkey register, etc.) are inserted by `server/utils/audit.ts:logAuditEvent`. Best-effort: a DB failure during audit insert is logged to `console.error` and the request proceeds normally.
+
+- `GET /api/audit/me`: last 50 events for the calling user (used by `/dashboard/security`)
+
+Query everything via `battlestack db:studio` or psql. No retention policy yet, so the table grows unbounded.
+
+## Auth
+
+Session-based auth via `nuxt-auth-utils`. Argon2id password hashing via `@node-rs/argon2` (no Bun runtime required).
+
+- Login page: `/login`
+- API: `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`
+- Composable: `useAuth()` (`login`, `logout`, `loggedIn`, `user`)
+- Global middleware redirects unauthenticated visitors to `/login`
+
+**Sessions are DB-backed.** The cookie is just a sealed pointer to a `sessions` row (id, userId, expiresAt, lastSeenAt, userAgent, ip). The Nitro plugin at `server/plugins/session.ts` validates the row on every request and refreshes `lastSeenAt`. Revoke any session by `DELETE FROM sessions WHERE id = ...`; the cookie becomes immediately invalid.
+
+Other login flows (passkey, oauth, 2fa challenge) all call `createDbSession(userId, event)` from `server/utils/auth.ts` and pass the returned id as `secure.sessionId` to `setUserSession`. Skipping that step results in a cookie-only session that the fetch hook ignores.
+
+### Dev login shortcut
+
+- `battlestack login` opens a magic link for the seed admin in the OS browser (uses `SEED_ADMIN_EMAIL` from `.env`) and prints it to the terminal. Works under WSL/WSL2 via `wslview` or PowerShell interop.
+- `battlestack login --no-browser` prints the link only (for SSH sessions without a browser).
+- `battlestack login other@example.com` does the same for any user that already exists in the DB.
+- `battlestack uli` is a short alias (Drush muscle memory).
+
+Mechanism: CLI builds an HMAC-signed token with the same `NUXT_SESSION_PASSWORD` that seals session cookies and opens `/auth/magic-login?token=…&sig=…` on the running dev server. The Nuxt page (`app/pages/auth/magic-login.vue`) POSTs the token to `/api/auth/magic-login`, which verifies the HMAC, calls `createDbSession`, and sets the session cookie; the page then client-side navigates to `/dashboard`. The endpoint stacks two guards (`NODE_ENV !== 'production'` AND the request `host` header must resolve to a local hostname: `localhost`, `127.0.0.1`, `::1`, `0.0.0.0`, `*.local`, or `*.battlestack.test`), so even a dev-tagged server tunnelled through ngrok or exposed publicly returns 404. Tokens expire after 60 seconds.
+
+### Self-service registration
+
+Registration is **off by default**. Both `/signup` and `POST /api/auth/signup` return 404 until you flip `NUXT_PUBLIC_ALLOW_REGISTRATION=true` (or set `runtimeConfig.public.allowRegistration: true` in `nuxt.config.ts`). The login page hides the "Create account" link automatically when the flag is off.
+
+Until you flip it, the only path to a working account is `battlestack db:seed` (admin from `SEED_ADMIN_*`) or an admin manually creating users via `/dashboard/users`.
+
+## App shell
+
+Authenticated routes live under `/dashboard/*` with the dashboard layout (`app/layouts/dashboard.vue`).
+
+- `/dashboard`: landing dashboard
+- `/dashboard/profile`: read-only profile
+- `/dashboard/security`: passkey + 2FA management. Sections auto-show when the corresponding feature is installed (`nuxt4:auth-passkeys`, `nuxt4:auth-2fa`).
+
+## User admin
+
+Admin-only `/dashboard/users` for listing, creating, editing, and deleting users. Role-gated by `requireRole(event, Role.Admin)` server-side and `app/middleware/admin.ts` client-side.
+
+- `GET /api/users` (admin): list with optional `?search=`
+- `POST /api/users` (admin): create
+- `GET /api/users/[id]` (admin or self): read
+- `PUT /api/users/[id]` (admin or self; only admins may change `role`)
+- `DELETE /api/users/[id]` (admin only; refuses to delete self)
+
+Bootstrap an admin via `SEED_ADMIN_EMAIL` + `SEED_ADMIN_PASSWORD` in `.env`, then `battlestack db:seed`.
+
+## Passkeys
+
+Passkey (WebAuthn) registration + authentication. Built on nuxt-auth-utils' built-in handlers; we plug in challenge + credential storage via Drizzle.
+
+- Register: `POST /api/auth/passkey/register` (after sign-in)
+- Sign-in: `POST /api/auth/passkey/authenticate`
+- List: `GET /api/auth/passkeys`
+- Revoke: `DELETE /api/auth/passkeys/:id`
+- Composable: `usePasskey()` exposes `signUp`, `signIn`, `addCredential`
+
+Pin `NUXT_WEBAUTHN_RP_ID` to your production domain (hostname only, no scheme/port). 2FA via TOTP is on the roadmap; not part of this feature yet.
+
+## Auth recovery
+
+Password-reset flow. Tokens are sha256-hashed at rest; plaintext lives only in email links. Recovery emails go through `server/utils/email.ts`: set `NUXT_SMTP_*` in `.env` or fall back to logging.
+
+- `POST /api/auth/forgot-password` (public, rate-limited)
+- `POST /api/auth/reset-password` (one-time token, rotates password)
+- Pages: `/forgot-password`, `/reset-password`
+
+## Two-factor (TOTP)
+
+TOTP-based 2FA built on `otplib`. Secrets are encrypted at rest with AES-256-GCM (`server/utils/totp.ts`) using the project-scoped `NUXT_TOTP_ENCRYPTION_KEY`.
+
+- `GET /api/auth/2fa/status`: returns `{ enabled, enabledAt }`
+- `POST /api/auth/2fa/setup`: returns `{ secret, otpauthUrl }` (show as QR)
+- `POST /api/auth/2fa/verify`: body `{ code }` to flip enabled=true
+- `POST /api/auth/2fa/disable`: body `{ code }` (current code required to deauthorise)
+- Composable: `use2fa()` (the single client for all the above; `dashboard-shell/security.vue` uses it)
+
+Verification window: codes are accepted within ±60s of now by default (`epochTolerance` in `server/utils/totp.ts`), so a code entered at the last second survives submit latency + clock skew. Set `NUXT_TOTP_STRICT=true` to tighten to ±30s.
+
+Backup codes (single-use recovery, when the authenticator device is lost):
+- `GET /api/auth/2fa/backup-codes`: returns `{ unused: number }` (count only, since plaintext is generate-time-only)
+- `POST /api/auth/2fa/backup-codes/generate`: wipes existing codes, issues 10 new ones. Plaintext returned ONCE. Requires 2FA already enabled.
+- `POST /api/auth/2fa/backup-codes/redeem`: body `{ code }`. Atomic single-consumption, so concurrent redeems on the same code can't both win.
+
+Step-up challenge during sign-in is **not** in this version. Add a `pending2fa` session marker + wire backup-codes/redeem into the signin flow when you need it.
+
+## Redis rate limiting
+
+Runs `nuxt4:auth`'s rate limiter on Redis (preconfigured client, compose service and circuit breaker) with automatic failover to Postgres. Redis answers the limit decision; Postgres takes over only when the breaker opens.
+
+**Optional, and that is a correctness statement.** Postgres alone is already cross-replica correct, which is exactly why this is opt-in rather than required. What Redis buys is behaviour under a *concentrated* flood: every request against one key hits one Postgres row, and row-level locking serializes those UPSERTs precisely when rejection should be cheapest. Redis keeps rejection O(1) under that load. See `server/utils/rate-limit.ts`'s doc comment for the full reasoning.
+
+**Trigger: config presence.** There is no enabled flag; `NUXT_REDIS_URL` being set is what turns this on. Unset it (or run `battlestack remove nuxt4:redis`) and the project reverts to pure Postgres, no code change.
+
+**Circuit breaker, not a per-request fallback.** On the first failed Redis command, the breaker opens for ~30s: every rate-limit check during that window skips Redis entirely and goes straight to Postgres, with no per-request timeout tax. After ~30s the next check probes Redis again; success closes the breaker, failure re-opens it for another ~30s. `commandTimeout` is 200ms, so even a fully wedged (not just down) Redis fails fast enough that the breaker trips before a real request notices.
+
+The boot log names the active store, so an operator can tell which backend is live without reading source: `[rate-limit] store: redis (primary) + postgres (failover) at <url>`, or `[rate-limit] store: postgres only (NUXT_REDIS_URL not set)`.
+
+Dev backend: plain `redis:7-alpine` in the project's `docker-compose.yml` (no persistent volume, since rate-limit counters are short-TTL and safe to lose on a restart). `battlestack up` starts it.
+
+Exploitability during a breaker flip is bounded and not attacker-inducible: Redis and Postgres keep independent counters for the same key, so a flip can let at most 2× a policy's `max` through in one window, once. See `redis-rate-limit.ts`'s doc comment for the full derivation.
+
+## Storage
+
+S3-compatible object store. File uploads are proxied through the Nuxt server: the browser POSTs to `/api/files/upload-url`, which streams the file to S3 via `PutObjectCommand`. No CORS configuration needed.
+
+Dev backend: **RustFS** (`rustfs/rustfs`) shipped in the project's `docker-compose.yml`. `battlestack up` starts it; the built-in web console is on `http://localhost:$S3_CONSOLE_PORT` (port allocated per project).
+
+Prod backend: any S3-compatible provider (Scaleway by default). Set `NUXT_S3_ENDPOINT` + credentials in the prod env.
+
+- `POST /api/files/upload-url` accepts `multipart/form-data` with a `file` field, uploads to S3, returns `{ key, size, mime }`
+- `POST /api/files` records a `files` row once the object has landed (HEAD-checked against the bucket; refuses to record an absent object)
+- `GET /api/files` lists rows the caller owns (admins see all)
+- `GET /api/files/:id/download-url` per-row download (owner or admin). Default returns a time-limited **signed** URL; `?mode=public` returns a stable non-expiring URL (for forwarding to an LLM/agent; only resolves if the object/bucket is public). Response includes `etag`.
+- `DELETE /api/files/:id` deletes object then row (owner or admin)
+- `useS3Upload()` composable + `<FileUpload />` component handle the browser side
+
+MIME allowlist lives in `upload-url.post.ts`. Adding a type there is the explicit signoff that it can land in your bucket.
+
+Despite the route name, `/api/files/upload-url` does not return a presigned URL. Unlike downloads, uploads are not presigned: the route reads the entire multipart body into memory (up to the size cap above) and proxies it to S3 itself via `PutObjectCommand`. `getSignedUrl` is used only for downloads. Two consequences of that:
+
+- **A reverse proxy in front of the app must allow a request body at least as large as the upload cap**, or uploads fail before this route ever sees them. Most proxies default well below that. ingress-nginx (a common Kubernetes ingress controller) defaults `client_max_body_size` to 1 MB; raise it with the `nginx.ingress.kubernetes.io/proxy-body-size` ingress annotation. A single container behind a plain nginx or Caddy front end needs the equivalent body-size directive raised the same way.
+- **Memory cost is roughly `max upload size × concurrent uploads`, per app instance.** Every upload holds its full buffer in that instance's memory for the duration of the request. Size container memory limits (and any horizontal scaling) with that in mind. A presigned-upload rewrite (the browser uploads straight to the bucket, the app never buffers the bytes) is queued as a v0.1.x follow-up; until then this is the real cost model, not a corner case.
+
+## AI (Mastra)
+
+Mastra is the default AI runtime. The OpenAI SDK is **not** a direct dependency; Mastra talks to an OpenAI-compatible AI gateway via `@ai-sdk/openai-compatible`.
+
+The gateway is configured with `NUXT_AI_GATEWAY_URL` + `NUXT_AI_GATEWAY_KEY` in `.env`. This project uses the [sluis.ai](https://sluis.ai) preset: hosted, EU data residency, PII redaction, tamper-evident audit ledger; keys look like `sk_live_...`; per-request residency override via `NUXT_AI_GATEWAY_HEADERS`, e.g. `{"X-Sluis-Residency":"eu-only"}`. Any other OpenAI-compatible endpoint also works by swapping the URL.
+
+- Runtime: `server/mastra/index.ts`
+- Default agent: `server/mastra/agents/default.ts`
+- Add agents/tools/workflows to the Mastra constructor in `index.ts`
+- Swap models by editing the agent (no code path change)
+
+Admins also swap models at runtime from `/dashboard/settings/ai`. The `ai_model_configs` table holds `chat` + `embedding` rows; agents resolve a `key` and use the row's `model` value. The page calls `/api/ai/models` (gateway passthrough) for the picker and `PUT /api/ai/configs/:id` to commit changes (admin-only, audit-logged).
+
+Boot-time registration: `server/plugins/10-sync-ai-on-boot.ts` runs on EVERY boot (dev/staging/prod, advisory-locked) and ensures the `ai_model_configs` rows plus an `agents` row per registered agent exist: insert-if-missing, never update or delete. This replaces relying on the dev-only `db:seed` (which refuses to run in production), so a fresh staging/prod deploy is never left with empty tables.
+
+The `agents` table links each agent to a model config and (optionally) a prompt BY KEY: `model_config_key` → `ai_model_configs.key`, `prompt_key` → `prompts.key` (nullable: an agent can have no prompt, and a prompt can have no agent). Agents resolve both per-call via `getAgentModelId(key)` / `getAgentInstructions(key)` (`server/mastra/utils/agent-runtime.ts`), falling back to env / code defaults when a row, prompt, or the prompts table is absent. Admins repoint the model or swap the prompt from `/dashboard/settings/ai` (`/api/ai/agents` + `PUT /api/ai/agents/:id`). Declare agent metadata (name, default model config + prompt) in `server/mastra/agents/registry.ts`.
+
+Chat and RAG features both build on this runtime. Their endpoints call `mastra.getAgent(...)` rather than instantiating their own clients.
+
+## Prompt management
+
+Admin-editable AI agent prompts. Default prompts live in `server/utils/prompts/defaults.ts` (shipped by `nuxt4:mastra`); the `prompts` table is populated from that registry both on `battlestack db:seed` AND on every boot via `server/plugins/11-sync-prompts-on-boot.ts` (insert-if-missing, refreshes `default_content`, never overwrites admin-edited `content`). So staging/prod deploys get prompts without the dev-only seed.
+
+Admins edit live content at `/dashboard/prompts`. Reset restores a row's `defaultContent`. Agents look up prompts via `getPromptByKey(key)` (or, when linked through the `agents` table, `getAgentInstructions(agentKey)`), both falling back to the registry default when the table is empty.
+
+## Chat
+
+Streaming chat backed by Mastra's `default` agent. Edit the agent in `server/mastra/agents/default.ts` to change the system prompt, model, or tools.
+
+- Page: `/chat`
+- Composable: `useChatAgent()`
+- Transport (default): `ws-nitro`, a Nitro `defineWebSocketHandler` at `/_ws` (currently behind `nitro.experimental.websocket = true` on Nuxt 4).
+- Transport `http` (Vercel AI SDK chunked-stream) is shipped but WARNING: **not supported in production today**. Cloudflare's edge buffers it. Manual opt-in only; never auto-selected.
+
+Transport is fixed at scaffold time via `state.chatTransport` and reflected in the manifest. To switch, re-run `battlestack pull` with a new value; current files become `.battlestack.patch` artefacts if user-modified.
+
+## RAG
+
+Retrieval-augmented generation. pgvector + Mastra.
+
+Pipeline (`server/utils/rag.ts`): `MDocument.fromText` → recursive chunking → `embedMany` (through the AI gateway via `@ai-sdk/openai-compatible`) → `PgVector.upsert`.
+
+- `POST /api/rag/ingest` body: `{ title, source, text, metadata? }`
+- `POST /api/rag/query` body: `{ query }` returns top-K chunks with scores
+- UI: `/dashboard/rag` (ingest form + query box; nav entry under Admin, gated by the public `rag` flag). Both endpoints require a session.
+- Agent: `server/mastra/agents/rag.ts`: same gateway chat model as `default`, distinct system prompt
+
+Embedding model is admin-controllable: ingestion + query resolve it from the `embedding` row of `ai_model_configs` (registered on boot, edited at `/dashboard/settings/ai`) via `getActiveEmbeddingModelId()`, falling back to `runtimeConfig.rag.embeddingModel` (`NUXT_RAG_*`) / env. So a staging/prod deploy has a working, changeable embedding model with no redeploy. Caveat: switching to a model with a different vector dimension needs a reindex, because `NUXT_RAG_EMBEDDING_DIMENSIONS` is fixed at index creation.
+
+First-time setup: `battlestack db:up && battlestack db:push`. `db:push` applies `server/database/extensions/01_pgvector.sql` (CREATE EXTENSION) before drizzle pushes the schema.
+
+## PWA
+
+Service-worker via `@vite-pwa/nuxt` with `autoUpdate` registration. Manifest is wired in `nuxt.config.ts#pwa`; icons live at `public/icon-192.png` + `public/icon-512.png`.
+
+Replace both icons with your own branding before launch. The shipped PNGs are placeholder solid-colour fills.
+
+Service-worker is **disabled in dev** (`devOptions.enabled: false`) so HMR + auto-reload behave normally. Flip to `true` only when you specifically want to debug SW behaviour locally.
+
+## AI coding tool
+
+Curated rules for context-aware AI assistance live in `.claude/rules/` (or your tool's equivalent). Each rule has a glob pattern and is loaded by the assistant only when files matching the pattern are open.
+
+Currently shipping rules:
+
+- `drizzle.mdc` (server/database/**/*.ts, drizzle.config.ts)
+- `vue.mdc` (*.vue)
+- `tailwind.mdc` (*.vue, *.css, app.config.ts, main.css)
+- `ts.mdc` (*.ts)
+- `i18n.mdc` (i18n/**/*.ts, *.vue)
+- `postgres.mdc`, `security.mdc`, `global.mdc`
+
+Feature-gated rules ship from the relevant feature: `mastra.mdc` (mastra), `realtime.mdc` (chat).
+
+MCP servers live in `.mcp.json` at the project root (Claude Code picks them up automatically). Entries are gated by the enabled feature set: `nuxt` (always for Nuxt projects), `nuxt-ui` (when `nuxt:nuxt-ui` is on), `mastra` (when `nuxt:mastra` is on), `playwright` (when `shared:playwright` is on).
+
+## Playwright
+
+Playwright MCP server is registered via `.mcp.json` (emitted by `shared:ai-tool-config`), so Claude/Cursor/etc can open a browser and click around to verify UI changes without a manual hand-off.
+
+Set `PLAYWRIGHT_TEST_EMAIL` and `PLAYWRIGHT_TEST_PASSWORD` in `.env` so the AI tool can sign in for protected pages.
+
+Vitest + happy-dom are also installed; run `pnpm test` for unit/integration tests.
+
+## Conventions
+
+- TypeScript everywhere; `noUncheckedIndexedAccess` on.
+- Server routes in `server/api/`. Use `defineEventHandler`.
+- Shared utilities in `server/utils/`. Vue composables in `app/composables/`.
+- Run `battlestack` (no args) inside the project to see all task commands.
+
+## Server state
+
+This app runs as multiple replicas behind a non-sticky load balancer. Server code holds no **authoritative** mutable state outside (1) Postgres, (2) signed/HMAC tokens, or (3) request/connection scope. State that lives only in one replica's memory and matters for correctness is invisible to every other replica. Module-level state is a bug when it *is* the source of truth for a decision. It is fine as a **read-through cache of a decision already durably recorded elsewhere**, as long as losing it costs only a slower request, never a wrong one. Immutable lookup tables (a fixed `Set`/`Map` built once at module load and never mutated afterward) are always fine. Anything that runs at boot or on a timer takes a Postgres advisory lock (`pg_advisory_xact_lock`) so concurrent replicas don't race each other.
+
+The test to apply: if this process restarts right now and the in-memory state is gone, is anything wrong beyond one extra query or one slower request? If a request would now wrongly succeed or wrongly fail, it's authoritative state and belongs in Postgres. If the only cost is "a little slower until it's warm again," a module-level cache is fine.
+
+Three examples:
+
+- **Bug**: an in-memory request counter that *is* the rate limit. Across N replicas behind a non-sticky load balancer, each one enforces the limit independently against only its own share of traffic. The effective limit becomes roughly N× the intended one, and a flood (or a client that just gets rebalanced mid-burst) sails through.
+- **Fine**: an in-memory cache of a denial decision Postgres already recorded (e.g. "blocked until `resetAt`"), expiring at that same fixed time. A replica with a cold cache (just restarted, or never saw this key) asks the store, gets the same answer every other replica already has, and caches it too. Losing the cache costs one extra query per replica per denial; it never lets through a request the store would deny, and never denies one it would allow.
+- **Fine**: `const ALLOWED_MIME_TYPES = new Set([...])` (`server/api/files/upload-url.post.ts`): a fixed lookup table built once, nothing to lose on restart.
+- **Fine, a different shape**: `server/utils/redis-rate-limit.ts`'s circuit-breaker flag ("is Redis reachable from THIS replica right now"). Unlike the denial-decision cache above, this isn't a cache of anything Postgres recorded; it's a local liveness signal each replica learns and forgets independently. Losing it on restart just means starting optimistic (closed) and re-learning from the next call; it never changes what a rate-limit check answers, only which backend answers it.
+
+Patterns already in this codebase for the mechanics above:
+
+- `server/utils/mfa-challenge.ts`: no server state at all. The MFA challenge is a signed HMAC token (user id + expiry + nonce, signed with the session secret); any replica can issue or verify it without sharing memory with any other.
+- `server/plugins/10-sync-ai-on-boot.ts` / `server/plugins/11-sync-prompts-on-boot.ts`: boot-time work that must run exactly once per rollout takes `pg_advisory_xact_lock` before touching the database; every other replica booting concurrently blocks on the lock, then no-ops instead of racing.
+
+Before adding a module-level variable, apply the restart test above.
+
+## Runtime config, not process.env
+
+Never read `process.env.NUXT_*` in `app/` code: Nuxt statically replaces `process.env`/`import.meta.env` there at build, so the browser never sees your real value; a client read is either baked in forever or silently `undefined`. In `server/` (Nitro) code, `process.env` happens to reflect real container env at actual startup, but reading it directly still skips the same registered-key contract `runtimeConfig` gives you (nothing catches a wrong or mis-cased env var name). Declare a `runtimeConfig` key and read it via `useRuntimeConfig()` instead.
+
+Exceptions in this project, both deliberate:
+
+- `server/mastra/**`: Mastra Studio boots these files outside Nitro, where `useRuntimeConfig()` has no context.
+- Standalone scripts Nuxt never builds (`tools/migrate.mjs`, `tools/seed.mjs`, `drizzle.config.ts`, the seed runner under `server/database/seeds/`): nothing tree-shakes them and there's no `runtimeConfig` to read outside Nitro.
+
+**`process.env.NODE_ENV` specifically: never, anywhere. This is a different mechanism from the rule above, not a variant of it.** Bundlers statically inline `process.env.NODE_ENV` at build time (that's what enables dead-code elimination of dev-only branches), so a check keyed on it is frozen forever to whatever the *build machine's* env happened to be; a deploy-time env var can never change it. Use `import.meta.dev` for any dev-vs-production branch instead: it fails closed by construction, since a production build compiles the dead branch out entirely rather than just resolving a boolean.
+
+## Supply-chain policy
+
+New package releases are held back before this project will install them. The hold ramps from **0 days at scaffold, through pnpm 11's own default (1 day) on day one, to 7 days after a week**, idempotently. Running `battlestack` (any subcommand) advances the ramp by the number of whole days elapsed since the project was created.
+
+Configured per-PM in this project (not your global dotfiles):
+- `.npmrc`: `min-release-age` (npm 11+)
+- `pnpm-workspace.yaml`: `minimumReleaseAge` in minutes (pnpm 11+)
+- `bunfig.toml`: `[install] minimumReleaseAge` (bun 1.3+)
+
+Inspect / nudge:
+
+```bash
+battlestack policy:status     # current days, target, days remaining
+battlestack policy:tick       # force a ramp check now
+```
+
+Bypass for a one-off install: pass the PM's `--no-minimum-release-age` (or equivalent).

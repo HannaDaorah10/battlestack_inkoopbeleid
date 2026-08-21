@@ -1,0 +1,38 @@
+{
+    "mcpServers": {
+        "nuxt": {
+            "command": "npx",
+            "args": [
+                "mcp-remote",
+                "https://nuxt.com/mcp"
+            ]
+        },
+        "nuxt-ui": {
+            "command": "npx",
+            "args": [
+                "mcp-remote",
+                "https://ui.nuxt.com/mcp"
+            ]
+        },
+        "mastra": {
+            "type": "stdio",
+            "command": "npx",
+            "args": [
+                "-y",
+                "@mastra/mcp-docs-server@latest"
+            ],
+            "env": {}
+        },
+        "playwright": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@playwright/mcp@latest"
+            ],
+            "env": {
+                "PLAYWRIGHT_TEST_EMAIL": "${PLAYWRIGHT_TEST_EMAIL}",
+                "PLAYWRIGHT_TEST_PASSWORD": "${PLAYWRIGHT_TEST_PASSWORD}"
+            }
+        }
+    }
+}
