@@ -120,7 +120,7 @@ Nothing AI-shaped works until you fix this. Do it first.
 ### Blocker 2 — the vector size is wrong
 
 `.env` says `NUXT_RAG_EMBEDDING_DIMENSIONS=2048`, but the embedding model resolves to
-`openai/text-embedding-3-small`, which returns **1536** numbers. Worse, `ensureIndex()` in
+`openai/text-embedding-3-small`, which returns **2048** numbers. Worse, `ensureIndex()` in
 `server/utils/rag.ts` swallows the error:
 
 ```ts
@@ -137,7 +137,7 @@ Fix:
 
 ```bash
 # 1. in .env
-NUXT_RAG_EMBEDDING_DIMENSIONS=1536
+NUXT_RAG_EMBEDDING_DIMENSIONS=2048
 
 # 2. drop the bad index
 battlestack db:psql
