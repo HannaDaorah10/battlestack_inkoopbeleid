@@ -36,6 +36,7 @@ export default defineNuxtConfig({
             promptMgmt: true,
             chat: true,
             rag: true,
+            inkoopbeleid: true,
         },
 
         databaseUrl: '',
@@ -61,11 +62,11 @@ export default defineNuxtConfig({
         aiGatewayKey: '',
 
         rag: {
-            embeddingDimensions: 2048,
+            embeddingDimensions: 1536,
             maxChunkSize: 700,
             chunkOverlap: 100,
             topK: 5,
-            embeddingModel: '',
+            embeddingModel: 'openai/text-embedding-3-small',
         },
     },
 

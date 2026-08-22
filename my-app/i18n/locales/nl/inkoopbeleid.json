@@ -1,0 +1,264 @@
+{
+    "inkoopbeleid": {
+        "title": "Inkoopbeleid",
+        "subtitle": "Stel het inkoopbeleid op, doorzoek de brondocumenten en toets een inkoop aan de drempelbedragen.",
+        "error": "Er ging iets mis",
+        "loading": "Bezig met laden…",
+        "save": "Opslaan",
+        "cancel": "Annuleren",
+        "delete": "Verwijderen",
+        "add": "Toevoegen",
+        "back": "Terug",
+        "organisation": {
+            "label": "Organisatie",
+            "hint": "Alles op deze pagina hoort bij de gekozen organisatie.",
+            "empty": "Er zijn nog geen organisaties. Draai eerst de seed.",
+            "none": "Kies eerst een organisatie."
+        },
+        "nav": {
+            "overview": "Overzicht",
+            "documents": "Documenten",
+            "advisor": "Adviseur",
+            "check": "Toets een inkoop",
+            "deviations": "Afwijkingen"
+        },
+        "overview": {
+            "heading": "Beleidsdocumenten",
+            "empty": "Deze organisatie heeft nog geen inkoopbeleid.",
+            "new": "Nieuw inkoopbeleid",
+            "createTitle": "Nieuw inkoopbeleid",
+            "fieldTitle": "Titel",
+            "fieldPeriodStart": "Geldig vanaf",
+            "fieldPeriodEnd": "Geldig tot en met",
+            "created": "Inkoopbeleid aangemaakt",
+            "columns": {
+                "title": "Titel",
+                "status": "Status",
+                "version": "Versie",
+                "period": "Geldigheid",
+                "updatedAt": "Bijgewerkt"
+            },
+            "quickLinks": {
+                "documents": "Documenten toevoegen",
+                "documentsHint": "Upload het huidige beleid, de visie en andere bronnen.",
+                "advisor": "Vraag het de adviseur",
+                "advisorHint": "Stel een vraag en krijg antwoord uit je eigen documenten.",
+                "check": "Toets een inkoop",
+                "checkHint": "Welke procedure en welke handtekening horen bij dit bedrag?",
+                "deviations": "Pas toe of leg uit",
+                "deviationsHint": "Leg vast waarom er is afgeweken van de regels."
+            }
+        },
+        "status": {
+            "label": "Status",
+            "analyse": "Analyse",
+            "herijken": "Herijken",
+            "opstellen": "Opstellen",
+            "bespreken": "Bespreken",
+            "vastgesteld": "Vastgesteld",
+            "moveTo": "Naar {status}",
+            "changed": "Status gewijzigd naar {status}",
+            "noMoves": "Vanuit deze status zijn geen vervolgstappen mogelijk.",
+            "descriptions": {
+                "analyse": "Bestaand beleid en kaders in beeld brengen.",
+                "herijken": "Uitgangspunten opnieuw ijken met de stakeholders.",
+                "opstellen": "Het concept schrijven.",
+                "bespreken": "Het concept bespreken en laten beoordelen.",
+                "vastgesteld": "Formeel vastgesteld en geldig."
+            }
+        },
+        "completeness": {
+            "heading": "Volledigheid",
+            "chapters": "{filled} van {total} hoofdstukken gevuld",
+            "goals": "Inkoopdoelen vastgelegd",
+            "thresholds": "Drempelbedragen vastgelegd",
+            "mandates": "Mandaten vastgelegd",
+            "validity": "Binnen de geldigheidsperiode",
+            "validityUnknown": "Geen geldigheidsperiode vastgelegd",
+            "score": "Score"
+        },
+        "chapters": {
+            "heading": "Hoofdstukken",
+            "empty": "Dit hoofdstuk is nog leeg.",
+            "edit": "Bewerken",
+            "draft": "Laat de adviseur dit hoofdstuk schrijven",
+            "drafting": "De adviseur schrijft…",
+            "draftReady": "Concept klaar. Bekijk het en sla op als het klopt.",
+            "useDraft": "Concept overnemen",
+            "discardDraft": "Concept verwerpen",
+            "saved": "Hoofdstuk opgeslagen"
+        },
+        "goals": {
+            "heading": "Inkoopdoelen",
+            "empty": "Er zijn nog geen inkoopdoelen vastgelegd.",
+            "name": "Naam",
+            "description": "Toelichting",
+            "add": "Doel toevoegen",
+            "added": "Doel toegevoegd",
+            "removed": "Doel verwijderd"
+        },
+        "reviews": {
+            "heading": "Beoordelingen",
+            "empty": "Nog geen reacties.",
+            "comment": "Reactie",
+            "commentPlaceholder": "Schrijf je reactie…",
+            "chapter": "Hoofdstuk",
+            "wholePolicy": "Hele beleid",
+            "submit": "Plaatsen",
+            "submitted": "Reactie geplaatst",
+            "decision": {
+                "label": "Oordeel",
+                "comment": "Opmerking",
+                "approve": "Akkoord",
+                "reject": "Niet akkoord"
+            },
+            "by": "door {name}",
+            "anonymous": "onbekende gebruiker"
+        },
+        "documents": {
+            "title": "Documenten",
+            "subtitle": "Upload de brondocumenten. De adviseur beantwoordt vragen uitsluitend hieruit.",
+            "heading": "Document toevoegen",
+            "listHeading": "Toegevoegde documenten",
+            "empty": "Er zijn nog geen documenten toegevoegd.",
+            "fieldTitle": "Titel",
+            "fieldTitleHint": "Zo wordt dit document in antwoorden genoemd.",
+            "fieldKind": "Soort document",
+            "fieldFile": "Bestand",
+            "fileHint": "PDF of Word (.docx). Maximaal 100 MB.",
+            "uploaded": "Bestand geüpload: {name}",
+            "ingest": "Verwerken en doorzoekbaar maken",
+            "ingesting": "Bezig met verwerken…",
+            "success": "{n} fragment(en) toegevoegd uit \"{title}\"",
+            "warnings": "Let op bij het inlezen: {messages}",
+            "noText": "Er is geen tekst gevonden in dit bestand. Is het een scan zonder tekstlaag?",
+            "chunkCount": "{n} fragment(en)",
+            "columns": {
+                "title": "Titel",
+                "kind": "Soort",
+                "chunks": "Fragmenten",
+                "ingestedAt": "Toegevoegd op"
+            },
+            "kinds": {
+                "huidig_inkoopbeleid": "Huidig inkoopbeleid",
+                "visie": "Visie op opdrachtgeverschap",
+                "ondernemersplan": "Ondernemersplan / jaarplan",
+                "audit": "Interne audit / managementletter",
+                "mt_ambities": "MT-ambities",
+                "referentie": "Referentiedocument"
+            }
+        },
+        "advisor": {
+            "title": "Digitale inkoopadviseur",
+            "subtitle": "Stel je vraag in het Nederlands. Het antwoord komt uit de documenten van deze organisatie.",
+            "question": "Je vraag",
+            "questionPlaceholder": "Hoeveel offertes heb ik nodig voor een schoonmaakcontract van € 30.000?",
+            "ask": "Vraag stellen",
+            "asking": "De adviseur zoekt het op…",
+            "answer": "Antwoord",
+            "sources": "Gebruikte bronnen",
+            "noSources": "Geen bronnen gevonden. Voeg eerst documenten toe bij Documenten.",
+            "ungrounded": "Let op: er zijn geen documentfragmenten gevonden. Het antwoord is daarom niet onderbouwd.",
+            "score": "Relevantie",
+            "examples": "Voorbeeldvragen",
+            "example1": "Hoeveel offertes heb ik nodig voor een schoonmaakcontract van € 30.000?",
+            "example2": "Wie mag een opdracht van € 40.000 voor vastgoed tekenen?",
+            "example3": "Wat betekent pas toe of leg uit in ons inkoopbeleid?"
+        },
+        "check": {
+            "title": "Toets een inkoop",
+            "subtitle": "Vul het bedrag en het soort inkoop in. Je krijgt de procedure, het aantal offertes en wie mag tekenen.",
+            "amount": "Bedrag (incl. btw)",
+            "amountHint": "Hele contract, niet één jaar. Bij een jaarcontract vul je het jaarbedrag in en kies je \"per jaar\".",
+            "purchaseType": "Soort inkoop",
+            "recurrence": "Frequentie",
+            "duration": "Looptijd in jaren",
+            "ruleSet": "Regelset",
+            "submit": "Toets",
+            "submitting": "Bezig met toetsen…",
+            "verdict": "Uitkomst",
+            "contractValue": "Getoetste contractwaarde",
+            "procedure": "Procedure",
+            "minQuotes": "Minimaal aantal offertes",
+            "extraRequirement": "Aanvullende eis",
+            "mandate": "Mag tekenen",
+            "mandateAlternatives": "Of, met hetzelfde mandaat",
+            "mandateNone": "Geen enkele rol mag dit bedrag alleen tekenen.",
+            "noThreshold": "Voor deze organisatie zijn geen drempelbedragen vastgelegd die op dit bedrag passen.",
+            "obligationsHeading": "Waar je op moet letten",
+            "rulesHeading": "Drempelbedragen van deze organisatie",
+            "mandatesHeading": "Mandaten van deze organisatie",
+            "noUpperBound": "en hoger",
+            "columns": {
+                "range": "Contractwaarde",
+                "procedure": "Procedure",
+                "quotes": "Offertes",
+                "extra": "Aanvullende eis",
+                "advisor": "Adviseur inkoop",
+                "role": "Rol",
+                "department": "Afdeling",
+                "ceiling": "Tekengrens",
+                "scope": "Bereik"
+            }
+        },
+        "purchaseType": {
+            "werken": "Werken",
+            "diensten_leveringen": "Diensten en leveringen",
+            "any": "Alle soorten"
+        },
+        "recurrence": {
+            "once": "Eenmalig",
+            "yearly": "Per jaar (terugkerend)"
+        },
+        "ruleSet": {
+            "current": "Huidige drempelbedragen",
+            "legacy": "Oude drempelbedragen (bijlage 2)"
+        },
+        "procedure": {
+            "enkelvoudig_onderhands": "Enkelvoudig onderhands",
+            "meervoudig_onderhands": "Meervoudig onderhands",
+            "aanbesteding": "Aanbesteding",
+            "offerteprocedure": "Offerteprocedure",
+            "een_op_een": "Eén op één"
+        },
+        "requirement": {
+            "vastleggen_offerteaanvraag": "Offerteaanvraag en offerte(s) vastleggen",
+            "gunningsadvies": "Gunningsadvies opstellen",
+            "strategie_en_gunningsadvies": "Inkoopstrategie én gunningsadvies opstellen",
+            "categoriemanagement": "Volledig categoriemanagement doorlopen"
+        },
+        "obligation": {
+            "recurring_multiplier_applied": "Terugkerend contract: het jaarbedrag is met 4 vermenigvuldigd om de contractwaarde te bepalen.",
+            "advisor_required": "De adviseur inkoop moet bij deze inkoop betrokken worden.",
+            "supervisory_board_approval": "Boven € 1.000.000: vooraf goedkeuring van de Raad van Commissarissen nodig.",
+            "contract_register": "Deze verplichting moet worden opgenomen in het centrale contractregister.",
+            "anti_splitting": "Een inkoop mag niet worden opgeknipt om onder een drempel te blijven. Beoordeel de totale uitgave per leverancier of categorie, niet één opdracht.",
+            "no_mandate_covers": "Geen enkele rol heeft mandaat voor dit bedrag. Escaleer naar het bestuur.",
+            "no_threshold_matches": "Er is geen drempelcategorie gevonden voor dit bedrag."
+        },
+        "deviations": {
+            "title": "Pas toe of leg uit",
+            "subtitle": "Wijk je af van de inkoopregels? Leg dan hier vast wat je oversloeg en waarom.",
+            "heading": "Afwijking vastleggen",
+            "listHeading": "Vastgelegde afwijkingen",
+            "empty": "Er zijn nog geen afwijkingen vastgelegd.",
+            "subject": "Waar gaat het over",
+            "subjectPlaceholder": "Bijvoorbeeld: spoedreparatie dakbedekking Vogelbuurt",
+            "amount": "Bedrag (incl. btw)",
+            "purchaseType": "Soort inkoop",
+            "ruleSkipped": "Welke regel is niet gevolgd",
+            "ruleSkippedPlaceholder": "Bijvoorbeeld: 2 offertes bij € 30.000",
+            "justification": "Waarom is er afgeweken",
+            "justificationHint": "Dit is het hart van pas toe of leg uit. Schrijf het zo op dat een auditor het over een jaar nog begrijpt. Minimaal 20 tekens.",
+            "approverRole": "Wie heeft het goedgekeurd",
+            "approverRolePlaceholder": "Bijvoorbeeld: Directeur-bestuurder",
+            "submit": "Vastleggen",
+            "submitted": "Afwijking vastgelegd",
+            "recordedBy": "vastgelegd door {name}",
+            "columns": {
+                "ruleSkipped": "Niet gevolgde regel",
+                "approverRole": "Goedgekeurd door"
+            }
+        }
+    }
+}

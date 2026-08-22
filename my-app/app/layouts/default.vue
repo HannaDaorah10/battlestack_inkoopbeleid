@@ -120,6 +120,7 @@ const publicFlags = computed(
             promptMgmt?: boolean
             chat?: boolean
             rag?: boolean
+            inkoopbeleid?: boolean
         },
 )
 
@@ -141,6 +142,18 @@ const nav = computed(() => {
             label: t('shell.chat'),
             to: '/chat',
             icon: 'i-lucide-message-circle',
+        })
+    }
+
+    // Top-level, not under Admin: the procurement advisor is for the adviseur inkoop and for
+    // any employee asking "what do I have to do for this purchase?", neither of whom is an
+    // administrator of this application.
+    if (publicFlags.value.inkoopbeleid) {
+        base.push({
+            label: t('shell.inkoopbeleid'),
+            description: t('shell.inkoopbeleidHint'),
+            to: '/dashboard/inkoopbeleid',
+            icon: 'i-lucide-scale',
         })
     }
 

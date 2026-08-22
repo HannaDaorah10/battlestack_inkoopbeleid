@@ -1,0 +1,264 @@
+{
+    "inkoopbeleid": {
+        "title": "Procurement policy",
+        "subtitle": "Draft the procurement policy, search the source documents, and check a purchase against the thresholds.",
+        "error": "Something went wrong",
+        "loading": "Loading…",
+        "save": "Save",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "add": "Add",
+        "back": "Back",
+        "organisation": {
+            "label": "Organisation",
+            "hint": "Everything on this page belongs to the selected organisation.",
+            "empty": "There are no organisations yet. Run the seed first.",
+            "none": "Select an organisation first."
+        },
+        "nav": {
+            "overview": "Overview",
+            "documents": "Documents",
+            "advisor": "Advisor",
+            "check": "Check a purchase",
+            "deviations": "Deviations"
+        },
+        "overview": {
+            "heading": "Policy documents",
+            "empty": "This organisation has no procurement policy yet.",
+            "new": "New procurement policy",
+            "createTitle": "New procurement policy",
+            "fieldTitle": "Title",
+            "fieldPeriodStart": "Valid from",
+            "fieldPeriodEnd": "Valid until",
+            "created": "Procurement policy created",
+            "columns": {
+                "title": "Title",
+                "status": "Status",
+                "version": "Version",
+                "period": "Validity",
+                "updatedAt": "Updated"
+            },
+            "quickLinks": {
+                "documents": "Add documents",
+                "documentsHint": "Upload the current policy, the vision, and other sources.",
+                "advisor": "Ask the advisor",
+                "advisorHint": "Ask a question and get an answer from your own documents.",
+                "check": "Check a purchase",
+                "checkHint": "Which procedure and whose signature does this amount need?",
+                "deviations": "Comply or explain",
+                "deviationsHint": "Record why the rules were not followed."
+            }
+        },
+        "status": {
+            "label": "Status",
+            "analyse": "Analyse",
+            "herijken": "Recalibrate",
+            "opstellen": "Draft",
+            "bespreken": "Review",
+            "vastgesteld": "Adopted",
+            "moveTo": "Move to {status}",
+            "changed": "Status changed to {status}",
+            "noMoves": "No next steps are possible from this status.",
+            "descriptions": {
+                "analyse": "Map the existing policy and frameworks.",
+                "herijken": "Recalibrate the principles with stakeholders.",
+                "opstellen": "Write the draft.",
+                "bespreken": "Discuss the draft and have it reviewed.",
+                "vastgesteld": "Formally adopted and in force."
+            }
+        },
+        "completeness": {
+            "heading": "Completeness",
+            "chapters": "{filled} of {total} chapters filled in",
+            "goals": "Procurement goals recorded",
+            "thresholds": "Thresholds recorded",
+            "mandates": "Signing mandates recorded",
+            "validity": "Within the validity period",
+            "validityUnknown": "No validity period recorded",
+            "score": "Score"
+        },
+        "chapters": {
+            "heading": "Chapters",
+            "empty": "This chapter is still empty.",
+            "edit": "Edit",
+            "draft": "Have the advisor write this chapter",
+            "drafting": "The advisor is writing…",
+            "draftReady": "Draft ready. Review it and save if it is correct.",
+            "useDraft": "Use this draft",
+            "discardDraft": "Discard draft",
+            "saved": "Chapter saved"
+        },
+        "goals": {
+            "heading": "Procurement goals",
+            "empty": "No procurement goals recorded yet.",
+            "name": "Name",
+            "description": "Description",
+            "add": "Add goal",
+            "added": "Goal added",
+            "removed": "Goal removed"
+        },
+        "reviews": {
+            "heading": "Reviews",
+            "empty": "No responses yet.",
+            "comment": "Response",
+            "commentPlaceholder": "Write your response…",
+            "chapter": "Chapter",
+            "wholePolicy": "Whole policy",
+            "submit": "Post",
+            "submitted": "Response posted",
+            "decision": {
+                "label": "Decision",
+                "comment": "Comment",
+                "approve": "Approve",
+                "reject": "Reject"
+            },
+            "by": "by {name}",
+            "anonymous": "unknown user"
+        },
+        "documents": {
+            "title": "Documents",
+            "subtitle": "Upload the source documents. The advisor answers only from these.",
+            "heading": "Add a document",
+            "listHeading": "Added documents",
+            "empty": "No documents added yet.",
+            "fieldTitle": "Title",
+            "fieldTitleHint": "This is how the document is named in answers.",
+            "fieldKind": "Document type",
+            "fieldFile": "File",
+            "fileHint": "PDF or Word (.docx). Up to 100 MB.",
+            "uploaded": "File uploaded: {name}",
+            "ingest": "Process and make searchable",
+            "ingesting": "Processing…",
+            "success": "{n} excerpt(s) added from \"{title}\"",
+            "warnings": "Note while reading the file: {messages}",
+            "noText": "No text was found in this file. Is it a scan without a text layer?",
+            "chunkCount": "{n} excerpt(s)",
+            "columns": {
+                "title": "Title",
+                "kind": "Type",
+                "chunks": "Excerpts",
+                "ingestedAt": "Added on"
+            },
+            "kinds": {
+                "huidig_inkoopbeleid": "Current procurement policy",
+                "visie": "Vision on client leadership",
+                "ondernemersplan": "Business plan / annual plan",
+                "audit": "Internal audit / management letter",
+                "mt_ambities": "Management team ambitions",
+                "referentie": "Reference document"
+            }
+        },
+        "advisor": {
+            "title": "Digital procurement advisor",
+            "subtitle": "Ask your question. The answer comes from this organisation's own documents.",
+            "question": "Your question",
+            "questionPlaceholder": "How many quotes do I need for a € 30,000 cleaning contract?",
+            "ask": "Ask",
+            "asking": "The advisor is looking it up…",
+            "answer": "Answer",
+            "sources": "Sources used",
+            "noSources": "No sources found. Add documents under Documents first.",
+            "ungrounded": "Note: no document excerpts were found, so this answer is not grounded in your documents.",
+            "score": "Relevance",
+            "examples": "Example questions",
+            "example1": "How many quotes do I need for a € 30,000 cleaning contract?",
+            "example2": "Who may sign a € 40,000 real-estate assignment?",
+            "example3": "What does comply-or-explain mean in our procurement policy?"
+        },
+        "check": {
+            "title": "Check a purchase",
+            "subtitle": "Enter the amount and the type of purchase. You get the procedure, the number of quotes, and who may sign.",
+            "amount": "Amount (incl. VAT)",
+            "amountHint": "The whole contract, not one year. For an annual contract, enter the yearly amount and choose \"per year\".",
+            "purchaseType": "Type of purchase",
+            "recurrence": "Frequency",
+            "duration": "Duration in years",
+            "ruleSet": "Rule set",
+            "submit": "Check",
+            "submitting": "Checking…",
+            "verdict": "Result",
+            "contractValue": "Contract value assessed",
+            "procedure": "Procedure",
+            "minQuotes": "Minimum number of quotes",
+            "extraRequirement": "Additional requirement",
+            "mandate": "May sign",
+            "mandateAlternatives": "Or, with the same mandate",
+            "mandateNone": "No role may sign this amount on its own.",
+            "noThreshold": "This organisation has no threshold tier covering this amount.",
+            "obligationsHeading": "What to watch out for",
+            "rulesHeading": "This organisation's thresholds",
+            "mandatesHeading": "This organisation's signing mandates",
+            "noUpperBound": "and above",
+            "columns": {
+                "range": "Contract value",
+                "procedure": "Procedure",
+                "quotes": "Quotes",
+                "extra": "Additional requirement",
+                "advisor": "Procurement advisor",
+                "role": "Role",
+                "department": "Department",
+                "ceiling": "Signing limit",
+                "scope": "Scope"
+            }
+        },
+        "purchaseType": {
+            "werken": "Works (construction)",
+            "diensten_leveringen": "Services and supplies",
+            "any": "All types"
+        },
+        "recurrence": {
+            "once": "One-off",
+            "yearly": "Per year (recurring)"
+        },
+        "ruleSet": {
+            "current": "Current thresholds",
+            "legacy": "Legacy thresholds (appendix 2)"
+        },
+        "procedure": {
+            "enkelvoudig_onderhands": "Single-source private procedure",
+            "meervoudig_onderhands": "Multiple-party private procedure",
+            "aanbesteding": "Full tender",
+            "offerteprocedure": "Quote procedure",
+            "een_op_een": "One-to-one"
+        },
+        "requirement": {
+            "vastleggen_offerteaanvraag": "Record the request for quotation and the quote(s)",
+            "gunningsadvies": "Produce an award-advice document",
+            "strategie_en_gunningsadvies": "Produce a procurement strategy and an award-advice document",
+            "categoriemanagement": "Run the full category-management cycle"
+        },
+        "obligation": {
+            "recurring_multiplier_applied": "Recurring contract: the yearly amount was multiplied by 4 to determine the contract value.",
+            "advisor_required": "The procurement advisor must be involved in this purchase.",
+            "supervisory_board_approval": "Above € 1,000,000: advance approval from the Supervisory Board is required.",
+            "contract_register": "This commitment must be entered in the central contract register.",
+            "anti_splitting": "A purchase may not be split up to stay under a threshold. Assess total spend per supplier or category, not a single order.",
+            "no_mandate_covers": "No role holds a mandate for this amount. Escalate to the board.",
+            "no_threshold_matches": "No threshold tier was found for this amount."
+        },
+        "deviations": {
+            "title": "Comply or explain",
+            "subtitle": "Deviating from the procurement rules? Record here what you skipped and why.",
+            "heading": "Record a deviation",
+            "listHeading": "Recorded deviations",
+            "empty": "No deviations recorded yet.",
+            "subject": "What is this about",
+            "subjectPlaceholder": "For example: emergency roof repair, Vogelbuurt",
+            "amount": "Amount (incl. VAT)",
+            "purchaseType": "Type of purchase",
+            "ruleSkipped": "Which rule was not followed",
+            "ruleSkippedPlaceholder": "For example: 2 quotes at € 30,000",
+            "justification": "Why was the rule not followed",
+            "justificationHint": "This is the heart of comply-or-explain. Write it so an auditor still understands it a year from now. At least 20 characters.",
+            "approverRole": "Who approved it",
+            "approverRolePlaceholder": "For example: Managing director",
+            "submit": "Record",
+            "submitted": "Deviation recorded",
+            "recordedBy": "recorded by {name}",
+            "columns": {
+                "ruleSkipped": "Rule not followed",
+                "approverRole": "Approved by"
+            }
+        }
+    }
+}

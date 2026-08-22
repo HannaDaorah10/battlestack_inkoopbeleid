@@ -74,3 +74,19 @@ export async function deleteObject(key: string): Promise<void> {
 export async function headObject(key: string) {
     return getClient().send(new HeadObjectCommand({ Bucket: bucket(), Key: key }))
 }
+
+/**
+ * Read a whole object into memory.
+ *
+ * For server-side processing that needs the actual bytes (text extraction, checksums), where a
+ * signed URL would only add a round trip through the network to fetch what this process can
+ * read directly. Same memory cost model as uploads: the entire object is buffered, so call it
+ * for documents, not for media.
+ */
+export async function getObjectBytes(key: string): Promise<Uint8Array> {
+    const res = await getClient().send(new GetObjectCommand({ Bucket: bucket(), Key: key }))
+    if (!res.Body) {
+        throw createError({ statusCode: 404, statusMessage: 'Object has no body' })
+    }
+    return res.Body.transformToByteArray()
+}

@@ -3,6 +3,8 @@ import { PinoLogger } from '@mastra/loggers'
 import { PostgresStore } from '@mastra/pg'
 import { Observability, DefaultExporter } from '@mastra/observability'
 import { defaultAgent } from './agents/default'
+import { ragAgent } from './agents/rag'
+import { inkoopbeleidAgent, inkoopbeleidRedacteurAgent } from './agents/inkoopbeleid'
 import { OpenAICompatGateway } from './gateways/openai-compat'
 
 /**
@@ -21,7 +23,16 @@ const storage = new PostgresStore({
 })
 
 export const mastra = new Mastra({
-    agents: { default: defaultAgent },
+    // Every agent the app can call must be listed here. This map is also what
+    // `10-sync-ai-on-boot.ts` enumerates to create one `agents` row per agent, so an agent
+    // missing from it both throws on `getAgent()` and never becomes admin-configurable.
+    // `rag` was previously absent for exactly that reason.
+    agents: {
+        'default': defaultAgent,
+        'rag': ragAgent,
+        'inkoopbeleid': inkoopbeleidAgent,
+        'inkoopbeleid-redacteur': inkoopbeleidRedacteurAgent,
+    },
     // Every `<provider>/<model>` request routes through this gateway; discovery hits `/v1/models` at runtime so any provider the configured AI gateway (sluis.ai, a LiteLLM proxy, ...) serves is registered automatically.
     gateways: { gateway: new OpenAICompatGateway() },
     storage,

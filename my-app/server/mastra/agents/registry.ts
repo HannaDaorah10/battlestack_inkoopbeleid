@@ -25,6 +25,31 @@ export function getAgentDefinitions(): AgentDefinition[] {
             promptKey: 'agent.default.system',
             defaultInstructions: FALLBACK_INSTRUCTIONS,
         },
+        {
+            key: 'rag',
+            name: 'RAG agent',
+            description: 'Answers from retrieved context excerpts, citing their sources.',
+            modelConfigKey: 'chat',
+            promptKey: null,
+            defaultInstructions: FALLBACK_INSTRUCTIONS,
+        },
+        {
+            key: 'inkoopbeleid',
+            name: 'Inkoopbeleid adviseur',
+            description:
+                'Answers procurement-policy questions in Dutch from the organisation\'s own documents.',
+            modelConfigKey: 'chat',
+            promptKey: 'agent.inkoopbeleid.system',
+            defaultInstructions: FALLBACK_INSTRUCTIONS,
+        },
+        {
+            key: 'inkoopbeleid-redacteur',
+            name: 'Inkoopbeleid redacteur',
+            description: 'Drafts a single chapter of a procurement policy from source documents.',
+            modelConfigKey: 'chat',
+            promptKey: 'agent.inkoopbeleid.redacteur.system',
+            defaultInstructions: FALLBACK_INSTRUCTIONS,
+        },
     ]
 }
 
