@@ -1,10 +1,10 @@
 <template>
     <div class="space-y-6">
         <div>
-            <h1 class="text-2xl font-bold tracking-tight">
+            <h1 class="adj-page-title">
                 {{ t('inkoopbeleid.deviations.title') }}
             </h1>
-            <p class="mt-1 text-muted">
+            <p class="mt-1.5 adj-lead">
                 {{ t('inkoopbeleid.deviations.subtitle') }}
             </p>
         </div>
@@ -13,7 +13,7 @@
 
         <UCard>
             <template #header>
-                <h2 class="font-semibold">
+                <h2 class="adj-card-title">
                     {{ t('inkoopbeleid.deviations.heading') }}
                 </h2>
             </template>
@@ -103,7 +103,7 @@
 
         <UCard>
             <template #header>
-                <h2 class="font-semibold">
+                <h2 class="adj-card-title">
                     {{ t('inkoopbeleid.deviations.listHeading') }}
                 </h2>
             </template>
@@ -115,7 +115,7 @@
                 <div
                     v-for="d in deviations"
                     :key="d.id"
-                    class="rounded border border-default p-3"
+                    class="rounded-sm border border-default p-3"
                 >
                     <div class="flex flex-wrap items-baseline justify-between gap-2">
                         <p class="font-medium">
@@ -147,12 +147,21 @@
                     </p>
                 </div>
             </div>
-            <p
-                v-else-if="status !== 'pending'"
-                class="text-sm text-muted"
+            <div
+                v-else-if="status === 'pending'"
+                class="space-y-2"
             >
-                {{ t('inkoopbeleid.deviations.empty') }}
-            </p>
+                <USkeleton
+                    v-for="i in 2"
+                    :key="i"
+                    class="h-24 w-full"
+                />
+            </div>
+            <AdjEmptyState
+                v-else
+                icon="i-lucide-triangle-alert"
+                :title="t('inkoopbeleid.deviations.empty')"
+            />
         </UCard>
     </div>
 </template>
@@ -251,6 +260,7 @@ async function onSubmit() {
             title: t('inkoopbeleid.error'),
             description: serverErrorMessage(e, t('inkoopbeleid.error')),
             color: 'error',
+            duration: 0,
         })
     } finally {
         saving.value = false

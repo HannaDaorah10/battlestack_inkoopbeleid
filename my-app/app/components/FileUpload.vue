@@ -8,16 +8,18 @@
             @change="onChange"
         />
         <UButton
-            color="primary"
-            variant="soft"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-upload"
             :loading="uploading"
+            :disabled="uploading"
             @click="input?.click()"
         >
-            {{ uploading ? `${progress}%` : 'Upload' }}
+            {{ uploading ? t('common.actions.uploading', { progress }) : t('common.actions.chooseFile') }}
         </UButton>
         <p
             v-if="error"
-            class="text-xs text-red-500"
+            class="text-xs text-error"
         >
             {{ error }}
         </p>
@@ -25,6 +27,8 @@
 </template>
 
 <script setup lang="ts">
+const { t } = useI18n()
+
 defineProps<{ accept?: string }>()
 const emit = defineEmits<{ uploaded: [file: { key: string, size: number, mime: string | null }] }>()
 

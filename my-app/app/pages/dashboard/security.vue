@@ -1,10 +1,10 @@
 <template>
     <div class="space-y-6">
         <div>
-            <h1 class="text-2xl font-bold">
+            <h1 class="adj-page-title">
                 {{ t('dashboard.security.title') }}
             </h1>
-            <p class="mt-1 text-sm text-muted">
+            <p class="mt-1.5 adj-lead">
                 {{ t('dashboard.security.subtitle') }}
             </p>
         </div>
@@ -21,7 +21,7 @@
                 <template #header>
                     <div class="flex items-center justify-between">
                         <div>
-                            <h2 class="text-base font-semibold">
+                            <h2 class="adj-card-title">
                                 {{ t('dashboard.security.passkeys.heading') }}
                             </h2>
                             <p class="text-sm text-muted">
@@ -31,7 +31,9 @@
                         <UButton
                             icon="i-lucide-key"
                             size="sm"
-                            @click="onAddPasskey"
+                            color="neutral"
+                            variant="outline"
+                            @click="openAddPasskey"
                         >
                             {{ t('dashboard.security.passkeys.add') }}
                         </UButton>
@@ -66,26 +68,30 @@
                             </p>
                         </div>
                         <UButton
-                            color="error"
-                            variant="ghost"
+                            color="neutral"
+                            variant="link"
                             icon="i-lucide-trash-2"
                             size="sm"
-                            :aria-label="t('dashboard.security.passkeys.remove')"
                             @click="removePasskey(p.id)"
-                        />
+                        >
+                            {{ t('dashboard.security.passkeys.remove') }}
+                        </UButton>
                     </li>
                 </ul>
-                <p
+                <AdjEmptyState
                     v-else
-                    class="text-sm text-muted"
-                >
-                    {{ t('dashboard.security.passkeys.empty') }}
-                </p>
+                    icon="i-lucide-key"
+                    :title="t('dashboard.security.passkeys.empty')"
+                    :description="t('dashboard.security.passkeys.description')"
+                    :action-label="t('dashboard.security.passkeys.add')"
+                    action-icon="i-lucide-key"
+                    @action="openAddPasskey"
+                />
             </UCard>
 
             <UCard>
                 <template #header>
-                    <h2 class="text-base font-semibold">
+                    <h2 class="adj-card-title">
                         {{ t('dashboard.security.sessions.heading') }}
                     </h2>
                     <p class="text-sm text-muted">
@@ -93,12 +99,11 @@
                     </p>
                 </template>
 
-                <p
+                <AdjEmptyState
                     v-if="!activeSessions.length"
-                    class="text-sm text-muted"
-                >
-                    {{ t('dashboard.security.sessions.empty') }}
-                </p>
+                    icon="i-lucide-monitor"
+                    :title="t('dashboard.security.sessions.empty')"
+                />
                 <ul
                     v-else
                     class="divide-y divide-default -my-3"
@@ -111,12 +116,14 @@
                         <div class="min-w-0 flex-1">
                             <p class="text-sm font-medium">
                                 {{ describeSession(s.userAgent) }}
-                                <span
+                                <UBadge
                                     v-if="s.current"
-                                    class="ml-2 inline-flex rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary"
+                                    color="info"
+                                    size="sm"
+                                    class="ml-2 align-middle"
                                 >
                                     {{ t('dashboard.security.sessions.current') }}
-                                </span>
+                                </UBadge>
                             </p>
                             <p class="text-xs text-muted">
                                 {{
@@ -132,20 +139,21 @@
                         </div>
                         <UButton
                             v-if="!s.current"
-                            color="error"
-                            variant="ghost"
+                            color="neutral"
+                            variant="link"
                             icon="i-lucide-log-out"
                             size="sm"
-                            :aria-label="t('dashboard.security.sessions.revoke')"
                             @click="revokeSession(s.id)"
-                        />
+                        >
+                            {{ t('dashboard.security.sessions.revoke') }}
+                        </UButton>
                     </li>
                 </ul>
             </UCard>
 
             <UCard v-if="totpAvailable">
                 <template #header>
-                    <h2 class="text-base font-semibold">
+                    <h2 class="adj-card-title">
                         {{ t('dashboard.security.twoFactor.heading') }}
                     </h2>
                     <p class="text-sm text-muted">
@@ -156,6 +164,8 @@
                 <div v-if="!totpStatus.enabled && !setup.otpauthUrl">
                     <UButton
                         icon="i-lucide-shield-check"
+                        color="neutral"
+                        variant="outline"
                         @click="startTotp"
                     >
                         {{ t('dashboard.security.twoFactor.enable') }}
@@ -173,7 +183,7 @@
                         v-if="qrDataUrl"
                         :src="qrDataUrl"
                         :alt="t('dashboard.security.twoFactor.qrAlt')"
-                        class="rounded border bg-white p-2"
+                        class="rounded-md border border-default bg-default p-2"
                         width="200"
                         height="200"
                     />
@@ -181,7 +191,7 @@
                         <summary class="cursor-pointer text-muted">
                             {{ t('dashboard.security.twoFactor.copyUri') }}
                         </summary>
-                        <code class="mt-1 block break-all rounded bg-elevated p-2">
+                        <code class="mt-1 block break-all rounded-sm bg-elevated p-2">
                             {{ setup.otpauthUrl }}
                         </code>
                     </details>
@@ -221,7 +231,6 @@
                     </UFormField>
                     <UButton
                         color="error"
-                        variant="soft"
                         @click="disableTotp"
                     >
                         {{ t('dashboard.security.twoFactor.disable') }}
@@ -231,7 +240,7 @@
 
             <UCard v-if="totpAvailable && totpStatus.enabled">
                 <template #header>
-                    <h2 class="text-base font-semibold">
+                    <h2 class="adj-card-title">
                         {{ t('dashboard.security.backupCodes.heading') }}
                     </h2>
                     <p class="text-sm text-muted">
@@ -266,7 +275,8 @@
                     </p>
                     <UButton
                         icon="i-lucide-refresh-cw"
-                        variant="soft"
+                        color="neutral"
+                        variant="outline"
                         @click="onGenerateBackupCodes"
                     >
                         {{
@@ -288,7 +298,7 @@
                         :description="t('dashboard.security.backupCodes.saveDescription')"
                     />
                     <ul
-                        class="grid grid-cols-1 gap-2 rounded border border-default bg-elevated p-3 font-mono text-sm sm:grid-cols-2"
+                        class="grid grid-cols-1 gap-2 rounded-md border border-default bg-elevated p-3 font-mono text-sm sm:grid-cols-2"
                     >
                         <li
                             v-for="c in revealedCodes"
@@ -298,7 +308,8 @@
                         </li>
                     </ul>
                     <UButton
-                        variant="soft"
+                        color="neutral"
+                        variant="outline"
                         @click="revealedCodes = []"
                     >
                         {{ t('dashboard.security.backupCodes.saved') }}
@@ -308,7 +319,7 @@
 
             <UCard v-if="auditAvailable">
                 <template #header>
-                    <h2 class="text-base font-semibold">
+                    <h2 class="adj-card-title">
                         {{ t('dashboard.security.auditLog.heading') }}
                     </h2>
                     <p class="text-sm text-muted">
@@ -316,12 +327,11 @@
                     </p>
                 </template>
 
-                <p
+                <AdjEmptyState
                     v-if="!auditEvents.length"
-                    class="text-sm text-muted"
-                >
-                    {{ t('dashboard.security.auditLog.empty') }}
-                </p>
+                    icon="i-lucide-history"
+                    :title="t('dashboard.security.auditLog.empty')"
+                />
                 <ul
                     v-else
                     class="divide-y divide-default -my-3"
@@ -371,6 +381,49 @@
                 </i18n-t>
             </UCard>
         </ClientOnly>
+
+        <!-- Kort formulier (één veld) in een modal: de gebruiker blijft in
+             context en de primaire knop benoemt de actie. -->
+        <UModal
+            v-model:open="showAddPasskey"
+            :title="t('dashboard.security.passkeys.add')"
+            :description="t('dashboard.security.passkeys.namePrompt')"
+        >
+            <template #body>
+                <form
+                    id="add-passkey-form"
+                    @submit.prevent="onAddPasskey"
+                >
+                    <UFormField :label="t('dashboard.security.passkeys.nameLabel')">
+                        <UInput
+                            v-model="passkeyLabel"
+                            autofocus
+                            class="w-full"
+                        />
+                    </UFormField>
+                </form>
+            </template>
+            <template #footer>
+                <div class="flex w-full justify-end gap-2.5">
+                    <UButton
+                        color="neutral"
+                        variant="outline"
+                        @click="showAddPasskey = false"
+                    >
+                        {{ t('common.actions.cancel') }}
+                    </UButton>
+                    <UButton
+                        type="submit"
+                        form="add-passkey-form"
+                        icon="i-lucide-key"
+                        :loading="addingPasskey"
+                        :disabled="addingPasskey"
+                    >
+                        {{ t('dashboard.security.passkeys.add') }}
+                    </UButton>
+                </div>
+            </template>
+        </UModal>
     </div>
 </template>
 
@@ -412,7 +465,7 @@ function metaSubject(ev: AuditRow): string | null {
 }
 
 function notifyError(e: unknown, fallback: string) {
-    toast.add({ title: fallback, description: serverErrorMessage(e, fallback), color: 'error' })
+    toast.add({ title: fallback, description: serverErrorMessage(e, fallback), color: 'error', duration: 0 })
 }
 
 const passkeysAvailable = ref(false)
@@ -576,21 +629,35 @@ function defaultPasskeyLabel(): string {
     return browser ? `${platform} · ${browser}` : platform
 }
 
+// Kort formulier (één veld) hoort in een modal, niet in een `window.prompt`:
+// een browserdialoog is geen component uit dit design system.
+const showAddPasskey = ref(false)
+const passkeyLabel = ref('')
+const addingPasskey = ref(false)
+
+function openAddPasskey() {
+    passkeyLabel.value = defaultPasskeyLabel()
+    showAddPasskey.value = true
+}
+
 async function onAddPasskey() {
+    addingPasskey.value = true
     try {
         const { addCredential } = usePasskey()
         const { user } = useAuth()
         const email = user.value?.email
         if (!email) return
-        const suggested = defaultPasskeyLabel()
-        const label = window.prompt(t('dashboard.security.passkeys.namePrompt'), suggested)
-        if (label === null) return
-        const trimmed = label.trim() || suggested
-        await addCredential(email, trimmed)
+        const label = passkeyLabel.value.trim() || defaultPasskeyLabel()
+        // De WebAuthn-ceremonie moet uit een gebruikersgebaar komen; de klik op
+        // deze knop is dat, dus de modal mag pas ná afloop dicht.
+        await addCredential(email, label)
+        showAddPasskey.value = false
         await refreshPasskeys()
         toast.add({ title: t('dashboard.security.passkeys.added'), color: 'success' })
     } catch (e) {
         notifyError(e, t('dashboard.security.passkeys.addError'))
+    } finally {
+        addingPasskey.value = false
     }
 }
 

@@ -17,6 +17,15 @@
         "accountMenu": "Account menu",
         "dashboard": "Dashboard",
         "inkoopbeleid": "Procurement policy",
-        "inkoopbeleidHint": "Draft the policy, query documents, and check a purchase"
+        "inkoopbeleidHint": "Draft the policy, query documents, and check a purchase",
+        "mainNavigation": "Main navigation",
+        "openMenu": "Open menu",
+        "closeMenu": "Close menu",
+        "inkoopbeleidNav": {
+            "documents": "Documents",
+            "advisor": "Advisor",
+            "check": "Check a purchase",
+            "deviations": "Deviations"
+        }
     }
 }

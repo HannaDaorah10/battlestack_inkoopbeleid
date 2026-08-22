@@ -1,10 +1,10 @@
 <template>
     <div class="space-y-6">
         <div>
-            <h1 class="text-2xl font-bold tracking-tight">
+            <h1 class="adj-page-title">
                 {{ t('inkoopbeleid.title') }}
             </h1>
-            <p class="mt-1 text-muted">
+            <p class="mt-1.5 adj-lead">
                 {{ t('inkoopbeleid.subtitle') }}
             </p>
         </div>
@@ -18,14 +18,14 @@
                 :to="link.to"
                 class="group"
             >
-                <UCard class="h-full transition hover:ring-primary hover:shadow-sm">
+                <UCard class="h-full transition-colors hover:bg-accented">
                     <div class="flex items-start gap-3">
                         <UIcon
                             :name="link.icon"
-                            class="mt-0.5 shrink-0 text-2xl text-primary"
+                            class="mt-1 size-[18px] shrink-0 text-toned"
                         />
                         <div class="min-w-0">
-                            <p class="font-semibold group-hover:text-primary">
+                            <p class="font-semibold text-highlighted">
                                 {{ link.label }}
                             </p>
                             <p class="text-sm text-muted">
@@ -40,7 +40,7 @@
         <UCard>
             <template #header>
                 <div class="flex items-center justify-between gap-2">
-                    <h2 class="font-semibold">
+                    <h2 class="adj-card-title">
                         {{ t('inkoopbeleid.overview.heading') }}
                     </h2>
                     <UButton
@@ -53,14 +53,35 @@
                 </div>
             </template>
 
-            <p
+            <AdjEmptyState
                 v-if="!organisationId"
-                class="text-sm text-muted"
-            >
-                {{ t('inkoopbeleid.organisation.none') }}
-            </p>
+                icon="i-lucide-building-2"
+                :title="t('inkoopbeleid.organisation.none')"
+            />
             <template v-else>
+                <!-- Skeleton in de vorm van de rijen die komen. -->
+                <div
+                    v-if="status === 'pending' && policies.length === 0"
+                    class="space-y-2"
+                >
+                    <USkeleton
+                        v-for="i in 4"
+                        :key="i"
+                        class="h-9 w-full"
+                    />
+                </div>
+
+                <AdjEmptyState
+                    v-else-if="policies.length === 0"
+                    icon="i-lucide-scale"
+                    :title="t('inkoopbeleid.overview.empty')"
+                    :action-label="t('inkoopbeleid.overview.new')"
+                    action-icon="i-lucide-plus"
+                    @action="showCreate = true"
+                />
+
                 <UTable
+                    v-else
                     :data="policies"
                     :columns="columns"
                     :loading="status === 'pending'"
@@ -68,7 +89,7 @@
                     <template #title-cell="{ row }">
                         <NuxtLink
                             :to="`/dashboard/inkoopbeleid/${row.original.id}`"
-                            class="text-primary-600 hover:underline"
+                            class="adj-link"
                         >
                             {{ row.original.title }}
                         </NuxtLink>
@@ -85,13 +106,6 @@
                         {{ new Date(row.original.updatedAt).toLocaleDateString(locale) }}
                     </template>
                 </UTable>
-
-                <p
-                    v-if="status !== 'pending' && policies.length === 0"
-                    class="mt-3 text-sm text-muted"
-                >
-                    {{ t('inkoopbeleid.overview.empty') }}
-                </p>
             </template>
         </UCard>
 
@@ -134,7 +148,7 @@
                         <div class="flex justify-end gap-2">
                             <UButton
                                 color="neutral"
-                                variant="ghost"
+                                variant="outline"
                                 @click="showCreate = false"
                             >
                                 {{ t('inkoopbeleid.cancel') }}
@@ -262,6 +276,7 @@ async function createPolicy() {
             title: t('inkoopbeleid.error'),
             description: serverErrorMessage(e, t('inkoopbeleid.error')),
             color: 'error',
+            duration: 0,
         })
     } finally {
         creating.value = false

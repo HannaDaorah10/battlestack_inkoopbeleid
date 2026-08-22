@@ -1,10 +1,10 @@
 <template>
     <div class="space-y-6">
         <div>
-            <h1 class="text-2xl font-bold tracking-tight">
+            <h1 class="adj-page-title">
                 {{ t('inkoopbeleid.advisor.title') }}
             </h1>
-            <p class="mt-1 text-muted">
+            <p class="mt-1.5 adj-lead">
                 {{ t('inkoopbeleid.advisor.subtitle') }}
             </p>
         </div>
@@ -44,7 +44,7 @@
                             v-for="(example, i) in examples"
                             :key="i"
                             size="xs"
-                            variant="soft"
+                            variant="outline"
                             color="neutral"
                             @click="question = example"
                         >
@@ -57,7 +57,7 @@
 
         <UCard v-if="answer !== null">
             <template #header>
-                <h2 class="font-semibold">
+                <h2 class="adj-card-title">
                     {{ t('inkoopbeleid.advisor.answer') }}
                 </h2>
             </template>
@@ -157,6 +157,7 @@ async function onAsk() {
             title: t('inkoopbeleid.error'),
             description: serverErrorMessage(e, t('inkoopbeleid.error')),
             color: 'error',
+            duration: 0,
         })
     } finally {
         asking.value = false

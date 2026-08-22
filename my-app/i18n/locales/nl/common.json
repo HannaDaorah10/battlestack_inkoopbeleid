@@ -1,15 +1,17 @@
 {
     "common": {
         "actions": {
-            "cancel": "Annuleren",
-            "save": "Opslaan",
-            "delete": "Verwijderen",
-            "confirm": "Bevestigen",
-            "edit": "Bewerken",
-            "reset": "Herstellen",
+            "cancel": "Annuleer",
+            "save": "Bewaar",
+            "delete": "Verwijder",
+            "confirm": "Ja, doe het",
+            "edit": "Bewerk",
+            "reset": "Herstel",
             "loading": "Laden…",
             "previous": "Vorige",
-            "next": "Volgende"
+            "next": "Volgende",
+            "chooseFile": "Bestand kiezen",
+            "uploading": "Bezig met uploaden… {progress}%"
         },
         "welcome": "Welkom"
     }

@@ -17,6 +17,14 @@ export default defineNuxtConfig({
 
     css: ['~/assets/css/main.css'],
 
+    // Het Adjust design system kent één thema. Donkere vlakken zijn er alleen
+    // voor navigatie en oriëntatie, niet voor content — een dark mode zou dus
+    // kleuren vragen die het merk niet heeft.
+    colorMode: {
+        preference: 'light',
+        fallback: 'light',
+    },
+
     runtimeConfig: {
         health: {
             failOnDegraded: true,
@@ -126,6 +134,18 @@ export default defineNuxtConfig({
         },
     },
 
+    // Instrument Sans is het merkfont van Adjust en het enige font in
+    // applicaties. @nuxt/fonts host het zelf onder /_fonts, zodat de CSP
+    // (font-src 'self') geen uitzondering voor Google nodig heeft.
+    fonts: {
+        families: [{
+            name: 'Instrument Sans',
+            provider: 'google',
+            weights: [400, 500, 600, 700],
+            styles: ['normal', 'italic'],
+        }],
+    },
+
     i18n: {
         defaultLocale: 'nl',
         strategy: 'no_prefix',
@@ -152,8 +172,8 @@ export default defineNuxtConfig({
         manifest: {
             name: 'my-app',
             short_name: 'my-app',
-            theme_color: '#3b82f6',
-            background_color: '#ffffff',
+            theme_color: '#CF2C28',
+            background_color: '#F1F1F1',
             display: 'standalone',
 
             icons: [{

@@ -1,10 +1,8 @@
 <template>
-    <UCard>
-        <template #header>
-            <h1 class="text-xl font-semibold">
-                {{ t('authRecovery.forgot.title') }}
-            </h1>
-        </template>
+    <div class="space-y-6">
+        <h1 class="adj-card-title">
+            {{ t('authRecovery.forgot.title') }}
+        </h1>
 
         <UForm
             v-if="!sent"
@@ -49,15 +47,13 @@
             :description="t('authRecovery.forgot.success.description')"
         />
 
-        <template #footer>
-            <NuxtLink
-                to="/login"
-                class="text-sm text-muted hover:text-primary"
-            >
-                {{ t('authRecovery.forgot.backToSignIn') }}
-            </NuxtLink>
-        </template>
-    </UCard>
+        <NuxtLink
+            to="/login"
+            class="adj-link text-sm"
+        >
+            {{ t('authRecovery.forgot.backToSignIn') }}
+        </NuxtLink>
+    </div>
 </template>
 
 <script setup lang="ts">

@@ -24,3 +24,8 @@ pnpm-debug.log*
 .env
 .env.*
 !.env.example
+
+# Adjust design system (intern merkmateriaal — niet publiek op GitHub).
+# De tokens en componentafspraken staan verwerkt in my-app/app/assets/css/main.css
+# en my-app/app/app.config.ts; de bronmap blijft lokaal.
+Design system concept development/

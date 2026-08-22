@@ -54,7 +54,7 @@ async function updateModelConfig(id: string, model: string) {
         const message
             = (error as { data?: { statusMessage?: string } })?.data?.statusMessage
                 ?? t('mastraAdmin.errorGeneric')
-        toast.add({ title: t('mastraAdmin.errorTitle'), description: message, color: 'error' })
+        toast.add({ title: t('mastraAdmin.errorTitle'), description: message, color: 'error', duration: 0 })
     }
 }
 
@@ -107,7 +107,7 @@ async function updateAgent(id: string, patch: Partial<Pick<AgentRow, 'modelConfi
         const message
             = (error as { data?: { statusMessage?: string } })?.data?.statusMessage
                 ?? t('mastraAdmin.errorGeneric')
-        toast.add({ title: t('mastraAdmin.errorTitle'), description: message, color: 'error' })
+        toast.add({ title: t('mastraAdmin.errorTitle'), description: message, color: 'error', duration: 0 })
     }
 }
 </script>
@@ -115,38 +115,37 @@ async function updateAgent(id: string, patch: Partial<Pick<AgentRow, 'modelConfi
 <template>
     <div class="space-y-6">
         <div>
-            <h1 class="text-2xl font-bold tracking-tight">
+            <h1 class="adj-page-title">
                 {{ t('mastraAdmin.title') }}
             </h1>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            <p class="mt-1.5 adj-lead">
                 {{ t('mastraAdmin.subtitle') }}
             </p>
         </div>
 
         <UCard>
             <template #header>
-                <h2 class="font-semibold">
+                <h2 class="adj-card-title">
                     {{ t('mastraAdmin.configsHeader') }}
                 </h2>
             </template>
 
             <div
                 v-if="modelsPending && !availableModels.length"
-                class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400"
+                class="space-y-3"
             >
-                <UIcon
-                    name="i-lucide-loader-circle"
-                    class="animate-spin"
+                <USkeleton
+                    v-for="i in 3"
+                    :key="i"
+                    class="h-11 w-full"
                 />
-                {{ t('mastraAdmin.loadingModels') }}
             </div>
 
-            <div
+            <AdjEmptyState
                 v-else-if="!availableModels.length"
-                class="text-sm text-gray-500 dark:text-gray-400"
-            >
-                {{ t('mastraAdmin.noModels') }}
-            </div>
+                icon="i-lucide-bot"
+                :title="t('mastraAdmin.noModels')"
+            />
 
             <div
                 v-else
@@ -163,7 +162,7 @@ async function updateAgent(id: string, patch: Partial<Pick<AgentRow, 'modelConfi
                         </p>
                         <p
                             v-if="config.description"
-                            class="text-xs text-gray-500 dark:text-gray-400"
+                            class="text-xs text-muted"
                         >
                             {{ config.description }}
                         </p>
@@ -188,20 +187,19 @@ async function updateAgent(id: string, patch: Partial<Pick<AgentRow, 'modelConfi
 
         <UCard>
             <template #header>
-                <h2 class="font-semibold">
+                <h2 class="adj-card-title">
                     {{ t('mastraAdmin.agentsHeader') }}
                 </h2>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <p class="mt-1 text-sm text-muted">
                     {{ t('mastraAdmin.agentsSubtitle') }}
                 </p>
             </template>
 
-            <div
+            <AdjEmptyState
                 v-if="!(agentRows ?? []).length"
-                class="text-sm text-gray-500 dark:text-gray-400"
-            >
-                {{ t('mastraAdmin.noAgents') }}
-            </div>
+                icon="i-lucide-bot"
+                :title="t('mastraAdmin.noAgents')"
+            />
 
             <div
                 v-else
@@ -218,7 +216,7 @@ async function updateAgent(id: string, patch: Partial<Pick<AgentRow, 'modelConfi
                         </p>
                         <p
                             v-if="agent.description"
-                            class="text-xs text-gray-500 dark:text-gray-400"
+                            class="text-xs text-muted"
                         >
                             {{ agent.description }}
                         </p>

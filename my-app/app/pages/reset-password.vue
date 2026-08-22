@@ -1,10 +1,8 @@
 <template>
-    <UCard>
-        <template #header>
-            <h1 class="text-xl font-semibold">
-                {{ t('authRecovery.reset.title') }}
-            </h1>
-        </template>
+    <div class="space-y-6">
+        <h1 class="adj-card-title">
+            {{ t('authRecovery.reset.title') }}
+        </h1>
 
         <UForm
             v-if="!done"
@@ -78,7 +76,7 @@
             :description="t('authRecovery.reset.success.description')"
             :actions="[{ label: t('authRecovery.reset.success.cta'), to: '/login' }]"
         />
-    </UCard>
+    </div>
 </template>
 
 <script setup lang="ts">

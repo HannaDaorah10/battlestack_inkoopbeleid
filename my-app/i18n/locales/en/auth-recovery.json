@@ -3,7 +3,7 @@
         "forgot": {
             "title": "Forgot password",
             "email": "Email",
-            "submit": "Send reset link",
+            "submit": "Send the reset link",
             "backToSignIn": "Back to sign in",
             "validation": {
                 "email": "Enter a valid email"
@@ -21,7 +21,7 @@
             "newPassword": "New password",
             "confirmPassword": "Confirm password",
             "hint": "Minimum 12 characters. Use a passphrase or mixed-character password.",
-            "submit": "Reset",
+            "submit": "Save your new password",
             "showPassword": "Show password",
             "hidePassword": "Hide password",
             "validation": {

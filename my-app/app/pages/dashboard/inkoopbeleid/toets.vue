@@ -1,10 +1,10 @@
 <template>
     <div class="space-y-6">
         <div>
-            <h1 class="text-2xl font-bold tracking-tight">
+            <h1 class="adj-page-title">
                 {{ t('inkoopbeleid.check.title') }}
             </h1>
-            <p class="mt-1 text-muted">
+            <p class="mt-1.5 adj-lead">
                 {{ t('inkoopbeleid.check.subtitle') }}
             </p>
         </div>
@@ -91,7 +91,7 @@
 
         <UCard v-if="verdict">
             <template #header>
-                <h2 class="font-semibold">
+                <h2 class="adj-card-title">
                     {{ t('inkoopbeleid.check.verdict') }}
                 </h2>
             </template>
@@ -190,7 +190,7 @@
 
         <UCard v-if="rules && rules.thresholds.length">
             <template #header>
-                <h2 class="font-semibold">
+                <h2 class="adj-card-title">
                     {{ t('inkoopbeleid.check.rulesHeading') }}
                 </h2>
             </template>
@@ -226,7 +226,7 @@
 
         <UCard v-if="rules && rules.mandates.length">
             <template #header>
-                <h2 class="font-semibold">
+                <h2 class="adj-card-title">
                     {{ t('inkoopbeleid.check.mandatesHeading') }}
                 </h2>
             </template>
@@ -384,6 +384,7 @@ async function onCheck() {
             title: t('inkoopbeleid.error'),
             description: serverErrorMessage(e, t('inkoopbeleid.error')),
             color: 'error',
+            duration: 0,
         })
     } finally {
         checking.value = false

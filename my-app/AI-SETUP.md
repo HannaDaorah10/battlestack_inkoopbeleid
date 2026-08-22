@@ -22,7 +22,7 @@ S3-server (RustFS). Beide draaien in Docker. Zonder Docker start de app niet.
 Op deze laptop staat op dit moment **geen Docker**. Dat heb ik gecontroleerd: geen Docker Desktop,
 geen WSL.
 
-1. Installeer **Docker Desktop** voor Windows: https://www.docker.com/products/docker-desktop/
+1. Installeer **Docker Desktop** voor Windows: https://www  .docker.com/products/docker-desktop/
 2. Start Docker Desktop en wacht tot het icoon groen/"running" is.
 3. Controleer in een terminal:
    ```bash

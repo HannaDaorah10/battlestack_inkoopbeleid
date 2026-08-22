@@ -14,7 +14,7 @@
                 >
                     {{ t('inkoopbeleid.back') }}
                 </UButton>
-                <h1 class="text-2xl font-bold tracking-tight">
+                <h1 class="adj-page-title">
                     {{ detail.policy.title }}
                 </h1>
                 <p class="mt-1 text-sm text-muted">
@@ -35,7 +35,7 @@
         <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <UCard>
                 <template #header>
-                    <h2 class="font-semibold">
+                    <h2 class="adj-card-title">
                         {{ t('inkoopbeleid.status.label') }}
                     </h2>
                 </template>
@@ -48,7 +48,8 @@
                         :key="next"
                         :loading="movingTo === next"
                         :disabled="movingTo !== null"
-                        variant="soft"
+                        color="neutral"
+                        variant="outline"
                         @click="moveTo(next)"
                     >
                         {{ t('inkoopbeleid.status.moveTo', { status: t(`inkoopbeleid.status.${next}`) }) }}
@@ -65,7 +66,7 @@
             <UCard>
                 <template #header>
                     <div class="flex items-center justify-between">
-                        <h2 class="font-semibold">
+                        <h2 class="adj-card-title">
                             {{ t('inkoopbeleid.completeness.heading') }}
                         </h2>
                         <UBadge color="neutral">
@@ -102,7 +103,7 @@
 
         <UCard>
             <template #header>
-                <h2 class="font-semibold">
+                <h2 class="adj-card-title">
                     {{ t('inkoopbeleid.goals.heading') }}
                 </h2>
             </template>
@@ -114,7 +115,7 @@
                 <li
                     v-for="goal in detail.goals"
                     :key="goal.id"
-                    class="flex items-start justify-between gap-3 rounded border border-default p-3"
+                    class="flex items-start justify-between gap-3 rounded-sm border border-default p-3"
                 >
                     <div class="min-w-0">
                         <p class="font-medium">
@@ -130,19 +131,20 @@
                     <UButton
                         icon="i-lucide-trash-2"
                         color="neutral"
-                        variant="ghost"
+                        variant="link"
                         size="xs"
-                        :aria-label="t('inkoopbeleid.delete')"
                         @click="removeGoal(goal.id)"
-                    />
+                    >
+                        {{ t('inkoopbeleid.delete') }}
+                    </UButton>
                 </li>
             </ul>
-            <p
+            <AdjEmptyState
                 v-else
-                class="mb-4 text-sm text-muted"
-            >
-                {{ t('inkoopbeleid.goals.empty') }}
-            </p>
+                class="mb-4"
+                icon="i-lucide-target"
+                :title="t('inkoopbeleid.goals.empty')"
+            />
 
             <form
                 class="flex flex-col gap-2 sm:flex-row sm:items-end"
@@ -178,7 +180,7 @@
 
         <UCard>
             <template #header>
-                <h2 class="font-semibold">
+                <h2 class="adj-card-title">
                     {{ t('inkoopbeleid.chapters.heading') }}
                 </h2>
             </template>
@@ -187,16 +189,16 @@
                 <div
                     v-for="chapter in detail.chapters"
                     :key="chapter.id"
-                    class="rounded border border-default p-3"
+                    class="rounded-sm border border-default p-3"
                 >
                     <div class="flex flex-wrap items-center justify-between gap-2">
-                        <h3 class="font-medium">
+                        <h3 class="adj-subhead">
                             {{ chapter.number }}. {{ chapter.title }}
                         </h3>
                         <div class="flex flex-wrap gap-1">
                             <UButton
                                 size="xs"
-                                variant="ghost"
+                                variant="link"
                                 color="neutral"
                                 icon="i-lucide-pencil"
                                 @click="toggleEdit(chapter)"
@@ -205,7 +207,8 @@
                             </UButton>
                             <UButton
                                 size="xs"
-                                variant="soft"
+                                color="neutral"
+                                variant="outline"
                                 icon="i-lucide-sparkles"
                                 :loading="draftingId === chapter.id"
                                 :disabled="draftingId !== null"
@@ -220,7 +223,7 @@
                         <UEditor
                             v-model="editingContent"
                             content-type="markdown"
-                            class="mt-3 rounded border border-default"
+                            class="mt-3 rounded-md border border-default"
                         >
                             <template #default="{ editor }">
                                 <UEditorToolbar
@@ -240,7 +243,7 @@
                             <UButton
                                 size="sm"
                                 color="neutral"
-                                variant="ghost"
+                                variant="outline"
                                 @click="editingId = null"
                             >
                                 {{ t('inkoopbeleid.cancel') }}
@@ -265,7 +268,7 @@
 
         <UCard>
             <template #header>
-                <h2 class="font-semibold">
+                <h2 class="adj-card-title">
                     {{ t('inkoopbeleid.reviews.heading') }}
                 </h2>
             </template>
@@ -316,7 +319,7 @@
                 <li
                     v-for="r in reviews"
                     :key="r.id"
-                    class="rounded border border-default p-3"
+                    class="rounded-sm border border-default p-3"
                 >
                     <div class="flex flex-wrap items-baseline justify-between gap-2">
                         <UBadge :color="decisionColor(r.decision)">
@@ -338,12 +341,11 @@
                     </p>
                 </li>
             </ul>
-            <p
+            <AdjEmptyState
                 v-else
-                class="text-sm text-muted"
-            >
-                {{ t('inkoopbeleid.reviews.empty') }}
-            </p>
+                icon="i-lucide-message-square-quote"
+                :title="t('inkoopbeleid.reviews.empty')"
+            />
         </UCard>
 
         <UModal v-model:open="showDraft">
@@ -360,12 +362,12 @@
                         :description="t('inkoopbeleid.advisor.ungrounded')"
                         class="mb-3"
                     />
-                    <pre class="max-h-96 overflow-auto whitespace-pre-wrap rounded bg-elevated p-3 text-sm">{{ draftResult?.draft }}</pre>
+                    <pre class="max-h-96 overflow-auto whitespace-pre-wrap rounded-md bg-elevated p-3 text-sm">{{ draftResult?.draft }}</pre>
                     <template #footer>
                         <div class="flex justify-end gap-2">
                             <UButton
                                 color="neutral"
-                                variant="ghost"
+                                variant="outline"
                                 @click="showDraft = false"
                             >
                                 {{ t('inkoopbeleid.chapters.discardDraft') }}
@@ -380,12 +382,17 @@
         </UModal>
     </div>
 
-    <p
+    <div
         v-else-if="status === 'pending'"
-        class="text-sm text-muted"
+        class="space-y-6"
     >
-        {{ t('inkoopbeleid.loading') }}
-    </p>
+        <USkeleton class="h-12 w-2/3" />
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <USkeleton class="h-44 w-full" />
+            <USkeleton class="h-44 w-full" />
+        </div>
+        <USkeleton class="h-56 w-full" />
+    </div>
 </template>
 
 <script setup lang="ts">
@@ -508,6 +515,7 @@ function notifyError(e: unknown) {
         title: t('inkoopbeleid.error'),
         description: serverErrorMessage(e, t('inkoopbeleid.error')),
         color: 'error',
+        duration: 0,
     })
 }
 

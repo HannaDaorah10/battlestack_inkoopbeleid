@@ -4,12 +4,14 @@
             "cancel": "Cancel",
             "save": "Save",
             "delete": "Delete",
-            "confirm": "Confirm",
+            "confirm": "Yes, do it",
             "edit": "Edit",
             "reset": "Reset",
             "loading": "Loading…",
             "previous": "Previous",
-            "next": "Next"
+            "next": "Next",
+            "chooseFile": "Choose file",
+            "uploading": "Uploading… {progress}%"
         },
         "welcome": "Welcome"
     }

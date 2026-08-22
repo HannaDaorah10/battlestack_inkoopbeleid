@@ -4,10 +4,10 @@
             <div
                 v-for="m in messages"
                 :key="m.id"
-                class="rounded-md p-3"
-                :class="m.role === 'user' ? 'bg-primary-50' : 'bg-muted'"
+                class="rounded-md border border-muted p-3"
+                :class="m.role === 'user' ? 'bg-accented' : 'bg-muted'"
             >
-                <div class="text-xs uppercase tracking-wide text-muted">
+                <div class="adj-microlabel-stil">
                     {{ m.role }}
                 </div>
                 <div class="whitespace-pre-wrap">

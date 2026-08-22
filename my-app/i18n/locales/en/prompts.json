@@ -4,16 +4,22 @@
         "subtitle": "Edit AI agent system prompts without redeploying. Reset to default at any time.",
         "loading": "Loading…",
         "version": "v{n}",
-        "edit": "Edit",
-        "reset": "Reset",
+        "edit": "Edit prompt",
+        "reset": "Reset to default",
         "cancel": "Cancel",
-        "save": "Save",
-        "resetConfirm": "Reset {key} to its default? This cannot be undone.",
+        "save": "Save prompt",
+        "resetConfirm": "This puts \"{key}\" back to the default text. Your own version is lost and this cannot be undone.",
         "savedTitle": "{name} saved",
         "resetTitle": "{name} reset to default",
         "saveFailed": "Save failed",
         "saveFailedTitle": "Save failed",
         "resetFailed": "Reset failed",
-        "resetFailedTitle": "Reset failed"
+        "resetFailedTitle": "Reset failed",
+        "resetTitleModal": "Reset prompt to default?",
+        "resetConfirmAction": "Reset to the default prompt",
+        "empty": {
+            "title": "No prompts yet",
+            "description": "Once the AI agents run, their system prompts show up here."
+        }
     }
 }

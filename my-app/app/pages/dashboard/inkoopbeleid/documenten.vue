@@ -1,10 +1,10 @@
 <template>
     <div class="space-y-6">
         <div>
-            <h1 class="text-2xl font-bold tracking-tight">
+            <h1 class="adj-page-title">
                 {{ t('inkoopbeleid.documents.title') }}
             </h1>
-            <p class="mt-1 text-muted">
+            <p class="mt-1.5 adj-lead">
                 {{ t('inkoopbeleid.documents.subtitle') }}
             </p>
         </div>
@@ -13,7 +13,7 @@
 
         <UCard>
             <template #header>
-                <h2 class="font-semibold">
+                <h2 class="adj-card-title">
                     {{ t('inkoopbeleid.documents.heading') }}
                 </h2>
             </template>
@@ -73,12 +73,30 @@
 
         <UCard>
             <template #header>
-                <h2 class="font-semibold">
+                <h2 class="adj-card-title">
                     {{ t('inkoopbeleid.documents.listHeading') }}
                 </h2>
             </template>
 
+            <div
+                v-if="status === 'pending' && documents.length === 0"
+                class="space-y-2"
+            >
+                <USkeleton
+                    v-for="i in 3"
+                    :key="i"
+                    class="h-9 w-full"
+                />
+            </div>
+
+            <AdjEmptyState
+                v-else-if="documents.length === 0"
+                icon="i-lucide-file-text"
+                :title="t('inkoopbeleid.documents.empty')"
+            />
+
             <UTable
+                v-else
                 :data="documents"
                 :columns="columns"
                 :loading="status === 'pending'"
@@ -98,13 +116,6 @@
                     {{ row.original.ingestedAt ? new Date(row.original.ingestedAt).toLocaleString(locale) : '-' }}
                 </template>
             </UTable>
-
-            <p
-                v-if="status !== 'pending' && documents.length === 0"
-                class="mt-3 text-sm text-muted"
-            >
-                {{ t('inkoopbeleid.documents.empty') }}
-            </p>
         </UCard>
     </div>
 </template>
@@ -200,6 +211,7 @@ async function onUploaded(file: UploadedFile) {
             title: t('inkoopbeleid.error'),
             description: serverErrorMessage(e, t('inkoopbeleid.error')),
             color: 'error',
+            duration: 0,
         })
     }
 }
@@ -246,6 +258,7 @@ async function onIngest() {
                 ? t('inkoopbeleid.documents.noText')
                 : serverErrorMessage(e, t('inkoopbeleid.error')),
             color: 'error',
+            duration: 0,
         })
     } finally {
         ingesting.value = false

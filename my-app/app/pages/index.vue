@@ -1,7 +1,7 @@
 <template>
     <UCard>
         <template #header>
-            <h1 class="text-xl font-semibold">
+            <h1 class="adj-card-title">
                 Welcome
             </h1>
         </template>

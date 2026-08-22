@@ -1,10 +1,8 @@
 <template>
-    <UCard>
-        <template #header>
-            <h1 class="text-xl font-semibold">
-                {{ error ? t('auth.magicLogin.failed') : t('auth.magicLogin.title') }}
-            </h1>
-        </template>
+    <div class="space-y-6">
+        <h1 class="adj-card-title">
+            {{ error ? t('auth.magicLogin.failed') : t('auth.magicLogin.title') }}
+        </h1>
 
         <div
             v-if="error"
@@ -27,19 +25,16 @@
             </p>
         </div>
 
-        <template
+        <UButton
             v-if="error"
-            #footer
+            to="/login"
+            color="neutral"
+            variant="outline"
+            block
         >
-            <UButton
-                to="/login"
-                variant="soft"
-                block
-            >
-                {{ t('auth.magicLogin.toLogin') }}
-            </UButton>
-        </template>
-    </UCard>
+            {{ t('auth.magicLogin.toLogin') }}
+        </UButton>
+    </div>
 </template>
 
 <script setup lang="ts">

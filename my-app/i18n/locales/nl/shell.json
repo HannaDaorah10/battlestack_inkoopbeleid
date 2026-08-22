@@ -17,6 +17,15 @@
         "accountMenu": "Accountmenu",
         "dashboard": "Dashboard",
         "inkoopbeleid": "Inkoopbeleid",
-        "inkoopbeleidHint": "Beleid opstellen, documenten bevragen en inkopen toetsen"
+        "inkoopbeleidHint": "Beleid opstellen, documenten bevragen en inkopen toetsen",
+        "mainNavigation": "Hoofdnavigatie",
+        "openMenu": "Menu openen",
+        "closeMenu": "Menu sluiten",
+        "inkoopbeleidNav": {
+            "documents": "Documenten",
+            "advisor": "Adviseur",
+            "check": "Toets een inkoop",
+            "deviations": "Afwijkingen"
+        }
     }
 }

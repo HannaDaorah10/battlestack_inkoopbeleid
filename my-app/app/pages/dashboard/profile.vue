@@ -1,10 +1,10 @@
 <template>
     <div class="mx-auto max-w-2xl space-y-6">
         <div>
-            <h1 class="text-2xl font-bold tracking-tight">
+            <h1 class="adj-page-title">
                 {{ t('dashboard.profile.title') }}
             </h1>
-            <p class="mt-1 text-sm text-muted">
+            <p class="mt-1.5 adj-lead">
                 {{ t('dashboard.profile.subtitle') }}
             </p>
         </div>
@@ -35,10 +35,11 @@
                     />
                     <UButton
                         size="sm"
-                        color="primary"
-                        variant="soft"
+                        color="neutral"
+                        variant="outline"
                         icon="i-lucide-upload"
                         :loading="avatarUploading"
+                        :disabled="avatarUploading"
                         @click="avatarInput?.click()"
                     >
                         {{
@@ -50,8 +51,8 @@
                     <UButton
                         v-if="avatarUrl"
                         size="sm"
-                        color="error"
-                        variant="ghost"
+                        color="neutral"
+                        variant="link"
                         icon="i-lucide-trash-2"
                         :loading="avatarRemoving"
                         @click="removeAvatar"
@@ -89,33 +90,18 @@
                     />
                 </UFormField>
 
-                <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                    <UFormField
-                        :label="t('dashboard.profile.theme')"
-                        name="theme"
-                    >
-                        <USelectMenu
-                            v-model="state.theme"
-                            :items="themeOptions"
-                            value-key="value"
-                            size="lg"
-                            class="w-full"
-                        />
-                    </UFormField>
-
-                    <UFormField
-                        :label="t('dashboard.profile.locale')"
-                        name="locale"
-                    >
-                        <USelectMenu
-                            v-model="state.locale"
-                            :items="localeOptions"
-                            value-key="value"
-                            size="lg"
-                            class="w-full"
-                        />
-                    </UFormField>
-                </div>
+                <UFormField
+                    :label="t('dashboard.profile.locale')"
+                    name="locale"
+                >
+                    <USelectMenu
+                        v-model="state.locale"
+                        :items="localeOptions"
+                        value-key="value"
+                        size="lg"
+                        class="w-full sm:max-w-xs"
+                    />
+                </UFormField>
 
                 <div class="flex justify-end border-t border-default pt-4">
                     <UButton
@@ -137,13 +123,7 @@ import { z } from 'zod'
 const { t, setLocale } = useI18n()
 const { user, fetchUser } = useAuth()
 const toast = useToast()
-const colorMode = useColorMode()
 
-const themeOptions = computed(() => [
-    { label: t('dashboard.profile.themeOptions.light'), value: 'light' },
-    { label: t('dashboard.profile.themeOptions.dark'), value: 'dark' },
-    { label: t('dashboard.profile.themeOptions.system'), value: 'system' },
-])
 // Labels in native script: recovery from wrong-locale selection.
 const localeOptions = [
     { label: 'Nederlands', value: 'nl' },
@@ -152,13 +132,11 @@ const localeOptions = [
 
 const profileSchema = z.object({
     name: z.string().max(80),
-    theme: z.enum(['light', 'dark', 'system']),
     locale: z.enum(['nl', 'en']),
 })
 
 const state = reactive({
     name: '',
-    theme: 'system' as 'light' | 'dark' | 'system',
     locale: 'nl' as 'nl' | 'en',
 })
 const saving = ref(false)
@@ -168,7 +146,6 @@ watch(
     (val) => {
         if (val) {
             state.name = (val.name as string | undefined) ?? ''
-            state.theme = (val.theme as 'light' | 'dark' | 'system' | undefined) ?? 'system'
             state.locale = (val.locale as 'nl' | 'en' | undefined) ?? 'nl'
         }
     },
@@ -179,7 +156,6 @@ async function onSubmit() {
     saving.value = true
     try {
         await $fetch('/api/auth/profile', { method: 'PUT', body: state })
-        colorMode.preference = state.theme
         setLocale(state.locale)
         await fetchUser()
         toast.add({ title: t('dashboard.profile.saved'), color: 'success' })
@@ -189,6 +165,7 @@ async function onSubmit() {
             title: t('dashboard.profile.errorTitle'),
             description: msg,
             color: 'error',
+            duration: 0,
         })
     } finally {
         saving.value = false
@@ -253,7 +230,7 @@ async function onAvatarChange(e: Event) {
         avatarUrl.value = result.avatarUrl
         toast.add({ title: t('dashboard.profile.avatar.uploaded'), color: 'success' })
     } catch {
-        toast.add({ title: t('dashboard.profile.avatar.uploadError'), color: 'error' })
+        toast.add({ title: t('dashboard.profile.avatar.uploadError'), color: 'error', duration: 0 })
     } finally {
         avatarUploading.value = false
         if (avatarInput.value) avatarInput.value.value = ''
@@ -267,7 +244,7 @@ async function removeAvatar() {
         avatarUrl.value = null
         toast.add({ title: t('dashboard.profile.avatar.removed'), color: 'success' })
     } catch {
-        toast.add({ title: t('dashboard.profile.avatar.removeError'), color: 'error' })
+        toast.add({ title: t('dashboard.profile.avatar.removeError'), color: 'error', duration: 0 })
     } finally {
         avatarRemoving.value = false
     }

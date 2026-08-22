@@ -9,7 +9,7 @@
             "source": "Source",
             "sourceHint": "An identifier shown with results (URL, filename, doc id).",
             "text": "Text",
-            "submit": "Ingest",
+            "submit": "Add to the knowledge base",
             "success": "Ingested {n} chunk(s)"
         },
         "query": {

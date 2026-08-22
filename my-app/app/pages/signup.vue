@@ -1,10 +1,8 @@
 <template>
-    <UCard>
-        <template #header>
-            <h1 class="text-xl font-semibold">
-                {{ t('auth.signup.title') }}
-            </h1>
-        </template>
+    <div class="space-y-6">
+        <h1 class="adj-card-title">
+            {{ t('auth.signup.title') }}
+        </h1>
 
         <!-- Anti-enumeration: the same success state shows whether the email was
              new or already registered; it never reveals which. -->
@@ -69,15 +67,13 @@
             </p>
         </UForm>
 
-        <template #footer>
-            <NuxtLink
-                to="/login"
-                class="text-sm text-muted hover:text-primary"
-            >
-                {{ t('auth.signup.haveAccount') }} {{ t('auth.signup.signIn') }}
-            </NuxtLink>
-        </template>
-    </UCard>
+        <NuxtLink
+            to="/login"
+            class="adj-link text-sm"
+        >
+            {{ t('auth.signup.haveAccount') }} {{ t('auth.signup.signIn') }}
+        </NuxtLink>
+    </div>
 </template>
 
 <script setup lang="ts">

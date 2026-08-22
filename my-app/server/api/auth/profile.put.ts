@@ -5,7 +5,9 @@ import { users, type Role } from '#server/database/schema/users'
 
 const schema = z.object({
     name: z.string().max(80).default(''),
-    theme: z.enum(['light', 'dark', 'system']),
+    // Optional since the Adjust design system has a single theme and the profile
+    // page no longer offers a picker; the column stays for existing rows.
+    theme: z.enum(['light', 'dark', 'system']).optional(),
     locale: z.enum(['nl', 'en']),
 })
 

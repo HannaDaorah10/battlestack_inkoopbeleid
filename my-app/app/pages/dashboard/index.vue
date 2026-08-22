@@ -1,10 +1,10 @@
 <template>
     <div class="space-y-6">
         <div>
-            <h1 class="text-2xl font-bold tracking-tight">
+            <h1 class="adj-page-title">
                 {{ t('dashboard.home.title') }}
             </h1>
-            <p class="mt-1 text-muted">
+            <p class="mt-1.5 adj-lead">
                 {{ t('dashboard.home.welcome', { name: user?.name || user?.email || '' }) }}
             </p>
             <p class="mt-1 text-sm text-muted">
@@ -22,14 +22,14 @@
                 :to="link.to"
                 class="group"
             >
-                <UCard class="h-full transition hover:ring-primary hover:shadow-sm">
+                <UCard class="h-full transition-colors hover:bg-accented">
                     <div class="flex items-start gap-3">
                         <UIcon
                             :name="link.icon"
-                            class="text-2xl text-primary shrink-0 mt-0.5"
+                            class="size-[18px] shrink-0 mt-1 text-toned"
                         />
                         <div class="min-w-0">
-                            <p class="font-semibold group-hover:text-primary">
+                            <p class="font-semibold text-highlighted">
                                 {{ link.label }}
                             </p>
                             <p class="text-sm text-muted">{{ link.hint }}</p>

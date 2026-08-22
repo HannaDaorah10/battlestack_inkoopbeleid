@@ -1,6 +1,12 @@
+<!--
+  Organisatiekeuze: een filter dat bepaalt welk beleid, welke documenten en
+  welke drempels je ziet. De navigatie tussen de inkoopbeleid-pagina's zat hier
+  eerst als rij tabknoppen; die is verhuisd naar de subnavigatie in de sidebar,
+  want tabs schakelen weergaven bínnen een pagina — nooit tussen pagina's.
+-->
 <template>
     <UCard>
-        <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <UFormField
                 :label="t('inkoopbeleid.organisation.label')"
                 :description="t('inkoopbeleid.organisation.hint')"
@@ -21,30 +27,12 @@
             >
                 {{ t('inkoopbeleid.organisation.empty') }}
             </p>
-            <nav
-                v-else
-                class="flex flex-wrap gap-1"
-                :aria-label="t('inkoopbeleid.title')"
-            >
-                <UButton
-                    v-for="link in links"
-                    :key="link.to"
-                    :to="link.to"
-                    :icon="link.icon"
-                    size="sm"
-                    :variant="isActive(link.to) ? 'soft' : 'ghost'"
-                    :color="isActive(link.to) ? 'primary' : 'neutral'"
-                >
-                    {{ link.label }}
-                </UButton>
-            </nav>
         </div>
     </UCard>
 </template>
 
 <script setup lang="ts">
 const { t } = useI18n()
-const route = useRoute()
 const { organisations, organisationId } = await useOrganisations()
 
 const items = computed(() =>
@@ -58,18 +46,4 @@ const selected = computed<string | undefined>({
     get: () => organisationId.value ?? undefined,
     set: (v) => (organisationId.value = v ?? null),
 })
-
-const links = computed(() => [
-    { to: '/dashboard/inkoopbeleid', icon: 'i-lucide-list', label: t('inkoopbeleid.nav.overview') },
-    { to: '/dashboard/inkoopbeleid/documenten', icon: 'i-lucide-file-text', label: t('inkoopbeleid.nav.documents') },
-    { to: '/dashboard/inkoopbeleid/adviseur', icon: 'i-lucide-message-circle-question', label: t('inkoopbeleid.nav.advisor') },
-    { to: '/dashboard/inkoopbeleid/toets', icon: 'i-lucide-calculator', label: t('inkoopbeleid.nav.check') },
-    { to: '/dashboard/inkoopbeleid/afwijkingen', icon: 'i-lucide-triangle-alert', label: t('inkoopbeleid.nav.deviations') },
-])
-
-// Exact match only: the overview lives at the prefix of every other link, so a `startsWith`
-// test would light up the overview button on every page.
-function isActive(to: string): boolean {
-    return route.path === to
-}
 </script>

@@ -1,6 +1,6 @@
 <template>
     <div class="space-y-6">
-        <h1 class="text-xl font-semibold">
+        <h1 class="adj-card-title">
             {{ step === 'mfa' ? t('auth.login.mfaTitle') : t('auth.login.title') }}
         </h1>
 
@@ -89,9 +89,9 @@
                 class="space-y-2 pt-2"
             >
                 <div class="flex items-center gap-3 text-xs text-muted">
-                    <div class="h-px flex-1 bg-default" />
+                    <div class="h-px flex-1 bg-border" />
                     <span>{{ t('auth.login.orSeparator') }}</span>
-                    <div class="h-px flex-1 bg-default" />
+                    <div class="h-px flex-1 bg-border" />
                 </div>
                 <UButton
                     v-if="passkeysEnabled"
@@ -169,7 +169,7 @@
             <NuxtLink
                 v-if="registrationEnabled"
                 to="/signup"
-                class="text-sm text-muted hover:text-primary"
+                class="adj-link text-sm"
             >
                 {{ t('auth.login.noAccount') }} {{ t('auth.login.signup') }}
             </NuxtLink>
@@ -178,7 +178,7 @@
             <NuxtLink
                 v-if="recoveryEnabled"
                 to="/forgot-password"
-                class="text-sm text-muted hover:text-primary"
+                class="adj-link text-sm"
             >
                 {{ t('auth.login.forgotPassword') }}
             </NuxtLink>

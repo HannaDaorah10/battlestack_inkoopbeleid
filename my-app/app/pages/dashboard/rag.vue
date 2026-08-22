@@ -1,17 +1,17 @@
 <template>
     <div class="space-y-6">
         <div>
-            <h1 class="text-2xl font-bold tracking-tight">
+            <h1 class="adj-page-title">
                 {{ t('rag.title') }}
             </h1>
-            <p class="mt-1 text-muted">
+            <p class="mt-1.5 adj-lead">
                 {{ t('rag.subtitle') }}
             </p>
         </div>
 
         <UCard>
             <template #header>
-                <h2 class="font-semibold">
+                <h2 class="adj-card-title">
                     {{ t('rag.ingest.heading') }}
                 </h2>
             </template>
@@ -50,7 +50,7 @@
 
         <UCard>
             <template #header>
-                <h2 class="font-semibold">
+                <h2 class="adj-card-title">
                     {{ t('rag.query.heading') }}
                 </h2>
             </template>
@@ -78,7 +78,7 @@
                     <div
                         v-for="(r, i) in results"
                         :key="i"
-                        class="rounded border border-default p-3"
+                        class="rounded-sm border border-default p-3"
                     >
                         <div class="flex items-center justify-between gap-2 text-xs text-muted">
                             <span class="truncate">{{ resultLabel(r) }}</span>
@@ -89,12 +89,11 @@
                         </p>
                     </div>
                 </div>
-                <p
+                <AdjEmptyState
                     v-else-if="queried"
-                    class="text-sm text-muted"
-                >
-                    {{ t('rag.query.empty') }}
-                </p>
+                    icon="i-lucide-search"
+                    :title="t('rag.query.empty')"
+                />
             </div>
         </UCard>
     </div>
@@ -136,7 +135,7 @@ async function onIngest() {
         toast.add({ title: t('rag.ingest.success', { n: res.chunks }), color: 'success' })
         ingest.text = ''
     } catch (e: unknown) {
-        toast.add({ title: t('rag.error'), description: errMessage(e, t('rag.error')), color: 'error' })
+        toast.add({ title: t('rag.error'), description: errMessage(e, t('rag.error')), color: 'error', duration: 0 })
     } finally {
         ingesting.value = false
     }
@@ -158,7 +157,7 @@ async function onQuery() {
         results.value = res.results
         queried.value = true
     } catch (e: unknown) {
-        toast.add({ title: t('rag.error'), description: errMessage(e, t('rag.error')), color: 'error' })
+        toast.add({ title: t('rag.error'), description: errMessage(e, t('rag.error')), color: 'error', duration: 0 })
     } finally {
         querying.value = false
     }

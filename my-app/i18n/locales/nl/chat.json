@@ -1,7 +1,7 @@
 {
     "chat": {
         "placeholder": "Vraag iets…",
-        "send": "Versturen",
+        "send": "Verstuur",
         "errorTitle": "Chat niet beschikbaar",
         "errorGeneric": "Er ging iets mis. Probeer het opnieuw.",
         "errorMissingKey": "NUXT_AI_GATEWAY_KEY ontbreekt in .env. Stel de sleutel in en herstart de dev-server.",
