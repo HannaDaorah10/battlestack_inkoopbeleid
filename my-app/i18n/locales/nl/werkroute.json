@@ -1,0 +1,94 @@
+{
+    "werkroute": {
+        "title": "Begeleide route",
+        "loading": "Werkinstructie laden…",
+        "error": "Er ging iets mis",
+        "cancel": "Annuleer",
+        "back": "Terug",
+        "next": "Volgende",
+        "level": "Niveau: {niveau}",
+        "backToPolicy": "Terug naar het inkoopbeleid",
+        "backToWelcome": "Terug naar het overzicht van de bouwsteen",
+        "youAreHere": "Jij bent hier:",
+        "position": "stap {stap} van {totaal} · {scherm}",
+        "saving": "Bezig met bewaren…",
+        "saved": "Bewaard",
+        "saveFailed": "Bewaren mislukt",
+        "open": "Doorloop de route",
+        "openHint": "Loop stap voor stap door de werkinstructie en bouw per stap het document op.",
+        "welkom": {
+            "kicker": "{kamer} · Bouwsteen {nummer}",
+            "forPolicy": "Je werkt aan: {titel}",
+            "route": "De route · {n} stappen",
+            "start": "Start de route",
+            "resume": "Ga verder waar je was",
+            "result": "Eindresultaat: {resultaat}",
+            "tools": "Hulpmiddelen en templates"
+        },
+        "reisbalk": {
+            "label": "Jouw route door de bouwsteen",
+            "heading": "Jouw route",
+            "progress": "Voortgang door de bouwsteen",
+            "done": "Afgerond",
+            "busy": "Bezig",
+            "todo": "Nog niet gestart"
+        },
+        "taak": {
+            "step": "Stap {nummer}",
+            "inShort": "In het kort:",
+            "next": "Daarna:",
+            "startStep": "Start deze stap",
+            "nextStep": "Door naar de volgende stap",
+            "finished": "Bouwsteen afgerond",
+            "inputTitle": "Verzamel eerst je input",
+            "inputBody": "Vink aan wat je hebt. Je hoeft niet alles te hebben om te starten: de belangrijkste documenten staan bovenaan.",
+            "part": "Onderdeel {i} van {n}",
+            "approach": "Zo pak je het aan",
+            "tip": "Tip",
+            "placeholder": "Schrijf hier je bevindingen, kort en concreet is genoeg…",
+            "tool": "Open {label}",
+            "checkTitle": "Controleer jezelf",
+            "checkBody": "Kun je elke vraag met ja beantwoorden? Dan is de stap klaar. Twijfel je ergens? Ga terug naar dat onderdeel.",
+            "doneKicker": "Stap afgerond",
+            "doneTitle": "{document} staat klaar",
+            "doneBody": "Dit document is opgebouwd uit je antwoorden en gaat mee als input voor de volgende stap.",
+            "empty": "(nog leeg)",
+            "quality": "Kwaliteitscriteria · {gedaan} van {totaal} controlevragen afgevinkt. De stap is afgerond wanneer:"
+        },
+        "gesprekken": {
+            "number": "{eenheid} {n}",
+            "add": "{eenheid} toevoegen",
+            "remove": "{eenheid} verwijderen",
+            "removeTitle": "Dit {eenheid} verwijderen?",
+            "removeBody": "Het verslag en alle notities erin verdwijnen. Dit kun je niet ongedaan maken.",
+            "removeConfirm": "Verwijder",
+            "empty": "Nog geen enkel {eenheid} vastgelegd. Voeg er een toe zodra je iemand hebt gesproken.",
+            "notePlaceholder": "Wat is hierover opgehaald?"
+        },
+        "instructie": {
+            "heading": "Werkinstructie · stap {nummer}",
+            "button": "Werkinstructie",
+            "close": "Sluit de werkinstructie",
+            "kwaliteitsIntro": "De stap is afgerond wanneer:",
+            "doelgroep": "Doelgroep: {waarde}",
+            "kern": "Kern van de stap: {waarde}",
+            "vervolg": "Vervolgstap: {waarde}",
+            "secties": {
+                "doel": "Doel",
+                "benodigdeInput": "Benodigde input",
+                "aanpak": "Aanpak",
+                "resultaat": "Resultaat",
+                "templates": "Te gebruiken templates",
+                "aandachtspunten": "Praktische aandachtspunten",
+                "controlevragen": "Controlevragen",
+                "kwaliteitscriteria": "Kwaliteitscriteria",
+                "rolEnContext": "Rol en context"
+            }
+        },
+        "status": {
+            "heading": "Status van het inkoopbeleid",
+            "body": "Het beleid staat nu op {huidig}. Deze stap leidt naar {volgende}.",
+            "action": "Zet op {status}"
+        }
+    }
+}

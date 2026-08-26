@@ -1,0 +1,94 @@
+{
+    "werkroute": {
+        "title": "Guided route",
+        "loading": "Loading the work instruction…",
+        "error": "Something went wrong",
+        "cancel": "Cancel",
+        "back": "Back",
+        "next": "Next",
+        "level": "Level: {niveau}",
+        "backToPolicy": "Back to the procurement policy",
+        "backToWelcome": "Back to the building block overview",
+        "youAreHere": "You are here:",
+        "position": "step {stap} of {totaal} · {scherm}",
+        "saving": "Saving…",
+        "saved": "Saved",
+        "saveFailed": "Could not save",
+        "open": "Walk through the route",
+        "openHint": "Follow the work instruction step by step and build up the document for each step.",
+        "welkom": {
+            "kicker": "{kamer} · Building block {nummer}",
+            "forPolicy": "You are working on: {titel}",
+            "route": "The route · {n} steps",
+            "start": "Start the route",
+            "resume": "Continue where you left off",
+            "result": "End result: {resultaat}",
+            "tools": "Tools and templates"
+        },
+        "reisbalk": {
+            "label": "Your route through the building block",
+            "heading": "Your route",
+            "progress": "Progress through the building block",
+            "done": "Completed",
+            "busy": "In progress",
+            "todo": "Not started"
+        },
+        "taak": {
+            "step": "Step {nummer}",
+            "inShort": "In short:",
+            "next": "After this:",
+            "startStep": "Start this step",
+            "nextStep": "On to the next step",
+            "finished": "Building block completed",
+            "inputTitle": "Collect your input first",
+            "inputBody": "Tick what you have. You do not need everything to start: the most important documents are at the top.",
+            "part": "Part {i} of {n}",
+            "approach": "How to go about it",
+            "tip": "Tip",
+            "placeholder": "Write your findings here, short and concrete is enough…",
+            "tool": "Open {label}",
+            "checkTitle": "Check yourself",
+            "checkBody": "Can you answer every question with yes? Then the step is done. Unsure about something? Go back to that part.",
+            "doneKicker": "Step completed",
+            "doneTitle": "{document} is ready",
+            "doneBody": "This document is built from your answers and carries over as input for the next step.",
+            "empty": "(still empty)",
+            "quality": "Quality criteria · {gedaan} of {totaal} check questions ticked. The step is complete when:"
+        },
+        "gesprekken": {
+            "number": "{eenheid} {n}",
+            "add": "Add {eenheid}",
+            "remove": "Remove {eenheid}",
+            "removeTitle": "Remove this {eenheid}?",
+            "removeBody": "The record and all notes in it will be gone. This cannot be undone.",
+            "removeConfirm": "Remove",
+            "empty": "No {eenheid} recorded yet. Add one as soon as you have spoken to someone.",
+            "notePlaceholder": "What came out of this?"
+        },
+        "instructie": {
+            "heading": "Work instruction · step {nummer}",
+            "button": "Work instruction",
+            "close": "Close the work instruction",
+            "kwaliteitsIntro": "The step is complete when:",
+            "doelgroep": "Audience: {waarde}",
+            "kern": "Core of the step: {waarde}",
+            "vervolg": "Next step: {waarde}",
+            "secties": {
+                "doel": "Goal",
+                "benodigdeInput": "Required input",
+                "aanpak": "Approach",
+                "resultaat": "Result",
+                "templates": "Templates to use",
+                "aandachtspunten": "Practical points of attention",
+                "controlevragen": "Check questions",
+                "kwaliteitscriteria": "Quality criteria",
+                "rolEnContext": "Role and context"
+            }
+        },
+        "status": {
+            "heading": "Status of the procurement policy",
+            "body": "The policy is currently at {huidig}. This step leads to {volgende}.",
+            "action": "Move to {status}"
+        }
+    }
+}

@@ -32,6 +32,35 @@
             </UBadge>
         </div>
 
+        <!-- De begeleide route staat bovenaan: dit is de manier waarop de werkinstructie
+             bedoeld is om doorlopen te worden. De kaarten eronder blijven het losse gereedschap
+             voor wie gericht een hoofdstuk of een doel wil aanpassen. -->
+        <NuxtLink
+            :to="`/dashboard/inkoopbeleid/${policyId}/route`"
+            class="block no-underline"
+        >
+            <UCard class="transition-colors hover:bg-accented">
+                <div class="flex items-center gap-3">
+                    <UIcon
+                        name="i-lucide-route"
+                        class="size-5 shrink-0 text-toned"
+                    />
+                    <div class="min-w-0 flex-1">
+                        <p class="font-semibold text-highlighted">
+                            {{ t('werkroute.open') }}
+                        </p>
+                        <p class="text-sm text-muted">
+                            {{ t('werkroute.openHint') }}
+                        </p>
+                    </div>
+                    <UIcon
+                        name="i-lucide-arrow-right"
+                        class="size-4 shrink-0 text-muted"
+                    />
+                </div>
+            </UCard>
+        </NuxtLink>
+
         <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <UCard>
                 <template #header>

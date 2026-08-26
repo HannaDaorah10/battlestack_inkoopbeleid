@@ -175,8 +175,12 @@
             </UDropdownMenu>
         </nav>
 
-        <main class="px-4 py-6 sm:px-6 lg:px-11 lg:pt-9 lg:pb-16">
-            <div class="mx-auto w-full max-w-[1080px]">
+        <!-- Schermen die de volle breedte nodig hebben, zoals de begeleide route met zijn
+             eigen routebalk en zijpaneel, zetten `fullBleed` in `definePageMeta`. Zonder die
+             uitzondering zou zo een scherm binnen de 1080px van een gewone dashboardpagina
+             worden geperst en zijn drie kolommen kwijtraken. -->
+        <main :class="fullBleed ? 'min-w-0' : 'px-4 py-6 sm:px-6 lg:px-11 lg:pt-9 lg:pb-16'">
+            <div :class="fullBleed ? 'h-full' : 'mx-auto w-full max-w-[1080px]'">
                 <slot />
             </div>
         </main>
@@ -194,6 +198,8 @@ const { t } = useI18n()
 const appName = computed(
     () => (runtimeConfig.public.appName as string | undefined) || 'App',
 )
+
+const fullBleed = computed(() => route.meta.fullBleed === true)
 
 // Alleen voor het mobiele paneel; op lg staat de sidebar altijd vast.
 const menuOpen = ref(false)

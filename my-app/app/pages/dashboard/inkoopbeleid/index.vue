@@ -105,6 +105,19 @@
                     <template #updatedAt-cell="{ row }">
                         {{ new Date(row.original.updatedAt).toLocaleDateString(locale) }}
                     </template>
+                    <!-- De begeleide route is per beleid, dus hij hoort op de rij te staan en
+                         niet in de zijbalk: zonder gekozen beleid is er geen route om te lopen. -->
+                    <template #route-cell="{ row }">
+                        <UButton
+                            :to="`/dashboard/inkoopbeleid/${row.original.id}/route`"
+                            icon="i-lucide-route"
+                            color="neutral"
+                            variant="outline"
+                            size="xs"
+                        >
+                            {{ t('werkroute.title') }}
+                        </UButton>
+                    </template>
                 </UTable>
             </template>
         </UCard>
@@ -208,6 +221,8 @@ const columns = computed<TableColumn<PolicyRow>[]>(() => [
     { accessorKey: 'version', header: t('inkoopbeleid.overview.columns.version') },
     { accessorKey: 'period', header: t('inkoopbeleid.overview.columns.period') },
     { accessorKey: 'updatedAt', header: t('inkoopbeleid.overview.columns.updatedAt') },
+    // Kop bewust leeg: de knop zegt zelf al waar hij heen gaat.
+    { accessorKey: 'route', header: '' },
 ])
 
 const quickLinks = computed(() => [

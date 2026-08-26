@@ -6,6 +6,7 @@ import {
     date,
     index,
     integer,
+    jsonb,
     pgTable,
     text,
     timestamp,
@@ -332,6 +333,110 @@ export const policyDeviations = pgTable('policy_deviations', {
     ),
 ])
 
+/**
+ * Waar de begeleide route (bouwsteen 0.2) het werk van de gebruiker bewaart.
+ *
+ * Drie tabellen in plaats van een, omdat de route drie soorten invoer kent die zich echt
+ * anders gedragen: vrije tekst per onderdeel, aangevinkte checklists, en een variabel aantal
+ * gespreksverslagen. Ze in een tabel met een `kind`-kolom persen zou elke rij half leeg maken.
+ *
+ * `stepKey` en `fieldKey` zijn de stabiele sleutels uit de content
+ * (`shared/werkinstructies/bouwsteen-0-2.ts`), niet de titels. De content is bewust geen
+ * database-inhoud: de werkinstructie is een document dat door de vakinhoud wordt beheerd, en
+ * een titelwijziging daarin mag nooit het werk van een adviseur losbreken van zijn stap.
+ */
+
+/** Welke checklist een vinkje hoort bij: de Benodigde input of de Controlevragen. */
+export enum StepCheckKind {
+    /** Het scherm "Input verzamelen": de Benodigde input van de stap. */
+    Input = 'input',
+    /** Het scherm "Controleer jezelf": de Controlevragen van de stap. */
+    Controle = 'controle',
+}
+
+/**
+ * Een ingevuld onderdeel van een stapdocument. Een rij per werkscherm dat tekst opleverde.
+ *
+ * De unieke sleutel is (policy, stap, onderdeel): een onderdeel heeft precies een tekst, dus
+ * schrijven is een upsert en niet een insert die duplicaten kan maken.
+ */
+export const policyStepEntries = pgTable('policy_step_entries', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    policyId: uuid('policy_id')
+        .notNull()
+        .references(() => policies.id, { onDelete: 'cascade' }),
+    stepKey: text('step_key').notNull(),
+    fieldKey: text('field_key').notNull(),
+    content: text('content').notNull().default(''),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+    unique('policy_step_entries_policy_step_field_key').on(
+        table.policyId,
+        table.stepKey,
+        table.fieldKey,
+    ),
+    index('policy_step_entries_policy_id_idx').on(table.policyId),
+])
+
+/**
+ * Een aangevinkt item uit een van de twee checklists van een stap.
+ *
+ * `itemIndex` verwijst naar de positie in `benodigdeInput` of `controlevragen` van de stap.
+ * Een index en niet de tekst zelf, omdat de tekst uit de werkinstructie komt en daar mag
+ * worden bijgeschaafd zonder dat een vinkje verdwijnt. Wordt de volgorde van een checklist
+ * ooit omgegooid, dan verschuiven vinkjes mee; dat is bewust geaccepteerd, want de checklist
+ * is een hulpmiddel voor de adviseur en geen formeel bewijsstuk.
+ */
+export const policyStepChecks = pgTable('policy_step_checks', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    policyId: uuid('policy_id')
+        .notNull()
+        .references(() => policies.id, { onDelete: 'cascade' }),
+    stepKey: text('step_key').notNull(),
+    checkKind: text('check_kind').notNull().default(StepCheckKind.Input),
+    itemIndex: integer('item_index').notNull(),
+    checked: boolean('checked').notNull().default(false),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+    unique('policy_step_checks_policy_step_kind_index_key').on(
+        table.policyId,
+        table.stepKey,
+        table.checkKind,
+        table.itemIndex,
+    ),
+    index('policy_step_checks_policy_id_idx').on(table.policyId),
+    check('policy_step_checks_item_index_non_negative', sql`${table.itemIndex} >= 0`),
+])
+
+/**
+ * Een gespreksverslag binnen een herhaalbaar onderdeel: de stakeholdergesprekken van stap
+ * 0.2.2 en 0.2.4.
+ *
+ * `answers` is jsonb met de sectiesleutels van het richtvragen-sjabloon als sleutels. Jsonb en
+ * geen aparte antwoordtabel, omdat het sjabloon content is en geen schema: een sectie erbij in
+ * de werkinstructie hoort geen migratie te kosten. Voor de rest van de applicatie is dit ook
+ * geen bevraagbare inhoud, in tegenstelling tot drempelbedragen en mandaten, die juist daarom
+ * wel echte kolommen hebben.
+ */
+export const policyStepItems = pgTable('policy_step_items', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    policyId: uuid('policy_id')
+        .notNull()
+        .references(() => policies.id, { onDelete: 'cascade' }),
+    stepKey: text('step_key').notNull(),
+    fieldKey: text('field_key').notNull(),
+    sortOrder: integer('sort_order').notNull().default(0),
+    /** Wie er gesproken is, in de woorden van de adviseur. Nooit vertaald. */
+    title: text('title').notNull().default(''),
+    answers: jsonb('answers').$type<Record<string, string>>().notNull().default({}),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+    index('policy_step_items_policy_id_idx').on(table.policyId),
+])
+
 // --- Inferred types ----------------------------------------------------------------------
 
 export type Organisation = typeof organisations.$inferSelect
@@ -352,3 +457,9 @@ export type PolicyReview = typeof policyReviews.$inferSelect
 export type NewPolicyReview = typeof policyReviews.$inferInsert
 export type PolicyDeviation = typeof policyDeviations.$inferSelect
 export type NewPolicyDeviation = typeof policyDeviations.$inferInsert
+export type PolicyStepEntry = typeof policyStepEntries.$inferSelect
+export type NewPolicyStepEntry = typeof policyStepEntries.$inferInsert
+export type PolicyStepCheck = typeof policyStepChecks.$inferSelect
+export type NewPolicyStepCheck = typeof policyStepChecks.$inferInsert
+export type PolicyStepItem = typeof policyStepItems.$inferSelect
+export type NewPolicyStepItem = typeof policyStepItems.$inferInsert
