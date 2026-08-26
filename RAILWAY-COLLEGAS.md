@@ -3,7 +3,7 @@
 Voor collega's die het prototype willen doorlopen. Je hebt er niets voor nodig behalve een
 browser en een account dat de beheerder voor je aanmaakt.
 
-> **Beheerder:** Hanna (`hanna.adjust@gmail.com`)
+> **Beheerder:** Hanna (`hanna.daorah@adjust.com`)
 > **App-adres:** `https://JOUW-APP.up.railway.app` *(de beheerder vult dit in)*
 
 ---
