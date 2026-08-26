@@ -21,9 +21,14 @@
             "forPolicy": "Je werkt aan: {titel}",
             "route": "De route · {n} stappen",
             "start": "Start de route",
-            "resume": "Ga verder waar je was",
+            "resume": "Ga verder met de route",
             "result": "Eindresultaat: {resultaat}",
-            "tools": "Hulpmiddelen en templates"
+            "tools": "Hulpmiddelen en templates",
+            "chooseTitle": "Meerdere beleidsdocumenten",
+            "chooseBody": "De knop hierboven opent het meest recent bewerkte beleid. Kies hier een ander beleid om daar verder te gaan.",
+            "policyMeta": "{status} · stap {stap} van 5 · versie {versie}",
+            "noPolicyYet": "Er is nog geen inkoopbeleid voor deze organisatie. De knop Start de route maakt er een aan.",
+            "defaultTitle": "Inkoopbeleid {organisatie}"
         },
         "reisbalk": {
             "label": "Jouw route door de bouwsteen",

@@ -21,9 +21,14 @@
             "forPolicy": "You are working on: {titel}",
             "route": "The route · {n} steps",
             "start": "Start the route",
-            "resume": "Continue where you left off",
+            "resume": "Continue the route",
             "result": "End result: {resultaat}",
-            "tools": "Tools and templates"
+            "tools": "Tools and templates",
+            "chooseTitle": "Multiple policy documents",
+            "chooseBody": "The button above opens the most recently edited policy. Pick another one here to continue there.",
+            "policyMeta": "{status} · step {stap} of 5 · version {versie}",
+            "noPolicyYet": "There is no procurement policy for this organisation yet. The Start the route button creates one.",
+            "defaultTitle": "Procurement policy {organisatie}"
         },
         "reisbalk": {
             "label": "Your route through the building block",

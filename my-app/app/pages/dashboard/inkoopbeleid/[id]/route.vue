@@ -3,20 +3,18 @@
         <!-- Kop van de bouwsteen. Blijft staan in beide weergaven, zodat de gebruiker altijd
              ziet bij welk inkoopbeleid hij aan het werk is. -->
         <header class="flex flex-wrap items-center justify-between gap-3 border-b border-inkoophuis-lijn bg-white px-6 py-3.5">
-            <!-- Halverwege de route gaat "terug" naar het welkomscherm van de bouwsteen, van
-                 daaruit naar het beleid zelf. Zo blijven de hulpmiddelen op het welkomscherm
-                 onderweg bereikbaar zonder de route te verlaten. -->
-            <button
-                type="button"
-                class="inline-flex cursor-pointer items-center gap-1.5 border-none bg-transparent text-[13px] font-medium text-inkoophuis-tekst-stil"
-                @click="terug"
+            <!-- Terug gaat naar het welkomscherm van de bouwsteen, waar de hulpmiddelen en het
+                 beleidsoverzicht staan. Het werk is al bewaard, dus weggaan is altijd veilig. -->
+            <NuxtLink
+                to="/dashboard/inkoopbeleid"
+                class="inline-flex items-center gap-1.5 text-[13px] font-medium text-inkoophuis-tekst-stil no-underline"
             >
                 <UIcon
                     name="i-lucide-arrow-left"
                     class="size-3.5"
                 />
-                {{ gestart ? t('werkroute.backToWelcome') : t('werkroute.backToPolicy') }}
-            </button>
+                {{ t('werkroute.backToWelcome') }}
+            </NuxtLink>
             <div class="flex flex-wrap items-center gap-2.5">
                 <span
                     v-if="bewaarLabel"
@@ -35,15 +33,6 @@
         >
             {{ t('werkroute.loading') }}
         </div>
-
-        <WerkrouteWelkom
-            v-else-if="!gestart"
-            :bouwsteen="bouwsteen"
-            :policy-id="policyId"
-            :policy-titel="policyTitel"
-            :hervatten="hervatten"
-            @start="gestart = true"
-        />
 
         <div
             v-else
@@ -173,7 +162,6 @@ definePageMeta({ fullBleed: true })
 
 const { t } = useI18n()
 const route = useRoute()
-const router = useRouter()
 const toast = useToast()
 
 const policyId = computed(() => String(route.params.id))
@@ -206,34 +194,11 @@ const {
     verwijderGesprek,
     werkGesprekBij,
     isVeldGevuld,
-    gevuldeOnderdelen,
 } = await useWerkroute(policyId)
 
 const policyTitel = computed(() => data.value?.policy.title ?? '')
 
 useHead({ title: () => `${bouwsteen.title} · ${policyTitel.value}` })
-
-// --- Welkomscherm versus werkruimte -------------------------------------------------------
-const gestart = ref(false)
-
-/**
- * Is er al werk gedaan? Dan heet de knop "hervatten".
- *
- * Kijkt naar de opgeslagen inhoud en niet naar de bewaarde schermpositie: iemand die de route
- * even opende en meteen wegklikte is niet halverwege, en zou anders een knop krijgen die iets
- * belooft wat er niet is.
- */
-const hervatten = computed(
-    () => bouwsteen.stappen.some((s) => gevuldeOnderdelen(s) > 0),
-)
-
-function terug() {
-    if (gestart.value) {
-        gestart.value = false
-        return
-    }
-    void router.push(`/dashboard/inkoopbeleid/${policyId.value}`)
-}
 
 // --- Huidige scherm -----------------------------------------------------------------------
 const huidigVeld = computed(() =>
