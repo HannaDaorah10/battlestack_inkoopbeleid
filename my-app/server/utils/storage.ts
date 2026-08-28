@@ -17,11 +17,14 @@ export function getClient(): S3Client {
         throw createError({ statusCode: 500, statusMessage: 'Object storage not configured' })
     }
     const endpoint = String(cfg.s3Endpoint)
-    const isLocal = /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)(:|\/|$)/.test(endpoint)
+    // Self-hosted RustFS (local Docker, or a second Railway service on the private network) has
+    // no wildcard DNS for virtual-hosted-style (<bucket>.host); only a real cloud provider does.
+    const needsPathStyle = /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)(:|\/|$)/.test(endpoint)
+        || endpoint.includes('.railway.internal')
     client = new S3Client({
         region: String(cfg.s3Region) || 'us-east-1',
         endpoint,
-        forcePathStyle: isLocal,
+        forcePathStyle: needsPathStyle,
         credentials: {
             accessKeyId: String(cfg.s3AccessKeyId),
             secretAccessKey: String(cfg.s3SecretAccessKey),
