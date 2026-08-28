@@ -160,7 +160,7 @@ async function onSubmit() {
         await fetchUser()
         toast.add({ title: t('dashboard.profile.saved'), color: 'success' })
     } catch (e: unknown) {
-        const msg = (e as { statusMessage?: string }).statusMessage ?? t('dashboard.profile.error')
+        const msg = serverErrorMessage(e, t('dashboard.profile.error'))
         toast.add({
             title: t('dashboard.profile.errorTitle'),
             description: msg,

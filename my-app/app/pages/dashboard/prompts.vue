@@ -52,10 +52,7 @@ async function save(p: PromptRow) {
         await refresh()
         toast.add({ title: t('prompts.savedTitle', { name: p.name }), color: 'success' })
     } catch (e) {
-        const msg
-            = (e as { statusMessage?: string }).statusMessage
-                || (e as Error).message
-                || t('prompts.saveFailed')
+        const msg = serverErrorMessage(e, t('prompts.saveFailed'))
         errors.value[p.id] = msg
         // Blijft staan tot hij wordt weggeklikt; de bewerkte tekst blijft staan.
         toast.add({
@@ -80,10 +77,7 @@ async function confirmReset() {
         resetTarget.value = null
         toast.add({ title: t('prompts.resetTitle', { name: p.name }), color: 'success' })
     } catch (e) {
-        const msg
-            = (e as { statusMessage?: string }).statusMessage
-                || (e as Error).message
-                || t('prompts.resetFailed')
+        const msg = serverErrorMessage(e, t('prompts.resetFailed'))
         errors.value[p.id] = msg
         resetTarget.value = null
         toast.add({

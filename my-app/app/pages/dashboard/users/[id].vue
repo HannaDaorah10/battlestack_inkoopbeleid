@@ -63,10 +63,7 @@ async function save() {
         await refresh()
         toast.add({ title: t('userAdmin.edit.savedTitle'), color: 'success' })
     } catch (e) {
-        const msg
-            = (e as { statusMessage?: string, message?: string }).statusMessage
-                || (e as Error).message
-                || t('userAdmin.edit.saveFailed')
+        const msg = serverErrorMessage(e, t('userAdmin.edit.saveFailed'))
         formError.value = msg
         // Blijft staan tot hij wordt weggeklikt; de ingevulde velden blijven staan.
         toast.add({
@@ -87,10 +84,7 @@ async function destroy() {
         toast.add({ title: t('userAdmin.edit.deletedTitle'), color: 'success' })
         router.push('/dashboard/users')
     } catch (e) {
-        const msg
-            = (e as { statusMessage?: string, message?: string }).statusMessage
-                || (e as Error).message
-                || t('userAdmin.edit.deleteFailed')
+        const msg = serverErrorMessage(e, t('userAdmin.edit.deleteFailed'))
         formError.value = msg
         showDelete.value = false
         toast.add({

@@ -73,10 +73,7 @@ async function createUser() {
         await refresh()
         toast.add({ title: t('userAdmin.create.successTitle'), color: 'success' })
     } catch (e) {
-        const msg
-            = (e as { statusMessage?: string, message?: string }).statusMessage
-                || (e as Error).message
-                || t('userAdmin.create.failed')
+        const msg = serverErrorMessage(e, t('userAdmin.create.failed'))
         createError.value = msg
         // Een fout-toast blijft staan tot hij wordt weggeklikt; de invoer in de
         // modal blijft bewaard zodat niemand opnieuw hoeft te typen.

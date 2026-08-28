@@ -64,9 +64,7 @@ onMounted(async () => {
         await refreshSession()
         await navigateTo('/dashboard')
     } catch (e: unknown) {
-        error.value
-            = (e as { statusMessage?: string }).statusMessage
-                ?? t('auth.magicLogin.errors.generic')
+        error.value = serverErrorMessage(e, t('auth.magicLogin.errors.generic'))
     }
 })
 </script>
