@@ -12,8 +12,16 @@
         "organisation": {
             "label": "Organisatie",
             "hint": "Alles op deze pagina hoort bij de gekozen organisatie.",
-            "empty": "Er zijn nog geen organisaties. Draai eerst de seed.",
-            "none": "Kies eerst een organisatie."
+            "switcherPlaceholder": "Typ om te zoeken of aan te maken",
+            "gate": {
+                "title": "Voor welke organisatie ga je aan de slag?",
+                "body": "Typ de naam van je organisatie. Bestaat hij al, dan ga je direct verder; bestaat hij nog niet, dan maken we hem aan.",
+                "label": "Naam van je organisatie",
+                "placeholder": "Bijvoorbeeld: Woningstichting Ons Huis",
+                "submit": "Doorgaan",
+                "matchHint": "Je gaat verder bij {name}.",
+                "createHint": "Nieuwe organisatie: {name}."
+            }
         },
         "nav": {
             "overview": "Overzicht",

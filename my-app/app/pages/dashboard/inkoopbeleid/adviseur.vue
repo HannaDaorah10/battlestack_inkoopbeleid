@@ -1,107 +1,109 @@
 <template>
-    <div class="space-y-6">
-        <div>
-            <h1 class="adj-page-title">
-                {{ t('inkoopbeleid.advisor.title') }}
-            </h1>
-            <p class="mt-1.5 adj-lead">
-                {{ t('inkoopbeleid.advisor.subtitle') }}
-            </p>
-        </div>
+    <OrganisationGate>
+        <div class="space-y-6">
+            <div>
+                <h1 class="adj-page-title">
+                    {{ t('inkoopbeleid.advisor.title') }}
+                </h1>
+                <p class="mt-1.5 adj-lead">
+                    {{ t('inkoopbeleid.advisor.subtitle') }}
+                </p>
+            </div>
 
-        <OrganisationSwitcher />
+            <OrganisationSwitcher />
 
-        <UCard>
-            <div class="space-y-3">
-                <UFormField :label="t('inkoopbeleid.advisor.question')">
-                    <UTextarea
-                        v-model="question"
-                        :rows="3"
-                        :placeholder="t('inkoopbeleid.advisor.questionPlaceholder')"
-                        class="w-full"
-                        @keydown.enter.meta="onAsk"
-                        @keydown.enter.ctrl="onAsk"
-                    />
-                </UFormField>
+            <UCard>
+                <div class="space-y-3">
+                    <UFormField :label="t('inkoopbeleid.advisor.question')">
+                        <UTextarea
+                            v-model="question"
+                            :rows="3"
+                            :placeholder="t('inkoopbeleid.advisor.questionPlaceholder')"
+                            class="w-full"
+                            @keydown.enter.meta="onAsk"
+                            @keydown.enter.ctrl="onAsk"
+                        />
+                    </UFormField>
 
-                <div class="flex flex-wrap items-center gap-2">
-                    <UButton
-                        :loading="asking"
-                        :disabled="!canAsk"
-                        icon="i-lucide-sparkles"
-                        @click="onAsk"
-                    >
-                        {{ asking ? t('inkoopbeleid.advisor.asking') : t('inkoopbeleid.advisor.ask') }}
-                    </UButton>
-                </div>
-
-                <div class="pt-1">
-                    <p class="mb-1 text-xs font-medium text-muted">
-                        {{ t('inkoopbeleid.advisor.examples') }}
-                    </p>
-                    <div class="flex flex-wrap gap-1">
+                    <div class="flex flex-wrap items-center gap-2">
                         <UButton
-                            v-for="(example, i) in examples"
-                            :key="i"
-                            size="xs"
-                            variant="outline"
-                            color="neutral"
-                            @click="question = example"
+                            :loading="asking"
+                            :disabled="!canAsk"
+                            icon="i-lucide-sparkles"
+                            @click="onAsk"
                         >
-                            {{ example }}
+                            {{ asking ? t('inkoopbeleid.advisor.asking') : t('inkoopbeleid.advisor.ask') }}
                         </UButton>
                     </div>
+
+                    <div class="pt-1">
+                        <p class="mb-1 text-xs font-medium text-muted">
+                            {{ t('inkoopbeleid.advisor.examples') }}
+                        </p>
+                        <div class="flex flex-wrap gap-1">
+                            <UButton
+                                v-for="(example, i) in examples"
+                                :key="i"
+                                size="xs"
+                                variant="outline"
+                                color="neutral"
+                                @click="question = example"
+                            >
+                                {{ example }}
+                            </UButton>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </UCard>
+            </UCard>
 
-        <UCard v-if="answer !== null">
-            <template #header>
-                <h2 class="adj-card-title">
-                    {{ t('inkoopbeleid.advisor.answer') }}
-                </h2>
-            </template>
+            <UCard v-if="answer !== null">
+                <template #header>
+                    <h2 class="adj-card-title">
+                        {{ t('inkoopbeleid.advisor.answer') }}
+                    </h2>
+                </template>
 
-            <UAlert
-                v-if="!grounded"
-                icon="i-lucide-triangle-alert"
-                color="warning"
-                variant="subtle"
-                :description="t('inkoopbeleid.advisor.ungrounded')"
-                class="mb-3"
-            />
+                <UAlert
+                    v-if="!grounded"
+                    icon="i-lucide-triangle-alert"
+                    color="warning"
+                    variant="subtle"
+                    :description="t('inkoopbeleid.advisor.ungrounded')"
+                    class="mb-3"
+                />
 
-            <p class="whitespace-pre-wrap text-sm leading-relaxed">
-                {{ answer }}
-            </p>
-
-            <template #footer>
-                <div v-if="sources.length">
-                    <p class="mb-2 text-xs font-medium text-muted">
-                        {{ t('inkoopbeleid.advisor.sources') }}
-                    </p>
-                    <ul class="space-y-1">
-                        <li
-                            v-for="(s, i) in sources"
-                            :key="i"
-                            class="flex items-center justify-between gap-2 text-sm"
-                        >
-                            <span class="truncate">{{ s.source || s.title }}</span>
-                            <span class="shrink-0 font-mono text-xs text-muted">
-                                {{ t('inkoopbeleid.advisor.score') }} {{ s.score.toFixed(3) }}
-                            </span>
-                        </li>
-                    </ul>
-                </div>
-                <p
-                    v-else
-                    class="text-sm text-muted"
-                >
-                    {{ t('inkoopbeleid.advisor.noSources') }}
+                <p class="whitespace-pre-wrap text-sm leading-relaxed">
+                    {{ answer }}
                 </p>
-            </template>
-        </UCard>
-    </div>
+
+                <template #footer>
+                    <div v-if="sources.length">
+                        <p class="mb-2 text-xs font-medium text-muted">
+                            {{ t('inkoopbeleid.advisor.sources') }}
+                        </p>
+                        <ul class="space-y-1">
+                            <li
+                                v-for="(s, i) in sources"
+                                :key="i"
+                                class="flex items-center justify-between gap-2 text-sm"
+                            >
+                                <span class="truncate">{{ s.source || s.title }}</span>
+                                <span class="shrink-0 font-mono text-xs text-muted">
+                                    {{ t('inkoopbeleid.advisor.score') }} {{ s.score.toFixed(3) }}
+                                </span>
+                            </li>
+                        </ul>
+                    </div>
+                    <p
+                        v-else
+                        class="text-sm text-muted"
+                    >
+                        {{ t('inkoopbeleid.advisor.noSources') }}
+                    </p>
+                </template>
+            </UCard>
+        </div>
+    </OrganisationGate>
 </template>
 
 <script setup lang="ts">

@@ -12,8 +12,16 @@
         "organisation": {
             "label": "Organisation",
             "hint": "Everything on this page belongs to the selected organisation.",
-            "empty": "There are no organisations yet. Run the seed first.",
-            "none": "Select an organisation first."
+            "switcherPlaceholder": "Type to search or create",
+            "gate": {
+                "title": "Which organisation are you working with?",
+                "body": "Type your organisation's name. If it already exists you'll continue right there; if not, we'll create it.",
+                "label": "Your organisation's name",
+                "placeholder": "For example: Woningstichting Ons Huis",
+                "submit": "Continue",
+                "matchHint": "You'll continue with {name}.",
+                "createHint": "New organisation: {name}."
+            }
         },
         "nav": {
             "overview": "Overview",

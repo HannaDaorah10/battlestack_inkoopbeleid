@@ -1,245 +1,247 @@
 <template>
-    <div class="space-y-6">
-        <div>
-            <h1 class="adj-page-title">
-                {{ t('inkoopbeleid.check.title') }}
-            </h1>
-            <p class="mt-1.5 adj-lead">
-                {{ t('inkoopbeleid.check.subtitle') }}
-            </p>
-        </div>
-
-        <OrganisationSwitcher />
-
-        <UCard>
-            <form
-                class="space-y-3"
-                @submit.prevent="onCheck"
-            >
-                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <UFormField
-                        :label="t('inkoopbeleid.check.amount')"
-                        :description="t('inkoopbeleid.check.amountHint')"
-                        required
-                    >
-                        <UInput
-                            v-model.number="form.euros"
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            required
-                            class="w-full"
-                        >
-                            <template #leading>
-                                <span class="text-muted">&euro;</span>
-                            </template>
-                        </UInput>
-                    </UFormField>
-
-                    <UFormField
-                        :label="t('inkoopbeleid.check.purchaseType')"
-                        required
-                    >
-                        <USelect
-                            v-model="form.purchaseType"
-                            :items="purchaseTypeItems"
-                            value-key="value"
-                            class="w-full"
-                        />
-                    </UFormField>
-
-                    <UFormField :label="t('inkoopbeleid.check.recurrence')">
-                        <USelect
-                            v-model="form.recurrence"
-                            :items="recurrenceItems"
-                            value-key="value"
-                            class="w-full"
-                        />
-                    </UFormField>
-
-                    <UFormField :label="t('inkoopbeleid.check.duration')">
-                        <UInput
-                            v-model.number="form.durationYears"
-                            type="number"
-                            min="0"
-                            max="50"
-                            step="1"
-                            class="w-full"
-                        />
-                    </UFormField>
-
-                    <UFormField :label="t('inkoopbeleid.check.ruleSet')">
-                        <USelect
-                            v-model="form.ruleSet"
-                            :items="ruleSetItems"
-                            value-key="value"
-                            class="w-full"
-                        />
-                    </UFormField>
-                </div>
-
-                <UButton
-                    type="submit"
-                    icon="i-lucide-calculator"
-                    :loading="checking"
-                    :disabled="!organisationId"
-                >
-                    {{ checking ? t('inkoopbeleid.check.submitting') : t('inkoopbeleid.check.submit') }}
-                </UButton>
-            </form>
-        </UCard>
-
-        <UCard v-if="verdict">
-            <template #header>
-                <h2 class="adj-card-title">
-                    {{ t('inkoopbeleid.check.verdict') }}
-                </h2>
-            </template>
-
-            <UAlert
-                v-if="!verdict.threshold"
-                icon="i-lucide-triangle-alert"
-                color="warning"
-                variant="subtle"
-                :description="t('inkoopbeleid.check.noThreshold')"
-                class="mb-4"
-            />
-
-            <dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
-                <div>
-                    <dt class="text-xs font-medium text-muted">
-                        {{ t('inkoopbeleid.check.contractValue') }}
-                    </dt>
-                    <dd class="text-lg font-semibold">
-                        {{ formatCents(verdict.contractValueCents, locale) }}
-                    </dd>
-                </div>
-                <div>
-                    <dt class="text-xs font-medium text-muted">
-                        {{ t('inkoopbeleid.check.procedure') }}
-                    </dt>
-                    <dd class="text-lg font-semibold">
-                        {{ verdict.procedure ? t(`inkoopbeleid.procedure.${verdict.procedure}`) : '-' }}
-                    </dd>
-                </div>
-                <div>
-                    <dt class="text-xs font-medium text-muted">
-                        {{ t('inkoopbeleid.check.minQuotes') }}
-                    </dt>
-                    <dd class="text-lg font-semibold">
-                        {{ verdict.minQuotes ?? '-' }}
-                    </dd>
-                </div>
-                <div>
-                    <dt class="text-xs font-medium text-muted">
-                        {{ t('inkoopbeleid.check.extraRequirement') }}
-                    </dt>
-                    <dd class="font-medium">
-                        {{ verdict.extraRequirement ? t(`inkoopbeleid.requirement.${verdict.extraRequirement}`) : '-' }}
-                    </dd>
-                </div>
-                <div class="sm:col-span-2">
-                    <dt class="text-xs font-medium text-muted">
-                        {{ t('inkoopbeleid.check.mandate') }}
-                    </dt>
-                    <dd
-                        v-if="verdict.mandate"
-                        class="font-medium"
-                    >
-                        {{ verdict.mandate.roleName }}
-                        <span class="text-muted">
-                            ({{ formatCents(verdict.mandate.ceilingAmountCents, locale) }})
-                        </span>
-                        <span
-                            v-if="verdict.mandateAlternatives.length"
-                            class="block text-sm text-muted"
-                        >
-                            {{ t('inkoopbeleid.check.mandateAlternatives') }}:
-                            {{ verdict.mandateAlternatives.map((m) => m.roleName).join(', ') }}
-                        </span>
-                    </dd>
-                    <dd
-                        v-else
-                        class="font-medium text-warning"
-                    >
-                        {{ t('inkoopbeleid.check.mandateNone') }}
-                    </dd>
-                </div>
-            </dl>
-
-            <template #footer>
-                <p class="mb-2 text-xs font-medium text-muted">
-                    {{ t('inkoopbeleid.check.obligationsHeading') }}
+    <OrganisationGate>
+        <div class="space-y-6">
+            <div>
+                <h1 class="adj-page-title">
+                    {{ t('inkoopbeleid.check.title') }}
+                </h1>
+                <p class="mt-1.5 adj-lead">
+                    {{ t('inkoopbeleid.check.subtitle') }}
                 </p>
-                <ul class="space-y-2">
-                    <li
-                        v-for="code in verdict.obligations"
-                        :key="code"
-                        class="flex items-start gap-2 text-sm"
+            </div>
+
+            <OrganisationSwitcher />
+
+            <UCard>
+                <form
+                    class="space-y-3"
+                    @submit.prevent="onCheck"
+                >
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <UFormField
+                            :label="t('inkoopbeleid.check.amount')"
+                            :description="t('inkoopbeleid.check.amountHint')"
+                            required
+                        >
+                            <UInput
+                                v-model.number="form.euros"
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                required
+                                class="w-full"
+                            >
+                                <template #leading>
+                                    <span class="text-muted">&euro;</span>
+                                </template>
+                            </UInput>
+                        </UFormField>
+
+                        <UFormField
+                            :label="t('inkoopbeleid.check.purchaseType')"
+                            required
+                        >
+                            <USelect
+                                v-model="form.purchaseType"
+                                :items="purchaseTypeItems"
+                                value-key="value"
+                                class="w-full"
+                            />
+                        </UFormField>
+
+                        <UFormField :label="t('inkoopbeleid.check.recurrence')">
+                            <USelect
+                                v-model="form.recurrence"
+                                :items="recurrenceItems"
+                                value-key="value"
+                                class="w-full"
+                            />
+                        </UFormField>
+
+                        <UFormField :label="t('inkoopbeleid.check.duration')">
+                            <UInput
+                                v-model.number="form.durationYears"
+                                type="number"
+                                min="0"
+                                max="50"
+                                step="1"
+                                class="w-full"
+                            />
+                        </UFormField>
+
+                        <UFormField :label="t('inkoopbeleid.check.ruleSet')">
+                            <USelect
+                                v-model="form.ruleSet"
+                                :items="ruleSetItems"
+                                value-key="value"
+                                class="w-full"
+                            />
+                        </UFormField>
+                    </div>
+
+                    <UButton
+                        type="submit"
+                        icon="i-lucide-calculator"
+                        :loading="checking"
+                        :disabled="!organisationId"
                     >
+                        {{ checking ? t('inkoopbeleid.check.submitting') : t('inkoopbeleid.check.submit') }}
+                    </UButton>
+                </form>
+            </UCard>
+
+            <UCard v-if="verdict">
+                <template #header>
+                    <h2 class="adj-card-title">
+                        {{ t('inkoopbeleid.check.verdict') }}
+                    </h2>
+                </template>
+
+                <UAlert
+                    v-if="!verdict.threshold"
+                    icon="i-lucide-triangle-alert"
+                    color="warning"
+                    variant="subtle"
+                    :description="t('inkoopbeleid.check.noThreshold')"
+                    class="mb-4"
+                />
+
+                <dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
+                    <div>
+                        <dt class="text-xs font-medium text-muted">
+                            {{ t('inkoopbeleid.check.contractValue') }}
+                        </dt>
+                        <dd class="text-lg font-semibold">
+                            {{ formatCents(verdict.contractValueCents, locale) }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-muted">
+                            {{ t('inkoopbeleid.check.procedure') }}
+                        </dt>
+                        <dd class="text-lg font-semibold">
+                            {{ verdict.procedure ? t(`inkoopbeleid.procedure.${verdict.procedure}`) : '-' }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-muted">
+                            {{ t('inkoopbeleid.check.minQuotes') }}
+                        </dt>
+                        <dd class="text-lg font-semibold">
+                            {{ verdict.minQuotes ?? '-' }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-muted">
+                            {{ t('inkoopbeleid.check.extraRequirement') }}
+                        </dt>
+                        <dd class="font-medium">
+                            {{ verdict.extraRequirement ? t(`inkoopbeleid.requirement.${verdict.extraRequirement}`) : '-' }}
+                        </dd>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <dt class="text-xs font-medium text-muted">
+                            {{ t('inkoopbeleid.check.mandate') }}
+                        </dt>
+                        <dd
+                            v-if="verdict.mandate"
+                            class="font-medium"
+                        >
+                            {{ verdict.mandate.roleName }}
+                            <span class="text-muted">
+                                ({{ formatCents(verdict.mandate.ceilingAmountCents, locale) }})
+                            </span>
+                            <span
+                                v-if="verdict.mandateAlternatives.length"
+                                class="block text-sm text-muted"
+                            >
+                                {{ t('inkoopbeleid.check.mandateAlternatives') }}:
+                                {{ verdict.mandateAlternatives.map((m) => m.roleName).join(', ') }}
+                            </span>
+                        </dd>
+                        <dd
+                            v-else
+                            class="font-medium text-warning"
+                        >
+                            {{ t('inkoopbeleid.check.mandateNone') }}
+                        </dd>
+                    </div>
+                </dl>
+
+                <template #footer>
+                    <p class="mb-2 text-xs font-medium text-muted">
+                        {{ t('inkoopbeleid.check.obligationsHeading') }}
+                    </p>
+                    <ul class="space-y-2">
+                        <li
+                            v-for="code in verdict.obligations"
+                            :key="code"
+                            class="flex items-start gap-2 text-sm"
+                        >
+                            <UIcon
+                                :name="obligationIcon(code)"
+                                class="mt-0.5 shrink-0"
+                                :class="obligationClass(code)"
+                            />
+                            <span>{{ t(`inkoopbeleid.obligation.${code}`) }}</span>
+                        </li>
+                    </ul>
+                </template>
+            </UCard>
+
+            <UCard v-if="rules && rules.thresholds.length">
+                <template #header>
+                    <h2 class="adj-card-title">
+                        {{ t('inkoopbeleid.check.rulesHeading') }}
+                    </h2>
+                </template>
+                <UTable
+                    :data="rules.thresholds"
+                    :columns="thresholdColumns"
+                >
+                    <template #range-cell="{ row }">
+                        {{ formatRange(row.original.minAmountCents, row.original.maxAmountCents, locale, t('inkoopbeleid.check.noUpperBound')) }}
+                    </template>
+                    <template #purchaseType-cell="{ row }">
+                        {{ t(`inkoopbeleid.purchaseType.${row.original.purchaseType}`) }}
+                    </template>
+                    <template #procedure-cell="{ row }">
+                        {{ t(`inkoopbeleid.procedure.${row.original.procedure}`) }}
+                    </template>
+                    <template #extraRequirement-cell="{ row }">
+                        {{ t(`inkoopbeleid.requirement.${row.original.extraRequirement}`) }}
+                    </template>
+                    <template #advisorRequired-cell="{ row }">
                         <UIcon
-                            :name="obligationIcon(code)"
-                            class="mt-0.5 shrink-0"
-                            :class="obligationClass(code)"
+                            v-if="row.original.advisorRequired"
+                            name="i-lucide-check"
+                            class="text-success"
                         />
-                        <span>{{ t(`inkoopbeleid.obligation.${code}`) }}</span>
-                    </li>
-                </ul>
-            </template>
-        </UCard>
+                        <span
+                            v-else
+                            class="text-muted"
+                        >-</span>
+                    </template>
+                </UTable>
+            </UCard>
 
-        <UCard v-if="rules && rules.thresholds.length">
-            <template #header>
-                <h2 class="adj-card-title">
-                    {{ t('inkoopbeleid.check.rulesHeading') }}
-                </h2>
-            </template>
-            <UTable
-                :data="rules.thresholds"
-                :columns="thresholdColumns"
-            >
-                <template #range-cell="{ row }">
-                    {{ formatRange(row.original.minAmountCents, row.original.maxAmountCents, locale, t('inkoopbeleid.check.noUpperBound')) }}
+            <UCard v-if="rules && rules.mandates.length">
+                <template #header>
+                    <h2 class="adj-card-title">
+                        {{ t('inkoopbeleid.check.mandatesHeading') }}
+                    </h2>
                 </template>
-                <template #purchaseType-cell="{ row }">
-                    {{ t(`inkoopbeleid.purchaseType.${row.original.purchaseType}`) }}
-                </template>
-                <template #procedure-cell="{ row }">
-                    {{ t(`inkoopbeleid.procedure.${row.original.procedure}`) }}
-                </template>
-                <template #extraRequirement-cell="{ row }">
-                    {{ t(`inkoopbeleid.requirement.${row.original.extraRequirement}`) }}
-                </template>
-                <template #advisorRequired-cell="{ row }">
-                    <UIcon
-                        v-if="row.original.advisorRequired"
-                        name="i-lucide-check"
-                        class="text-success"
-                    />
-                    <span
-                        v-else
-                        class="text-muted"
-                    >-</span>
-                </template>
-            </UTable>
-        </UCard>
-
-        <UCard v-if="rules && rules.mandates.length">
-            <template #header>
-                <h2 class="adj-card-title">
-                    {{ t('inkoopbeleid.check.mandatesHeading') }}
-                </h2>
-            </template>
-            <UTable
-                :data="rules.mandates"
-                :columns="mandateColumns"
-            >
-                <template #ceilingAmountCents-cell="{ row }">
-                    {{ formatCents(row.original.ceilingAmountCents, locale) }}
-                </template>
-            </UTable>
-        </UCard>
-    </div>
+                <UTable
+                    :data="rules.mandates"
+                    :columns="mandateColumns"
+                >
+                    <template #ceilingAmountCents-cell="{ row }">
+                        {{ formatCents(row.original.ceilingAmountCents, locale) }}
+                    </template>
+                </UTable>
+            </UCard>
+        </div>
+    </OrganisationGate>
 </template>
 
 <script setup lang="ts">

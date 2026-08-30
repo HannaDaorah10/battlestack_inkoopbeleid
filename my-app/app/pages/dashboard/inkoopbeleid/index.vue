@@ -1,200 +1,197 @@
 <template>
-    <div class="flex min-h-full flex-col bg-inkoophuis-pagina">
-        <!-- Kop: alleen de organisatiekeuze. Geen "terug", want dit is het startpunt van de
+    <OrganisationGate>
+        <div class="flex min-h-full flex-col bg-inkoophuis-pagina">
+            <!-- Kop: alleen de organisatiekeuze. Geen "terug", want dit is het startpunt van de
              bouwsteen; de zijbalk is de weg naar de rest van de applicatie. -->
-        <header class="flex flex-wrap items-center justify-between gap-3 border-b border-inkoophuis-lijn bg-white px-6 py-3.5">
-            <label class="flex items-center gap-2.5 text-[12.5px] text-inkoophuis-tekst-stil">
-                <span class="font-semibold text-inkoophuis-navy">{{ t('inkoopbeleid.organisation.label') }}</span>
-                <USelect
-                    v-model="selectedOrganisation"
-                    :items="organisationItems"
-                    :disabled="organisationItems.length === 0"
-                    value-key="value"
-                    size="sm"
-                    class="min-w-52"
-                />
-            </label>
-            <span class="inline-flex rounded-full border border-inkoophuis-navy/20 bg-inkoophuis-navy/5 px-2.5 py-1 text-[11px] font-bold text-inkoophuis-navy">
-                {{ t('werkroute.level', { niveau: bouwsteen.niveau }) }}
-            </span>
-        </header>
+            <header class="flex flex-wrap items-center justify-between gap-3 border-b border-inkoophuis-lijn bg-white px-6 py-3.5">
+                <label class="flex items-center gap-2.5 text-[12.5px] text-inkoophuis-tekst-stil">
+                    <span class="font-semibold text-inkoophuis-navy">{{ t('inkoopbeleid.organisation.label') }}</span>
+                    <UInputMenu
+                        v-model="selectedOrganisation"
+                        :items="organisationItems"
+                        :create-item="true"
+                        value-key="value"
+                        :placeholder="t('inkoopbeleid.organisation.switcherPlaceholder')"
+                        :loading="creatingOrganisation"
+                        size="sm"
+                        class="min-w-52"
+                        @create="onCreateOrganisation"
+                    />
+                </label>
+                <span class="inline-flex rounded-full border border-inkoophuis-navy/20 bg-inkoophuis-navy/5 px-2.5 py-1 text-[11px] font-bold text-inkoophuis-navy">
+                    {{ t('werkroute.level', { niveau: bouwsteen.niveau }) }}
+                </span>
+            </header>
 
-        <div
-            v-if="!organisationId"
-            class="flex flex-1 items-center justify-center px-6 py-24 text-center text-[13px] text-inkoophuis-tekst-stil"
-        >
-            {{ t('inkoopbeleid.organisation.empty') }}
-        </div>
-
-        <WerkrouteWelkom
-            v-else
-            :bouwsteen="bouwsteen"
-            :policy-id="enigBeleid?.id"
-            :policy-titel="enigBeleid?.title"
-            :start-label="startLabel"
-            :bezig="starting"
-            @start="start"
-        >
-            <template #onder-start>
-                <!-- Bij meer dan een beleid staat de keuze open, direct onder de startknop en
+            <WerkrouteWelkom
+                :bouwsteen="bouwsteen"
+                :policy-id="enigBeleid?.id"
+                :policy-titel="enigBeleid?.title"
+                :start-label="startLabel"
+                :bezig="starting"
+                @start="start"
+            >
+                <template #onder-start>
+                    <!-- Bij meer dan een beleid staat de keuze open, direct onder de startknop en
                      niet in een modal: de gebruiker moet zien dat er iets te kiezen valt. -->
-                <div
-                    v-if="policies.length > 1"
-                    class="ih-paneel mt-6 px-6 py-5"
-                >
-                    <p class="ih-kicker-stil mb-1">
-                        {{ t('werkroute.welkom.chooseTitle') }}
-                    </p>
-                    <p class="mb-3 text-[12.5px] leading-relaxed text-inkoophuis-tekst-stil">
-                        {{ t('werkroute.welkom.chooseBody') }}
-                    </p>
-                    <ul class="flex list-none flex-col gap-1.5">
-                        <li
-                            v-for="p in policies"
-                            :key="p.id"
+                    <div
+                        v-if="policies.length > 1"
+                        class="ih-paneel mt-6 px-6 py-5"
+                    >
+                        <p class="ih-kicker-stil mb-1">
+                            {{ t('werkroute.welkom.chooseTitle') }}
+                        </p>
+                        <p class="mb-3 text-[12.5px] leading-relaxed text-inkoophuis-tekst-stil">
+                            {{ t('werkroute.welkom.chooseBody') }}
+                        </p>
+                        <ul class="flex list-none flex-col gap-1.5">
+                            <li
+                                v-for="p in policies"
+                                :key="p.id"
+                            >
+                                <NuxtLink
+                                    :to="`/dashboard/inkoopbeleid/${p.id}/route`"
+                                    class="flex items-center justify-between gap-3 rounded-xl border border-inkoophuis-lijn px-4 py-3 no-underline hover:bg-inkoophuis-vlak"
+                                >
+                                    <span class="min-w-0">
+                                        <span class="block truncate text-[13px] font-semibold text-inkoophuis-navy">{{ p.title }}</span>
+                                        <span class="block text-[11.5px] text-inkoophuis-tekst-stil">
+                                            {{ t('werkroute.welkom.policyMeta', {
+                                                status: t(`inkoopbeleid.status.${p.status}`),
+                                                stap: stapNummerVoor(p.status),
+                                                versie: p.version,
+                                            }) }}
+                                        </span>
+                                    </span>
+                                    <UIcon
+                                        name="i-lucide-arrow-right"
+                                        class="size-4 shrink-0 text-inkoophuis-tekst-stiller"
+                                    />
+                                </NuxtLink>
+                            </li>
+                        </ul>
+                    </div>
+                </template>
+
+                <template #onder>
+                    <!-- De beleidsdocumenten van deze organisatie: het lijstje dat vroeger de hele
+                     pagina was. Het blijft bereikbaar, maar onder de route in plaats van ervoor. -->
+                    <div class="ih-paneel mt-6 px-6 py-5.5">
+                        <div class="mb-3.5 flex items-center justify-between gap-3">
+                            <p class="ih-kicker-stil">
+                                {{ t('inkoopbeleid.overview.heading') }}
+                            </p>
+                            <button
+                                type="button"
+                                class="ih-knop-secundair"
+                                @click="showCreate = true"
+                            >
+                                <UIcon
+                                    name="i-lucide-plus"
+                                    class="size-3.5"
+                                />
+                                {{ t('inkoopbeleid.overview.new') }}
+                            </button>
+                        </div>
+
+                        <p
+                            v-if="policies.length === 0"
+                            class="text-[12.5px] leading-relaxed text-inkoophuis-tekst-stil"
                         >
-                            <NuxtLink
-                                :to="`/dashboard/inkoopbeleid/${p.id}/route`"
-                                class="flex items-center justify-between gap-3 rounded-xl border border-inkoophuis-lijn px-4 py-3 no-underline hover:bg-inkoophuis-vlak"
+                            {{ t('werkroute.welkom.noPolicyYet') }}
+                        </p>
+                        <ul
+                            v-else
+                            class="flex list-none flex-col divide-y divide-inkoophuis-lijn-zacht"
+                        >
+                            <li
+                                v-for="p in policies"
+                                :key="p.id"
+                                class="flex flex-wrap items-center justify-between gap-2 py-2.5"
                             >
                                 <span class="min-w-0">
-                                    <span class="block truncate text-[13px] font-semibold text-inkoophuis-navy">{{ p.title }}</span>
-                                    <span class="block text-[11.5px] text-inkoophuis-tekst-stil">
-                                        {{ t('werkroute.welkom.policyMeta', {
-                                            status: t(`inkoopbeleid.status.${p.status}`),
-                                            stap: stapNummerVoor(p.status),
-                                            versie: p.version,
-                                        }) }}
+                                    <NuxtLink
+                                        :to="`/dashboard/inkoopbeleid/${p.id}`"
+                                        class="text-[13px] font-semibold text-inkoophuis-navy underline decoration-inkoophuis-rood underline-offset-[3px]"
+                                    >
+                                        {{ p.title }}
+                                    </NuxtLink>
+                                    <span class="ms-2 text-[11.5px] text-inkoophuis-tekst-stil">
+                                        {{ t(`inkoopbeleid.status.${p.status}`) }}
+                                        · v{{ p.version }}
+                                        · {{ new Date(p.updatedAt).toLocaleDateString(locale) }}
                                     </span>
                                 </span>
-                                <UIcon
-                                    name="i-lucide-arrow-right"
-                                    class="size-4 shrink-0 text-inkoophuis-tekst-stiller"
-                                />
-                            </NuxtLink>
-                        </li>
-                    </ul>
-                </div>
-            </template>
-
-            <template #onder>
-                <!-- De beleidsdocumenten van deze organisatie: het lijstje dat vroeger de hele
-                     pagina was. Het blijft bereikbaar, maar onder de route in plaats van ervoor. -->
-                <div class="ih-paneel mt-6 px-6 py-5.5">
-                    <div class="mb-3.5 flex items-center justify-between gap-3">
-                        <p class="ih-kicker-stil">
-                            {{ t('inkoopbeleid.overview.heading') }}
-                        </p>
-                        <button
-                            type="button"
-                            class="ih-knop-secundair"
-                            @click="showCreate = true"
-                        >
-                            <UIcon
-                                name="i-lucide-plus"
-                                class="size-3.5"
-                            />
-                            {{ t('inkoopbeleid.overview.new') }}
-                        </button>
-                    </div>
-
-                    <p
-                        v-if="policies.length === 0"
-                        class="text-[12.5px] leading-relaxed text-inkoophuis-tekst-stil"
-                    >
-                        {{ t('werkroute.welkom.noPolicyYet') }}
-                    </p>
-                    <ul
-                        v-else
-                        class="flex list-none flex-col divide-y divide-inkoophuis-lijn-zacht"
-                    >
-                        <li
-                            v-for="p in policies"
-                            :key="p.id"
-                            class="flex flex-wrap items-center justify-between gap-2 py-2.5"
-                        >
-                            <span class="min-w-0">
                                 <NuxtLink
-                                    :to="`/dashboard/inkoopbeleid/${p.id}`"
-                                    class="text-[13px] font-semibold text-inkoophuis-navy underline decoration-inkoophuis-rood underline-offset-[3px]"
+                                    :to="`/dashboard/inkoopbeleid/${p.id}/route`"
+                                    class="text-[12px] font-semibold text-inkoophuis-navy underline decoration-inkoophuis-rood underline-offset-[3px]"
                                 >
-                                    {{ p.title }}
+                                    {{ t('werkroute.open') }}
                                 </NuxtLink>
-                                <span class="ms-2 text-[11.5px] text-inkoophuis-tekst-stil">
-                                    {{ t(`inkoopbeleid.status.${p.status}`) }}
-                                    · v{{ p.version }}
-                                    · {{ new Date(p.updatedAt).toLocaleDateString(locale) }}
-                                </span>
-                            </span>
-                            <NuxtLink
-                                :to="`/dashboard/inkoopbeleid/${p.id}/route`"
-                                class="text-[12px] font-semibold text-inkoophuis-navy underline decoration-inkoophuis-rood underline-offset-[3px]"
-                            >
-                                {{ t('werkroute.open') }}
-                            </NuxtLink>
-                        </li>
-                    </ul>
-                </div>
-            </template>
-        </WerkrouteWelkom>
+                            </li>
+                        </ul>
+                    </div>
+                </template>
+            </WerkrouteWelkom>
 
-        <UModal v-model:open="showCreate">
-            <template #content>
-                <UCard>
-                    <template #header>
-                        {{ t('inkoopbeleid.overview.createTitle') }}
-                    </template>
-                    <form
-                        class="space-y-3"
-                        @submit.prevent="createPolicy()"
-                    >
-                        <UFormField
-                            :label="t('inkoopbeleid.overview.fieldTitle')"
-                            required
+            <UModal v-model:open="showCreate">
+                <template #content>
+                    <UCard>
+                        <template #header>
+                            {{ t('inkoopbeleid.overview.createTitle') }}
+                        </template>
+                        <form
+                            class="space-y-3"
+                            @submit.prevent="createPolicy()"
                         >
-                            <UInput
-                                v-model="draft.title"
+                            <UFormField
+                                :label="t('inkoopbeleid.overview.fieldTitle')"
                                 required
-                                class="w-full"
-                            />
-                        </UFormField>
-                        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                            <UFormField :label="t('inkoopbeleid.overview.fieldPeriodStart')">
+                            >
                                 <UInput
-                                    v-model="draft.periodStart"
-                                    type="date"
+                                    v-model="draft.title"
+                                    required
                                     class="w-full"
                                 />
                             </UFormField>
-                            <UFormField :label="t('inkoopbeleid.overview.fieldPeriodEnd')">
-                                <UInput
-                                    v-model="draft.periodEnd"
-                                    type="date"
-                                    class="w-full"
-                                />
-                            </UFormField>
-                        </div>
-                        <div class="flex justify-end gap-2">
-                            <UButton
-                                color="neutral"
-                                variant="outline"
-                                @click="showCreate = false"
-                            >
-                                {{ t('inkoopbeleid.cancel') }}
-                            </UButton>
-                            <UButton
-                                type="submit"
-                                :loading="creating"
-                                :disabled="!draft.title.trim()"
-                            >
-                                {{ t('inkoopbeleid.add') }}
-                            </UButton>
-                        </div>
-                    </form>
-                </UCard>
-            </template>
-        </UModal>
-    </div>
+                            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                <UFormField :label="t('inkoopbeleid.overview.fieldPeriodStart')">
+                                    <UInput
+                                        v-model="draft.periodStart"
+                                        type="date"
+                                        class="w-full"
+                                    />
+                                </UFormField>
+                                <UFormField :label="t('inkoopbeleid.overview.fieldPeriodEnd')">
+                                    <UInput
+                                        v-model="draft.periodEnd"
+                                        type="date"
+                                        class="w-full"
+                                    />
+                                </UFormField>
+                            </div>
+                            <div class="flex justify-end gap-2">
+                                <UButton
+                                    color="neutral"
+                                    variant="outline"
+                                    @click="showCreate = false"
+                                >
+                                    {{ t('inkoopbeleid.cancel') }}
+                                </UButton>
+                                <UButton
+                                    type="submit"
+                                    :loading="creating"
+                                    :disabled="!draft.title.trim()"
+                                >
+                                    {{ t('inkoopbeleid.add') }}
+                                </UButton>
+                            </div>
+                        </form>
+                    </UCard>
+                </template>
+            </UModal>
+        </div>
+    </OrganisationGate>
 </template>
 
 <script setup lang="ts">
@@ -226,20 +223,40 @@ const bouwsteen = BOUWSTEEN_INKOOPBELEID
 const { t, locale } = useI18n()
 const toast = useToast()
 const router = useRouter()
-const { organisations, organisation, organisationId } = await useOrganisations()
+const { organisations, organisation, organisationId, identifyOrganisation } = await useOrganisations()
 
 useHead({ title: () => t('inkoopbeleid.title') })
 
 // --- Organisatie ----------------------------------------------------------------------------
+// Dit scherm rendert alleen binnen `OrganisationGate`, dus er is hier altijd al minstens de
+// eigen organisatie als optie.
 const organisationItems = computed(() =>
     organisations.value.map((o) => ({ label: o.name, value: o.id })),
 )
 
-// USelect modelleert "niets gekozen" als undefined, de store als null; hier vertaald.
+// UInputMenu modelleert "niets gekozen" als undefined, de store als null; hier vertaald.
 const selectedOrganisation = computed<string | undefined>({
     get: () => organisationId.value ?? undefined,
     set: (v) => (organisationId.value = v ?? null),
 })
+
+const creatingOrganisation = ref(false)
+
+async function onCreateOrganisation(name: string) {
+    creatingOrganisation.value = true
+    try {
+        await identifyOrganisation(name)
+    } catch (e) {
+        toast.add({
+            title: t('inkoopbeleid.error'),
+            description: serverErrorMessage(e, t('inkoopbeleid.error')),
+            color: 'error',
+            duration: 0,
+        })
+    } finally {
+        creatingOrganisation.value = false
+    }
+}
 
 // --- Beleidsdocumenten van deze organisatie -------------------------------------------------
 const headers = useRequestHeaders(['cookie'])

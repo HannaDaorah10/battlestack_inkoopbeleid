@@ -30,17 +30,18 @@ export async function useOrganisations() {
     const organisations = computed(() => data.value ?? [])
 
     /**
-     * Fall back to the first organisation when nothing is selected, or when the stored id no
-     * longer exists (a stale cookie after a reseed). Without the second check every page would
-     * render an empty state that no amount of clicking could fix.
+     * Trust a stored id only while it still exists in the list (a stale cookie after a reseed
+     * falls back to `null`, same as nothing stored at all). Deliberately does NOT fall back to
+     * the first organisation in the list: with nobody stored yet, this visitor has not said
+     * which organisation they are, and silently landing them on whichever org sorts first would
+     * show them another organisation's policies. `null` here is what makes `OrganisationGate`
+     * show the identify-yourself screen instead of a page.
      */
     const organisationId = computed<string | null>({
         get() {
-            const list = organisations.value
-            if (list.length === 0) return null
             const stored = store.organisationId
-            if (stored && list.some((o) => o.id === stored)) return stored
-            return list[0]?.id ?? null
+            if (stored && organisations.value.some((o) => o.id === stored)) return stored
+            return null
         },
         set(id) {
             store.setOrganisation(id)
@@ -51,5 +52,21 @@ export async function useOrganisations() {
         () => organisations.value.find((o) => o.id === organisationId.value) ?? null,
     )
 
-    return { organisations, organisation, organisationId, status, error, refresh }
+    /**
+     * Find-or-create an organisation by name and make it the current one. Typing an existing
+     * organisation's name joins it; anything else creates it. Shared by the first-visit identity
+     * screen and the header's "create new" action so both agree on what counts as "the same
+     * organisation" (the server does the actual matching, by slug).
+     */
+    async function identifyOrganisation(name: string): Promise<OrganisationOption> {
+        const created = await $fetch<OrganisationOption>('/api/inkoopbeleid/organisations', {
+            method: 'POST',
+            body: { name },
+        })
+        await refresh()
+        organisationId.value = created.id
+        return created
+    }
+
+    return { organisations, organisation, organisationId, identifyOrganisation, status, error, refresh }
 }

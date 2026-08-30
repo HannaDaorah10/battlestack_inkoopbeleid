@@ -1,123 +1,125 @@
 <template>
-    <div class="space-y-6">
-        <div>
-            <h1 class="adj-page-title">
-                {{ t('inkoopbeleid.documents.title') }}
-            </h1>
-            <p class="mt-1.5 adj-lead">
-                {{ t('inkoopbeleid.documents.subtitle') }}
-            </p>
-        </div>
-
-        <OrganisationSwitcher />
-
-        <UCard>
-            <template #header>
-                <h2 class="adj-card-title">
-                    {{ t('inkoopbeleid.documents.heading') }}
-                </h2>
-            </template>
-
-            <div class="space-y-3">
-                <UFormField
-                    :label="t('inkoopbeleid.documents.fieldTitle')"
-                    :description="t('inkoopbeleid.documents.fieldTitleHint')"
-                    required
-                >
-                    <UInput
-                        v-model="form.title"
-                        class="w-full"
-                    />
-                </UFormField>
-
-                <UFormField :label="t('inkoopbeleid.documents.fieldKind')">
-                    <USelect
-                        v-model="form.kind"
-                        :items="kindItems"
-                        value-key="value"
-                        class="w-full"
-                    />
-                </UFormField>
-
-                <UFormField
-                    :label="t('inkoopbeleid.documents.fieldFile')"
-                    :description="t('inkoopbeleid.documents.fileHint')"
-                >
-                    <div class="flex flex-wrap items-center gap-3">
-                        <FileUpload
-                            accept=".pdf,.docx,.txt,.md"
-                            @uploaded="onUploaded"
-                        />
-                        <span
-                            v-if="uploaded"
-                            class="text-sm text-muted"
-                        >
-                            <UIcon
-                                name="i-lucide-check"
-                                class="text-success"
-                            />
-                            {{ uploaded.name }}
-                        </span>
-                    </div>
-                </UFormField>
-
-                <UButton
-                    :loading="ingesting"
-                    :disabled="!canIngest"
-                    @click="onIngest"
-                >
-                    {{ ingesting ? t('inkoopbeleid.documents.ingesting') : t('inkoopbeleid.documents.ingest') }}
-                </UButton>
-            </div>
-        </UCard>
-
-        <UCard>
-            <template #header>
-                <h2 class="adj-card-title">
-                    {{ t('inkoopbeleid.documents.listHeading') }}
-                </h2>
-            </template>
-
-            <div
-                v-if="status === 'pending' && documents.length === 0"
-                class="space-y-2"
-            >
-                <USkeleton
-                    v-for="i in 3"
-                    :key="i"
-                    class="h-9 w-full"
-                />
+    <OrganisationGate>
+        <div class="space-y-6">
+            <div>
+                <h1 class="adj-page-title">
+                    {{ t('inkoopbeleid.documents.title') }}
+                </h1>
+                <p class="mt-1.5 adj-lead">
+                    {{ t('inkoopbeleid.documents.subtitle') }}
+                </p>
             </div>
 
-            <AdjEmptyState
-                v-else-if="documents.length === 0"
-                icon="i-lucide-file-text"
-                :title="t('inkoopbeleid.documents.empty')"
-            />
+            <OrganisationSwitcher />
 
-            <UTable
-                v-else
-                :data="documents"
-                :columns="columns"
-                :loading="status === 'pending'"
-            >
-                <template #kind-cell="{ row }">
-                    <UBadge
-                        color="neutral"
-                        variant="subtle"
+            <UCard>
+                <template #header>
+                    <h2 class="adj-card-title">
+                        {{ t('inkoopbeleid.documents.heading') }}
+                    </h2>
+                </template>
+
+                <div class="space-y-3">
+                    <UFormField
+                        :label="t('inkoopbeleid.documents.fieldTitle')"
+                        :description="t('inkoopbeleid.documents.fieldTitleHint')"
+                        required
                     >
-                        {{ t(`inkoopbeleid.documents.kinds.${row.original.kind}`) }}
-                    </UBadge>
+                        <UInput
+                            v-model="form.title"
+                            class="w-full"
+                        />
+                    </UFormField>
+
+                    <UFormField :label="t('inkoopbeleid.documents.fieldKind')">
+                        <USelect
+                            v-model="form.kind"
+                            :items="kindItems"
+                            value-key="value"
+                            class="w-full"
+                        />
+                    </UFormField>
+
+                    <UFormField
+                        :label="t('inkoopbeleid.documents.fieldFile')"
+                        :description="t('inkoopbeleid.documents.fileHint')"
+                    >
+                        <div class="flex flex-wrap items-center gap-3">
+                            <FileUpload
+                                accept=".pdf,.docx,.txt,.md"
+                                @uploaded="onUploaded"
+                            />
+                            <span
+                                v-if="uploaded"
+                                class="text-sm text-muted"
+                            >
+                                <UIcon
+                                    name="i-lucide-check"
+                                    class="text-success"
+                                />
+                                {{ uploaded.name }}
+                            </span>
+                        </div>
+                    </UFormField>
+
+                    <UButton
+                        :loading="ingesting"
+                        :disabled="!canIngest"
+                        @click="onIngest"
+                    >
+                        {{ ingesting ? t('inkoopbeleid.documents.ingesting') : t('inkoopbeleid.documents.ingest') }}
+                    </UButton>
+                </div>
+            </UCard>
+
+            <UCard>
+                <template #header>
+                    <h2 class="adj-card-title">
+                        {{ t('inkoopbeleid.documents.listHeading') }}
+                    </h2>
                 </template>
-                <template #chunkCount-cell="{ row }">
-                    {{ t('inkoopbeleid.documents.chunkCount', { n: row.original.chunkCount }) }}
-                </template>
-                <template #ingestedAt-cell="{ row }">
-                    {{ row.original.ingestedAt ? new Date(row.original.ingestedAt).toLocaleString(locale) : '-' }}
-                </template>
-            </UTable>
-        </UCard>
-    </div>
+
+                <div
+                    v-if="status === 'pending' && documents.length === 0"
+                    class="space-y-2"
+                >
+                    <USkeleton
+                        v-for="i in 3"
+                        :key="i"
+                        class="h-9 w-full"
+                    />
+                </div>
+
+                <AdjEmptyState
+                    v-else-if="documents.length === 0"
+                    icon="i-lucide-file-text"
+                    :title="t('inkoopbeleid.documents.empty')"
+                />
+
+                <UTable
+                    v-else
+                    :data="documents"
+                    :columns="columns"
+                    :loading="status === 'pending'"
+                >
+                    <template #kind-cell="{ row }">
+                        <UBadge
+                            color="neutral"
+                            variant="subtle"
+                        >
+                            {{ t(`inkoopbeleid.documents.kinds.${row.original.kind}`) }}
+                        </UBadge>
+                    </template>
+                    <template #chunkCount-cell="{ row }">
+                        {{ t('inkoopbeleid.documents.chunkCount', { n: row.original.chunkCount }) }}
+                    </template>
+                    <template #ingestedAt-cell="{ row }">
+                        {{ row.original.ingestedAt ? new Date(row.original.ingestedAt).toLocaleString(locale) : '-' }}
+                    </template>
+                </UTable>
+            </UCard>
+        </div>
+    </OrganisationGate>
 </template>
 
 <script setup lang="ts">

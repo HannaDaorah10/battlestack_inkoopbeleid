@@ -5,4 +5,4 @@ allowBuilds:
     sharp: true
     unrs-resolver: true
     vue-demi: true
-minimumReleaseAge: 0 # 0 day(s), managed by battlestack
+minimumReleaseAge: 10080 # 7 day(s), managed by battlestack

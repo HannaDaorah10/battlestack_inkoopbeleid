@@ -1,169 +1,171 @@
 <template>
-    <div class="space-y-6">
-        <div>
-            <h1 class="adj-page-title">
-                {{ t('inkoopbeleid.deviations.title') }}
-            </h1>
-            <p class="mt-1.5 adj-lead">
-                {{ t('inkoopbeleid.deviations.subtitle') }}
-            </p>
-        </div>
+    <OrganisationGate>
+        <div class="space-y-6">
+            <div>
+                <h1 class="adj-page-title">
+                    {{ t('inkoopbeleid.deviations.title') }}
+                </h1>
+                <p class="mt-1.5 adj-lead">
+                    {{ t('inkoopbeleid.deviations.subtitle') }}
+                </p>
+            </div>
 
-        <OrganisationSwitcher />
+            <OrganisationSwitcher />
 
-        <UCard>
-            <template #header>
-                <h2 class="adj-card-title">
-                    {{ t('inkoopbeleid.deviations.heading') }}
-                </h2>
-            </template>
+            <UCard>
+                <template #header>
+                    <h2 class="adj-card-title">
+                        {{ t('inkoopbeleid.deviations.heading') }}
+                    </h2>
+                </template>
 
-            <form
-                class="space-y-3"
-                @submit.prevent="onSubmit"
-            >
-                <UFormField
-                    :label="t('inkoopbeleid.deviations.subject')"
-                    required
+                <form
+                    class="space-y-3"
+                    @submit.prevent="onSubmit"
                 >
-                    <UInput
-                        v-model="form.subject"
-                        :placeholder="t('inkoopbeleid.deviations.subjectPlaceholder')"
+                    <UFormField
+                        :label="t('inkoopbeleid.deviations.subject')"
                         required
-                        class="w-full"
-                    />
-                </UFormField>
-
-                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <UFormField :label="t('inkoopbeleid.deviations.amount')">
+                    >
                         <UInput
-                            v-model.number="form.euros"
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            class="w-full"
-                        >
-                            <template #leading>
-                                <span class="text-muted">&euro;</span>
-                            </template>
-                        </UInput>
-                    </UFormField>
-                    <UFormField :label="t('inkoopbeleid.deviations.purchaseType')">
-                        <USelect
-                            v-model="form.purchaseType"
-                            :items="purchaseTypeItems"
-                            value-key="value"
+                            v-model="form.subject"
+                            :placeholder="t('inkoopbeleid.deviations.subjectPlaceholder')"
+                            required
                             class="w-full"
                         />
                     </UFormField>
-                </div>
 
-                <UFormField
-                    :label="t('inkoopbeleid.deviations.ruleSkipped')"
-                    required
-                >
-                    <UInput
-                        v-model="form.ruleSkipped"
-                        :placeholder="t('inkoopbeleid.deviations.ruleSkippedPlaceholder')"
-                        required
-                        class="w-full"
-                    />
-                </UFormField>
-
-                <UFormField
-                    :label="t('inkoopbeleid.deviations.justification')"
-                    :description="t('inkoopbeleid.deviations.justificationHint')"
-                    required
-                >
-                    <UTextarea
-                        v-model="form.justification"
-                        :rows="4"
-                        required
-                        class="w-full"
-                    />
-                </UFormField>
-
-                <UFormField :label="t('inkoopbeleid.deviations.approverRole')">
-                    <UInput
-                        v-model="form.approverRole"
-                        :placeholder="t('inkoopbeleid.deviations.approverRolePlaceholder')"
-                        class="w-full"
-                    />
-                </UFormField>
-
-                <UButton
-                    type="submit"
-                    :loading="saving"
-                    :disabled="!canSubmit"
-                >
-                    {{ t('inkoopbeleid.deviations.submit') }}
-                </UButton>
-            </form>
-        </UCard>
-
-        <UCard>
-            <template #header>
-                <h2 class="adj-card-title">
-                    {{ t('inkoopbeleid.deviations.listHeading') }}
-                </h2>
-            </template>
-
-            <div
-                v-if="deviations.length"
-                class="space-y-3"
-            >
-                <div
-                    v-for="d in deviations"
-                    :key="d.id"
-                    class="rounded-sm border border-default p-3"
-                >
-                    <div class="flex flex-wrap items-baseline justify-between gap-2">
-                        <p class="font-medium">
-                            {{ d.subject }}
-                        </p>
-                        <span class="text-xs text-muted">
-                            {{ new Date(d.createdAt).toLocaleDateString(locale) }}
-                            <template v-if="d.recordedByName || d.recordedByEmail">
-                                &middot;
-                                {{ t('inkoopbeleid.deviations.recordedBy', { name: d.recordedByName || d.recordedByEmail }) }}
-                            </template>
-                        </span>
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <UFormField :label="t('inkoopbeleid.deviations.amount')">
+                            <UInput
+                                v-model.number="form.euros"
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                class="w-full"
+                            >
+                                <template #leading>
+                                    <span class="text-muted">&euro;</span>
+                                </template>
+                            </UInput>
+                        </UFormField>
+                        <UFormField :label="t('inkoopbeleid.deviations.purchaseType')">
+                            <USelect
+                                v-model="form.purchaseType"
+                                :items="purchaseTypeItems"
+                                value-key="value"
+                                class="w-full"
+                            />
+                        </UFormField>
                     </div>
-                    <p class="mt-1 text-sm">
-                        <span class="text-muted">{{ t('inkoopbeleid.deviations.columns.ruleSkipped') }}:</span>
-                        {{ d.ruleSkipped }}
-                        <template v-if="d.amountCents !== null">
-                            &middot; {{ formatCents(d.amountCents, locale) }}
-                        </template>
-                    </p>
-                    <p class="mt-2 whitespace-pre-wrap text-sm">
-                        {{ d.justification }}
-                    </p>
-                    <p
-                        v-if="d.approverRole"
-                        class="mt-2 text-xs text-muted"
+
+                    <UFormField
+                        :label="t('inkoopbeleid.deviations.ruleSkipped')"
+                        required
                     >
-                        {{ t('inkoopbeleid.deviations.columns.approverRole') }}: {{ d.approverRole }}
-                    </p>
+                        <UInput
+                            v-model="form.ruleSkipped"
+                            :placeholder="t('inkoopbeleid.deviations.ruleSkippedPlaceholder')"
+                            required
+                            class="w-full"
+                        />
+                    </UFormField>
+
+                    <UFormField
+                        :label="t('inkoopbeleid.deviations.justification')"
+                        :description="t('inkoopbeleid.deviations.justificationHint')"
+                        required
+                    >
+                        <UTextarea
+                            v-model="form.justification"
+                            :rows="4"
+                            required
+                            class="w-full"
+                        />
+                    </UFormField>
+
+                    <UFormField :label="t('inkoopbeleid.deviations.approverRole')">
+                        <UInput
+                            v-model="form.approverRole"
+                            :placeholder="t('inkoopbeleid.deviations.approverRolePlaceholder')"
+                            class="w-full"
+                        />
+                    </UFormField>
+
+                    <UButton
+                        type="submit"
+                        :loading="saving"
+                        :disabled="!canSubmit"
+                    >
+                        {{ t('inkoopbeleid.deviations.submit') }}
+                    </UButton>
+                </form>
+            </UCard>
+
+            <UCard>
+                <template #header>
+                    <h2 class="adj-card-title">
+                        {{ t('inkoopbeleid.deviations.listHeading') }}
+                    </h2>
+                </template>
+
+                <div
+                    v-if="deviations.length"
+                    class="space-y-3"
+                >
+                    <div
+                        v-for="d in deviations"
+                        :key="d.id"
+                        class="rounded-sm border border-default p-3"
+                    >
+                        <div class="flex flex-wrap items-baseline justify-between gap-2">
+                            <p class="font-medium">
+                                {{ d.subject }}
+                            </p>
+                            <span class="text-xs text-muted">
+                                {{ new Date(d.createdAt).toLocaleDateString(locale) }}
+                                <template v-if="d.recordedByName || d.recordedByEmail">
+                                    &middot;
+                                    {{ t('inkoopbeleid.deviations.recordedBy', { name: d.recordedByName || d.recordedByEmail }) }}
+                                </template>
+                            </span>
+                        </div>
+                        <p class="mt-1 text-sm">
+                            <span class="text-muted">{{ t('inkoopbeleid.deviations.columns.ruleSkipped') }}:</span>
+                            {{ d.ruleSkipped }}
+                            <template v-if="d.amountCents !== null">
+                                &middot; {{ formatCents(d.amountCents, locale) }}
+                            </template>
+                        </p>
+                        <p class="mt-2 whitespace-pre-wrap text-sm">
+                            {{ d.justification }}
+                        </p>
+                        <p
+                            v-if="d.approverRole"
+                            class="mt-2 text-xs text-muted"
+                        >
+                            {{ t('inkoopbeleid.deviations.columns.approverRole') }}: {{ d.approverRole }}
+                        </p>
+                    </div>
                 </div>
-            </div>
-            <div
-                v-else-if="status === 'pending'"
-                class="space-y-2"
-            >
-                <USkeleton
-                    v-for="i in 2"
-                    :key="i"
-                    class="h-24 w-full"
+                <div
+                    v-else-if="status === 'pending'"
+                    class="space-y-2"
+                >
+                    <USkeleton
+                        v-for="i in 2"
+                        :key="i"
+                        class="h-24 w-full"
+                    />
+                </div>
+                <AdjEmptyState
+                    v-else
+                    icon="i-lucide-triangle-alert"
+                    :title="t('inkoopbeleid.deviations.empty')"
                 />
-            </div>
-            <AdjEmptyState
-                v-else
-                icon="i-lucide-triangle-alert"
-                :title="t('inkoopbeleid.deviations.empty')"
-            />
-        </UCard>
-    </div>
+            </UCard>
+        </div>
+    </OrganisationGate>
 </template>
 
 <script setup lang="ts">
