@@ -14,6 +14,7 @@ import {
     extractDocumentText,
 } from '#server/utils/inkoopbeleid/extract'
 import { requireOrganisation } from '#server/utils/inkoopbeleid/organisation'
+import { assertGatewayConfigured } from '#server/utils/inkoopbeleid/advisor'
 import { tryLogAudit } from '#server/utils/audit-bridge'
 
 const schema = z.object({
@@ -38,6 +39,10 @@ export default defineEventHandler(async (event) => {
     const { user } = await requireUserSession(event)
     const body = await readValidatedBody(event, schema.parse)
     await requireOrganisation(body.organisationId)
+    // Ingestion embeds the document through the same AI gateway the advisor uses. Without this
+    // guard a missing NUXT_AI_GATEWAY_URL/KEY surfaces as a raw, unhelpful 500 from deep inside
+    // `ingestText` after the file has already been read back from storage and extracted.
+    assertGatewayConfigured()
 
     if (body.policyId) {
         const [policy] = await db
@@ -96,19 +101,35 @@ export default defineEventHandler(async (event) => {
 
     const sourceLabel = body.sourceLabel || body.title
 
-    // `organisationId` in the metadata is what the advisor filters on at query time. Without it
-    // this document becomes visible to every organisation's questions.
-    const { chunks } = await ingestText({
-        title: body.title,
-        source: sourceLabel,
-        text: extracted.text,
-        metadata: {
-            organisationId: body.organisationId,
-            policyId: body.policyId ?? null,
-            documentKind: body.kind,
-            fileId: body.fileId,
-        },
-    })
+    let chunks: number
+    try {
+        // `organisationId` in the metadata is what the advisor filters on at query time. Without
+        // it this document becomes visible to every organisation's questions.
+        ;({ chunks } = await ingestText({
+            title: body.title,
+            source: sourceLabel,
+            text: extracted.text,
+            metadata: {
+                organisationId: body.organisationId,
+                policyId: body.policyId ?? null,
+                documentKind: body.kind,
+                fileId: body.fileId,
+            },
+        }))
+    } catch (err) {
+        // H3 masks a plain thrown Error's message behind a generic "Internal Server Error" in
+        // production, which is exactly the unhelpful toast this was reported against. `ingestText`
+        // most commonly fails on the vector store (e.g. the `vector` Postgres extension missing on
+        // a fresh managed database) or the AI gateway rejecting the embedding call; re-wrapping
+        // preserves the real cause instead of losing it behind that mask.
+        if (err && typeof err === 'object' && 'statusCode' in err) throw err
+        const message = err instanceof Error ? err.message : String(err)
+        throw createError({
+            statusCode: 500,
+            statusMessage: `Failed to index document: ${message}`,
+            data: { code: 'ingest-failed' },
+        })
+    }
 
     const [created] = await db
         .insert(policyDocuments)
