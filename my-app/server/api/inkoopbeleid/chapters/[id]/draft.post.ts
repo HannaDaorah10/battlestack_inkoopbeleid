@@ -5,10 +5,10 @@ import { policies, policyChapters, policyGoals } from '#server/database/schema/i
 import { mastra } from '#server/mastra'
 import { requireUuidRouterParam } from '#server/utils/auth'
 import {
-    NO_CONTEXT_NOTICE,
     assertGatewayConfigured,
     retrieveContext,
 } from '#server/utils/inkoopbeleid/advisor'
+import { NO_CONTEXT_NOTICE } from '#server/utils/inkoopbeleid/advice-prompt'
 import { tryLogAudit } from '#server/utils/audit-bridge'
 
 const schema = z.object({

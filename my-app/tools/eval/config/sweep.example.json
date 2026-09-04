@@ -1,0 +1,47 @@
+{
+    // Kopieer dit bestand naar config/sweep.json en pas het aan. Regels met // zijn commentaar.
+    "name": "adviseur-v1",
+
+    // Jouw documenten, in tools/eval/corpus/ (die map staat in .gitignore).
+    // De "organisatie" is niet optioneel: de app houdt organisaties gescheiden bij het zoeken,
+    // dus een sweep die beide beleidsstukken door elkaar doorzoekt meet iets makkelijkers dan
+    // wat de app werkelijk doet.
+    "corpus": [
+        { "path": "corpus/ons-huis-inkoopbeleid-2025-2028.pdf", "organisatie": "ons-huis", "titel": "Inkoopbeleid Ons Huis 2025-2028" },
+        { "path": "corpus/welbions-inkoopwijzer-2023.pdf", "organisatie": "welbions", "titel": "Inkoopwijzer Welbions 2023" }
+    ],
+
+    "questions": "cases/vragen.jsonl",
+
+    // FASE 1 - alleen embeddings, geen chatmodel. Draai deze eerst.
+    // Configuraties die alleen in topK verschillen delen een index, dus topK is bijna gratis.
+    "retrieval": {
+        "embeddingModel": ["openai/text-embedding-3-small"],
+        "maxChunkSize": [500, 700, 1000],
+        "chunkOverlap": [100, 200],
+        "topK": [5, 8]
+    },
+
+    // FASE 2 - hier zit het geld. Elke combinatie x elke vraag is een aanroep.
+    // Draai altijd eerst met --dry-run om te zien hoeveel dat er zijn.
+    // Kent je gateway andere modelnamen? Draai `pnpm eval:models` voor de lijst.
+    "generation": {
+        "model": ["openai/gpt-4o-mini"],
+        "temperature": [0, 0.3, 0.7],
+        "topP": [1],
+        "maxOutputTokens": [1200],
+        "systemPrompt": [
+            "prompts/adviseur-a-standaard.md",
+            "prompts/adviseur-b-strikt.md"
+        ],
+        // Meerdere trekkingen van dezelfde instelling. Zet op 2 of 3 als je wilt zien hoeveel
+        // een hogere temperature het antwoord laat variëren; bij temperature 0 heeft het weinig zin.
+        "samples": 1
+    },
+
+    // Hoeveel aanroepen tegelijk. Hoger is sneller, maar levert eerder rate limits op.
+    "concurrency": 4,
+
+    // Harde bovengrens op het aantal aanroepen. De run stopt daar en zegt dat hij stopt.
+    "maxCalls": 2000
+}

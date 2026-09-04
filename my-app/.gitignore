@@ -33,3 +33,10 @@ components.d.ts
 *.battlestack.patch
 .scannerwork
 dependencycheck
+
+# AI-evaluatie (configuratie-sweep) — lokaal, niet naar GitHub
+AI-EVALUATIE-PLAN.md
+tools/eval/corpus/*
+!tools/eval/corpus/.gitkeep
+tools/eval/runs/*
+!tools/eval/runs/.gitkeep

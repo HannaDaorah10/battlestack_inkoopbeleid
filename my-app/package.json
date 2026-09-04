@@ -21,6 +21,11 @@
         "db:migrate": "drizzle-kit migrate",
         "db:studio": "drizzle-kit studio",
         "db:seed": "tsx server/database/seed.ts",
+        "eval:models": "tsx tools/eval/src/models.ts",
+        "eval:retrieval": "tsx tools/eval/src/retrieval.ts",
+        "eval:generate": "tsx tools/eval/src/generation.ts",
+        "eval:aggregate": "tsx tools/eval/src/aggregate.ts",
+        "eval:typecheck": "tsc --noEmit -p tools/eval",
         "mastra:studio": "PORT=14905 mastra dev --dir server/mastra"
     },
     "dependencies": {
@@ -88,6 +93,7 @@
     "devDependencies": {
         "@iconify-json/lucide": "^1.2.124",
         "@nuxt/test-utils": "^4.1.0",
+        "@types/node": "^26.2.0",
         "@types/nodemailer": "^8.0.1",
         "@types/qrcode": "^1.5.6",
         "@vitest/coverage-v8": "^4.1.11",

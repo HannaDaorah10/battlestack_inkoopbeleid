@@ -1,9 +1,9 @@
-import { MDocument } from '@mastra/rag'
 import { PgVector } from '@mastra/pg'
 import { embedMany } from 'ai'
 import { createError } from 'h3'
 import { gatewayEmbedding } from '#server/mastra/gateways/openai-compat'
 import { getActiveEmbeddingModelId } from '#server/mastra/utils/ai-model'
+import { chunkDocument } from '#server/utils/rag-chunk'
 
 export const INDEX_NAME = 'rag_vectors'
 
@@ -129,14 +129,13 @@ export async function ingestText(opts: {
 }): Promise<{ chunks: number }> {
     const cfg = readConfig()
     await ensureIndex(cfg)
-    const doc = MDocument.fromText(opts.text, {
+    // Shared with the evaluation harness (tools/eval), which sweeps maxSize/overlap: both sides
+    // must chunk identically or the sweep tunes a pipeline the app does not run.
+    const chunks = await chunkDocument({
+        text: opts.text,
         title: opts.title,
         source: opts.source,
-        ...opts.metadata,
-    })
-
-    const chunks = await doc.chunk({
-        strategy: 'recursive',
+        metadata: opts.metadata,
         maxSize: cfg.maxChunkSize,
         overlap: cfg.chunkOverlap,
     })

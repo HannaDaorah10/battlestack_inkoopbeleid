@@ -104,6 +104,29 @@ export function gatewayEmbedding(modelId: string) {
     }).textEmbeddingModel(modelId)
 }
 
+/**
+ * Build a chat model routed through the AI gateway, bypassing Mastra's agent layer.
+ *
+ * The mirror image of {@link gatewayEmbedding}, and it exists for one caller: the evaluation
+ * harness in `tools/eval`. A Mastra agent resolves its model and prompt from the database, which
+ * is a single global setting, and exposes no sampling parameters — so it cannot answer "what does
+ * this model do at temperature 0.7 with that other prompt?", which is the whole question a sweep
+ * asks. Building the model here keeps the header/auth handling and the "only file that touches the
+ * SDK" rule at the top of this module intact.
+ *
+ * Application code should keep going through `mastra.getAgent(...)`: that is what makes the model
+ * and prompt admin-controllable at runtime.
+ */
+export function gatewayChatModel(modelId: string) {
+    const { apiRoot, apiKey } = gatewayEndpoints()
+    return createOpenAICompatible({
+        name: 'gateway',
+        apiKey,
+        baseURL: apiRoot,
+        headers: gatewayHeaders(),
+    }).chatModel(modelId)
+}
+
 let _endpoints: { root: string, apiRoot: string, apiKey: string } | null = null
 
 /**

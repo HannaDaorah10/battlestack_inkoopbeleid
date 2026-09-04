@@ -1,5 +1,6 @@
 import { queryText } from '#server/utils/rag'
 import { gatewayConfigError } from '#server/mastra/gateways/openai-compat'
+import { formatContextBlock, type RetrievedSource } from '#server/utils/inkoopbeleid/advice-prompt'
 
 /**
  * Retrieve-then-generate plumbing, shared by the advisor and the chapter drafter.
@@ -8,14 +9,11 @@ import { gatewayConfigError } from '#server/mastra/gateways/openai-compat'
  * calls a language model. This module is the other half - it turns those chunks into a context
  * block a grounded agent can answer from, and hands back the same sources so the answer stays
  * checkable against the documents it came from.
+ *
+ * The pure prompt-shaping pieces (`formatContextBlock`, `buildAdvicePrompt`, `NO_CONTEXT_NOTICE`,
+ * `RetrievedSource`) live in `advice-prompt.ts` so they can be imported without a database
+ * connection; see the note at the top of that file.
  */
-
-export interface RetrievedSource {
-    title: string
-    source: string
-    score: number
-    text: string
-}
 
 export interface RetrievedContext {
     sources: RetrievedSource[]
@@ -66,20 +64,3 @@ export async function retrieveContext(input: {
 
     return { sources, contextBlock: formatContextBlock(sources) }
 }
-
-/**
- * Format excerpts for the model.
- *
- * Each excerpt is labelled with the exact source string the prompt tells the agent to cite, so
- * "cite the source" needs no inference: the literal token to echo is already on the page.
- */
-export function formatContextBlock(sources: readonly RetrievedSource[]): string {
-    if (sources.length === 0) return ''
-    return sources
-        .map((s, i) => `--- Fragment ${i + 1} | bron: ${s.source} ---\n${s.text}`)
-        .join('\n\n')
-}
-
-/** Dutch stand-in used when retrieval comes back empty, so the agent is never asked to answer from nothing. */
-export const NO_CONTEXT_NOTICE
-    = 'Er zijn geen fragmenten gevonden in de documenten van deze organisatie.'

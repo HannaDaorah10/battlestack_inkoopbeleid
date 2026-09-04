@@ -1,0 +1,23 @@
+// Startset. De verwachte trefwoorden komen uit de drempelbedragen en mandaten in
+// server/database/seeds/005-inkoopbeleid.ts, die op hun beurt uit de echte beleidsdocumenten
+// komen - ze zijn dus controleerbaar en niet verzonnen. Controleer ze wel tegen jouw PDF's:
+// staat een bedrag daar anders geschreven, dan telt de vraag onterecht als gemist.
+//
+// verwachteTrefwoorden = wat in het OPGEHAALDE FRAGMENT moet staan (fase 1).
+// Laat het leeg voor vragen die alleen door mensen beoordeeld worden (fase 2).
+{"id": "q01", "vraag": "Hoeveel offertes heb ik nodig voor een schoonmaakcontract van EUR 30.000?", "organisatie": "ons-huis", "verwachteTrefwoorden": ["25.000", "50.000"], "tags": ["drempel", "diensten"]}
+{"id": "q02", "vraag": "Wat moet ik doen bij een dakrenovatie van EUR 2.500.000?", "organisatie": "ons-huis", "verwachteTrefwoorden": ["2.000.000", "categoriemanagement"], "tags": ["drempel", "werken"]}
+{"id": "q03", "vraag": "Welke procedure geldt voor een ICT-dienstverleningscontract van EUR 300.000?", "organisatie": "ons-huis", "verwachteTrefwoorden": ["250.000", "categoriemanagement"], "tags": ["drempel", "diensten"]}
+{"id": "q04", "vraag": "Mag ik voor een verbouwing van EUR 80.000 een enkele aannemer vragen?", "organisatie": "ons-huis", "verwachteTrefwoorden": ["100.000", "enkelvoudig onderhands"], "tags": ["drempel", "werken"]}
+{"id": "q05", "vraag": "Wie mag binnen Ons Huis een opdracht van EUR 900.000 tekenen?", "organisatie": "ons-huis", "verwachteTrefwoorden": ["directeur-bestuurder", "1.000.000"], "tags": ["mandaat"]}
+{"id": "q06", "vraag": "Tot welk bedrag mag de manager bedrijfsbeheer zelf tekenen?", "organisatie": "ons-huis", "verwachteTrefwoorden": ["manager bedrijfsbeheer", "50.000"], "tags": ["mandaat"]}
+{"id": "q07", "vraag": "Wat betekent 'pas toe of leg uit' in ons inkoopbeleid?", "organisatie": "ons-huis", "verwachteTrefwoorden": ["pas toe of leg uit"], "tags": ["principe"]}
+{"id": "q08", "vraag": "Welke doelen streeft Ons Huis na met inkoop?", "organisatie": "ons-huis", "verwachteTrefwoorden": ["verduurzaming", "betaalbaarheid"], "tags": ["doelen"]}
+{"id": "q09", "vraag": "Wanneer moet de adviseur inkoop verplicht worden betrokken?", "organisatie": "ons-huis", "verwachteTrefwoorden": ["adviseur inkoop"], "tags": ["rollen"]}
+{"id": "q10", "vraag": "Welke stukken heb ik nodig bij een werk van EUR 600.000?", "organisatie": "ons-huis", "verwachteTrefwoorden": ["500.000", "gunningsadvies"], "tags": ["drempel", "werken"]}
+{"id": "q11", "vraag": "Hoeveel offertes vraag ik op bij een dienstverleningscontract van EUR 60.000?", "organisatie": "ons-huis", "verwachteTrefwoorden": ["50.000", "250.000"], "tags": ["drempel", "diensten"]}
+{"id": "q12", "vraag": "Mag ik een opdracht opknippen zodat die onder de drempel blijft?", "organisatie": "ons-huis", "verwachteTrefwoorden": [], "tags": ["integriteit", "menselijk-oordeel"]}
+{"id": "q13", "vraag": "Welke doelen heeft Welbions voor inkoop geformuleerd?", "organisatie": "welbions", "verwachteTrefwoorden": ["duurzaamheid", "samenwerken"], "tags": ["doelen"]}
+{"id": "q14", "vraag": "Welke procedure geldt bij Welbions voor de hoogste inkoopcategorie?", "organisatie": "welbions", "verwachteTrefwoorden": ["aanbesteding"], "tags": ["drempel"]}
+{"id": "q15", "vraag": "Welke cao geldt voor onze eigen medewerkers?", "organisatie": "ons-huis", "verwachteTrefwoorden": [], "tags": ["controlevraag", "menselijk-oordeel"]}
+{"id": "q16", "vraag": "Hoeveel vakantiedagen krijgt een projectleider vastgoed?", "organisatie": "ons-huis", "verwachteTrefwoorden": [], "tags": ["controlevraag", "menselijk-oordeel"]}

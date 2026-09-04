@@ -2,10 +2,10 @@ import { z } from 'zod'
 import { mastra } from '#server/mastra'
 import { requireOrganisation } from '#server/utils/inkoopbeleid/organisation'
 import {
-    NO_CONTEXT_NOTICE,
     assertGatewayConfigured,
     retrieveContext,
 } from '#server/utils/inkoopbeleid/advisor'
+import { buildAdvicePrompt } from '#server/utils/inkoopbeleid/advice-prompt'
 
 const schema = z.object({
     organisationId: z.uuid(),
@@ -33,15 +33,9 @@ export default defineEventHandler(async (event) => {
         topK: body.topK,
     })
 
-    // Answer even with no context, rather than short-circuiting: the agent is instructed to say
-    // plainly that the documents do not cover this, which is a more useful reply than a bare
-    // empty-result state, and it keeps "I don't know" a normal answer instead of an error.
-    const prompt = [
-        'Context:',
-        contextBlock || NO_CONTEXT_NOTICE,
-        '',
-        `Vraag: ${body.question}`,
-    ].join('\n')
+    // Shared with the evaluation harness (tools/eval) so a sweep measures this exact prompt;
+    // see `advice-prompt.ts` for why answering without context is deliberate.
+    const prompt = buildAdvicePrompt({ contextBlock, question: body.question })
 
     const agent = mastra.getAgent('inkoopbeleid')
     const result = await agent.generate(prompt)

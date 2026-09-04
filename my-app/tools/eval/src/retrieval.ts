@@ -1,0 +1,209 @@
+import { mkdir, writeFile } from 'node:fs/promises'
+import { containsAllKeywords } from './checks'
+import { loadCases, loadSweep, readCliOptions } from './cli'
+import { loadCorpus, organisationsIn } from './corpus'
+import { assertGatewayReady, loadEnv } from './env'
+import { expandRetrieval, groupByIndex } from './expand'
+import { ALL_ORGANISATIONS, buildStores, corpusFingerprint, embedQuestions, storeFor } from './index-build'
+import { runPath } from './paths'
+import { completedCells, createJsonlWriter, readJsonl } from './store'
+import { writeCsv } from './report/csv'
+import { writeRetrievalSummary } from './report/markdown'
+import type { RetrievalSummaryRow } from './report/markdown'
+import type { EvalCase, RetrievalConfig, RetrievalRun } from './types'
+
+/**
+ * Phase 1: which retrieval settings actually find the right passage?
+ *
+ * This runs before any chat model is touched, because retrieval sets the ceiling on everything
+ * after it. If the fragment holding the answer is never fetched, no model can answer from it - it
+ * can only guess convincingly. Scoring needs no language model and no human judgement here: a
+ * fragment either contains the expected amount or it does not.
+ */
+
+async function main(): Promise<void> {
+    const options = readCliOptions()
+    loadEnv()
+
+    const sweep = await loadSweep(options.config)
+    const cases = await loadCases(sweep.questions, options.limit)
+    const configs = expandRetrieval(sweep.retrieval)
+    const groups = groupByIndex(configs)
+
+    console.log(`Sweep "${sweep.name}" - fase 1 (retrieval)`)
+    console.log(`  ${configs.length} configuraties x ${cases.length} vragen = ${configs.length * cases.length} metingen`)
+    console.log(`  ${groups.size} indexen te bouwen; configuraties die alleen in topK verschillen delen er een`)
+    console.log(`  ${sweep.retrieval.embeddingModel.length} x ${cases.length} vraag-embeddings`)
+    console.log('  0 aanroepen naar een chatmodel - deze fase gebruikt alleen embeddings')
+
+    if (options.dryRun) {
+        console.log('\n--dry-run: er is niets aangeroepen en niets betaald.\n')
+        for (const config of configs) {
+            console.log(
+                `  ${config.configId}  ${config.embeddingModel}  chunk=${config.maxChunkSize}`
+                + `  overlap=${config.chunkOverlap}  topK=${config.topK}`,
+            )
+        }
+        return
+    }
+
+    assertGatewayReady()
+
+    const documents = await loadCorpus(sweep.corpus)
+    const known = organisationsIn(documents)
+    console.log(`\n${documents.length} document(en): ${documents.map((d) => `${d.title} (${d.organisatie})`).join(', ')}`)
+
+    for (const organisatie of new Set(cases.map((c) => c.organisatie))) {
+        if (!known.has(organisatie)) {
+            console.warn(
+                `  LET OP: geen document met organisatie "${organisatie}". Die vragen doorzoeken nu`
+                + ' het hele corpus, wat makkelijker is dan wat de app doet.',
+            )
+        }
+    }
+
+    const unscored = cases.filter((c) => c.verwachteTrefwoorden.length === 0)
+    if (unscored.length > 0) {
+        console.warn(`  ${unscored.length} vraag/vragen zonder verwachteTrefwoorden tellen niet mee in recall en mrr.`)
+    }
+
+    const outDir = runPath(sweep.name, 'retrieval')
+    const runsFile = `${outDir}/runs.jsonl`
+    const done = completedCells(await readJsonl<RetrievalRun>(runsFile))
+    if (done.size > 0) console.log(`\n${done.size} metingen stonden er al; die worden overgeslagen.`)
+
+    const writer = await createJsonlWriter(runsFile)
+    const fingerprint = corpusFingerprint(documents)
+
+    // Question vectors depend only on the embedding model, never on chunk size or topK, so they
+    // are computed once per model instead of once per configuration. On the example grid that is
+    // 60 calls where the naive loop makes 720.
+    const questionVectors = new Map<string, Map<string, number[]>>()
+    for (const model of sweep.retrieval.embeddingModel) {
+        questionVectors.set(model, await embedQuestions(sweep.name, model, cases))
+        console.log(`Vraag-embeddings klaar voor ${model}`)
+    }
+
+    for (const [key, bucket] of groups) {
+        const shape = bucket[0]!
+        const stores = await buildStores(sweep.name, key, shape, documents, fingerprint, console.log)
+        const maxTopK = Math.max(...bucket.map((c) => c.topK))
+        const vectors = questionVectors.get(shape.embeddingModel)!
+
+        for (const evalCase of cases) {
+            const started = Date.now()
+            // One query serves every topK in the bucket: the ranking is identical and only the
+            // cut-off differs, so slicing is exactly equivalent to querying again with a smaller K.
+            const hits = storeFor(stores, evalCase.organisatie).query(vectors.get(evalCase.id)!, maxTopK)
+            const durationMs = Date.now() - started
+
+            for (const config of bucket) {
+                if (done.has(`${config.configId}|${evalCase.id}|0`)) continue
+                await writer.append(scoreRun(config, evalCase, hits, durationMs))
+            }
+        }
+
+        console.log(`Index ${key} klaar (${bucket.length} configuratie(s), ${stores.get(ALL_ORGANISATIONS)!.size} chunks)`)
+    }
+
+    const runs = await readJsonl<RetrievalRun>(runsFile)
+    const rows = summarise(configs, runs)
+
+    await writeCsv(`${outDir}/resultaten.csv`, rows, [
+        'configId', 'embeddingModel', 'maxChunkSize', 'chunkOverlap', 'topK',
+        'beoordeeldeVragen', 'gevonden', 'recall@k', 'mrr', 'gemiddeldeTopScore',
+    ])
+    // Phase 2 reads this to resolve `--retrieval`, and to pick a default when none is given.
+    // Re-parsing the CSV would mean re-implementing its locale quirks in the reader.
+    await mkdir(outDir, { recursive: true })
+    await writeFile(`${outDir}/ranglijst.json`, JSON.stringify({ configs, rows }, null, 2), 'utf8')
+    await writeRetrievalSummary(`${outDir}/samenvatting.md`, sweep.name, rows, cases.length)
+
+    console.log(`\nKlaar. Resultaten in ${outDir}`)
+    console.log('  samenvatting.md  - ranglijst met uitleg, winnaar bovenaan')
+    console.log('  resultaten.csv   - een regel per configuratie')
+    console.log('  runs.jsonl       - de opgehaalde fragmenten per vraag')
+    if (rows[0]) {
+        console.log(`\nBeste configuratie: ${rows[0].configId} (recall@k ${rows[0]['recall@k']})`)
+        console.log(`Volgende stap: pnpm eval:generate -- --retrieval ${rows[0].configId}`)
+    }
+}
+
+function scoreRun(
+    config: RetrievalConfig,
+    evalCase: EvalCase,
+    hits: ReadonlyArray<{ rank: number, score: number, chunk: { source: string, text: string } }>,
+    durationMs: number,
+): RetrievalRun {
+    const fragments = hits.slice(0, config.topK).map((h) => ({
+        rank: h.rank,
+        score: h.score,
+        source: h.chunk.source,
+        text: h.chunk.text,
+    }))
+
+    const scoreable = evalCase.verwachteTrefwoorden.length > 0
+    const firstHit = scoreable
+        ? fragments.find((f) => containsAllKeywords(f.text, evalCase.verwachteTrefwoorden))
+        : undefined
+
+    return {
+        configId: config.configId,
+        caseId: evalCase.id,
+        scoreable,
+        hit: firstHit !== undefined,
+        firstHitRank: firstHit?.rank ?? 0,
+        reciprocalRank: firstHit ? 1 / firstHit.rank : 0,
+        topScore: fragments[0]?.score ?? 0,
+        fragments,
+        durationMs,
+    }
+}
+
+function summarise(
+    configs: readonly RetrievalConfig[],
+    runs: readonly RetrievalRun[],
+): RetrievalSummaryRow[] {
+    const byConfig = new Map<string, RetrievalRun[]>()
+    for (const run of runs) {
+        const bucket = byConfig.get(run.configId) ?? []
+        bucket.push(run)
+        byConfig.set(run.configId, bucket)
+    }
+
+    const rows = configs.map((config) => {
+        const runsFor = byConfig.get(config.configId) ?? []
+        const scoreable = runsFor.filter((r) => r.scoreable)
+        const hits = scoreable.filter((r) => r.hit).length
+
+        return {
+            'configId': config.configId,
+            'embeddingModel': config.embeddingModel,
+            'maxChunkSize': config.maxChunkSize,
+            'chunkOverlap': config.chunkOverlap,
+            'topK': config.topK,
+            'beoordeeldeVragen': scoreable.length,
+            'gevonden': hits,
+            'recall@k': scoreable.length > 0 ? round(hits / scoreable.length) : 0,
+            'mrr': scoreable.length > 0 ? round(mean(scoreable.map((r) => r.reciprocalRank))) : 0,
+            'gemiddeldeTopScore': runsFor.length > 0 ? round(mean(runsFor.map((r) => r.topScore))) : 0,
+        }
+    })
+
+    // Recall first, then MRR: finding the passage at all beats finding it slightly higher up.
+    rows.sort((a, b) => (b['recall@k'] - a['recall@k']) || (b.mrr - a.mrr))
+    return rows
+}
+
+function mean(values: readonly number[]): number {
+    return values.length === 0 ? 0 : values.reduce((a, b) => a + b, 0) / values.length
+}
+
+function round(value: number): number {
+    return Math.round(value * 1000) / 1000
+}
+
+main().catch((err: unknown) => {
+    console.error(`\n${err instanceof Error ? err.message : String(err)}`)
+    process.exitCode = 1
+})
