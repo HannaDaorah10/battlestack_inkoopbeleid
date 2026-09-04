@@ -3,6 +3,7 @@ import { MemoryVectorStore } from '../../tools/eval/src/vector-store'
 import { stripJsonComments } from '../../tools/eval/src/cli'
 import { cellKey, completedCells } from '../../tools/eval/src/store'
 import { isRetryable } from '../../tools/eval/src/pool'
+import { samplingParams } from '../../tools/eval/src/gateway'
 
 function chunk(text: string) {
     return { text, title: 'doc', source: 'doc' }
@@ -87,6 +88,24 @@ describe('resume bookkeeping', () => {
         expect(done.has(cellKey('g_1', 'q01', 0))).toBe(true)
         expect(done.has(cellKey('g_1', 'q02', 0))).toBe(true)
         expect(done.has(cellKey('g_1', 'q03', 0))).toBe(false)
+    })
+})
+
+describe('samplingParams', () => {
+    it('omits topP at its neutral value', { timeout: 120_000 }, () => {
+        // Anthropic rejects a request carrying both temperature and top_p with a bare
+        // "Bad Request". topP 1 excludes nothing, so dropping it costs no behaviour and keeps
+        // every Claude model usable in a default sweep.
+        expect(samplingParams(0.3, 1)).toEqual({ temperature: 0.3 })
+    })
+
+    it('sends topP when it was deliberately set away from 1', { timeout: 120_000 }, () => {
+        expect(samplingParams(0.3, 0.8)).toEqual({ temperature: 0.3, topP: 0.8 })
+    })
+
+    it('still sends temperature 0', { timeout: 120_000 }, () => {
+        // Guards against a falsy check creeping in: 0 is the most-used temperature in a sweep.
+        expect(samplingParams(0, 1)).toEqual({ temperature: 0 })
     })
 })
 

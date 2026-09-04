@@ -53,7 +53,7 @@ EU-dataopslag, PII-filtering en een controleerbaar auditlogboek — precies wat 
 zien als je met beleidsdocumenten van een woningcorporatie werkt.
 
 1. Ga naar https://sluis.ai en vraag een account/sleutel aan.
-2. Je krijgt een sleutel die begint met `sk_live_`.
+2. Je krijgt een sleutel die begint met `sluis-`.
 3. Ga door naar stap 3.
 
 **Vraag bij het aanvragen om:**
@@ -103,6 +103,54 @@ NUXT_AI_GATEWAY_URL=https://api.sluis.ai
 
 > **Deel dit bestand nooit.** `.env` staat in `.gitignore` en hoort daar te blijven. Zet je sleutel
 > niet in een commit, niet in een screenshot, en niet in een chat.
+
+---
+
+## Stap 3b — Kies modellen die deze sleutel mág gebruiken
+
+**Dit is de stap die het vaakst wordt overgeslagen, en dan lijkt het alsof de sleutel niet werkt.**
+
+De sluis-tenant van dit project heeft een EU-residentiebeleid. OpenAI-modellen zijn daar niet bij:
+een aanroep naar `openai/gpt-4o-mini` wordt geweigerd met
+
+```
+provider `openai` (jurisdiction `US`) is not permitted by the tenant's residency policy
+```
+
+en de chat geeft dan gewoon geen antwoord terug. De standaardwaarden van de boilerplate zijn nu
+juist OpenAI-modellen, dus dit gebeurt bij elke verse installatie.
+
+Vraag de lijst op die jouw sleutel wél mag gebruiken:
+
+```bash
+pnpm eval:models
+```
+
+Beschikbare providers zijn `bedrock/`, `mistral/`, `nebius/`, `scaleway/`, `vertex/` en `sluis/`.
+Zet in `.env`:
+
+```
+NUXT_AI_GATEWAY_CHAT_MODEL=bedrock/eu.anthropic.claude-sonnet-4-5-20250929-v1:0
+NUXT_AI_GATEWAY_EMBEDDING_MODEL=bedrock/eu.cohere.embed-v4:0
+```
+
+> **Let op de dimensie.** `NUXT_RAG_EMBEDDING_DIMENSIONS` moet exact gelijk zijn aan het aantal
+> getallen dat het embeddingmodel teruggeeft, en die waarde ligt vast zodra de pgvector-index is
+> aangemaakt. `bedrock/eu.cohere.embed-v4:0` geeft er 1536 terug — precies wat er al staat, dus
+> daarvoor hoef je niets te doen. `vertex/text-multilingual-embedding-002` geeft er 768; kies je
+> die, zet de variabele dan om én doe `DROP TABLE rag_vectors;` voordat je opnieuw indexeert.
+
+### Bij een database die al eens gedraaid heeft
+
+De modelnaam staat óók in de database, in de tabel `ai_model_configs`. Die rijen worden bij het
+opstarten alleen aangemaakt als ze nog niet bestaan — nooit bijgewerkt, zodat een wijziging van een
+beheerder niet bij elke deploy wordt overschreven (`server/plugins/10-sync-ai-on-boot.ts`).
+
+Gevolg: op een omgeving die al eens heeft gedraaid verandert er **niets** als je alleen de
+omgevingsvariabele aanpast. Wijzig het model daar op **`/dashboard/settings/ai`**; de keuzelijst
+haalt de modellen rechtstreeks bij de gateway op. Binnen 30 seconden is het actief, zonder redeploy.
+
+Zet de omgevingsvariabelen alsnog: die gelden voor een nieuwe database en als terugval.
 
 ---
 

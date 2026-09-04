@@ -39,6 +39,23 @@ export async function embedTexts(
     return embeddings.map((e) => [...e])
 }
 
+/**
+ * `topP: 1` is the neutral value - it excludes nothing and changes no output - so it is dropped
+ * rather than sent.
+ *
+ * That is not a micro-optimisation. Anthropic's API rejects a request carrying both `temperature`
+ * and `top_p`, and returns a bare "Bad Request"; measured against
+ * `bedrock/eu.anthropic.claude-sonnet-4-5` on sluis.ai, sending either one alone succeeds and
+ * sending both fails every time. Since `topP` defaults to 1 in a sweep, always sending it would
+ * make every Claude cell fail for a reason the report could not explain.
+ *
+ * Deliberately sweeping `topP` away from 1 therefore excludes Anthropic models. That is a real
+ * trade-off, not a bug: those cells record their error and the rest of the run continues.
+ */
+export function samplingParams(temperature: number, topP: number): { temperature: number, topP?: number } {
+    return topP === 1 ? { temperature } : { temperature, topP }
+}
+
 export async function generateAnswer(opts: {
     model: string
     system: string
@@ -51,8 +68,7 @@ export async function generateAnswer(opts: {
         model: gatewayChatModel(opts.model),
         system: opts.system,
         prompt: opts.prompt,
-        temperature: opts.temperature,
-        topP: opts.topP,
+        ...samplingParams(opts.temperature, opts.topP),
         maxOutputTokens: opts.maxOutputTokens,
     }))
 

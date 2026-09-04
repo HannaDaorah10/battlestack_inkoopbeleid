@@ -42,6 +42,43 @@ gokken. Zet retrieval dus eerst vast.
 
 ---
 
+## Modellen op deze gateway
+
+Twee dingen die je een mislukte run besparen. Beide zijn gemeten tegen sluis.ai, niet uit een
+handleiding overgenomen.
+
+**Geen `openai/...`-modellen.** Deze tenant heeft een EU-residentiebeleid. Een OpenAI-model wordt
+geweigerd met:
+
+```
+provider `openai` (jurisdiction `US`) is not permitted by the tenant's residency policy
+```
+
+Beschikbaar zijn: `bedrock/`, `mistral/`, `nebius/`, `scaleway/`, `vertex/` en `sluis/`. Draai
+`pnpm eval:models` voor de lijst van jouw tenant — die verandert.
+
+**Anthropic weigert `temperature` en `top_p` samen**, met een kale `Bad Request` die niet zegt wat
+er mis is. Eén van de twee werkt prima. De harness stuurt `topP` daarom niet mee zolang hij op 1
+staat (bij 1 doet hij toch niets), zodat de Claude-modellen in een standaardsweep gewoon werken.
+Zet je `topP` bewust op iets anders, dan mislukken de Claude-cellen — die verschijnen dan met hun
+foutmelding in het rapport, de rest van de run gaat door.
+
+Embeddingmodellen geven vectoren van verschillende lengte. Gemeten:
+
+| Model | Dimensies |
+|---|---|
+| `bedrock/eu.cohere.embed-v4:0` | 1536 |
+| `vertex/text-multilingual-embedding-002` | 768 |
+| `nebius/Qwen/Qwen3-Embedding-8B` | 4096 |
+
+Voor de harness maakt dat niets uit — elke configuratie krijgt zijn eigen index. Voor de **app**
+wel: `NUXT_RAG_EMBEDDING_DIMENSIONS` moet exact gelijk zijn aan wat het gekozen model teruggeeft,
+en die waarde ligt vast zodra de pgvector-index is aangemaakt. Nu staat hij op 1536, wat overeenkomt
+met cohere embed-v4. Kies je iets anders, dan moet je `DROP TABLE rag_vectors;` doen en opnieuw
+indexeren.
+
+---
+
 ## Stap voor stap
 
 ### 1. Documenten klaarzetten

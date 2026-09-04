@@ -13,10 +13,21 @@
 
     "questions": "cases/vragen.jsonl",
 
+    // LET OP - modelnamen. Deze sluis-tenant staat alleen EU-providers toe: bedrock, mistral,
+    // nebius, scaleway, vertex en sluis. Een `openai/...`-model wordt geweigerd met
+    // "provider `openai` (jurisdiction `US`) is not permitted by the tenant's residency policy".
+    // Draai `pnpm eval:models` voor de actuele lijst van jouw tenant.
+
     // FASE 1 - alleen embeddings, geen chatmodel. Draai deze eerst.
     // Configuraties die alleen in topK verschillen delen een index, dus topK is bijna gratis.
+    // De twee modellen hieronder geven vectoren van verschillende lengte (1536 en 768). Voor de
+    // harness maakt dat niets uit; in de app moet NUXT_RAG_EMBEDDING_DIMENSIONS bij de winnaar
+    // passen (nu 1536, wat overeenkomt met cohere embed-v4).
     "retrieval": {
-        "embeddingModel": ["openai/text-embedding-3-small"],
+        "embeddingModel": [
+            "bedrock/eu.cohere.embed-v4:0",
+            "vertex/text-multilingual-embedding-002"
+        ],
         "maxChunkSize": [500, 700, 1000],
         "chunkOverlap": [100, 200],
         "topK": [5, 8]
@@ -24,10 +35,17 @@
 
     // FASE 2 - hier zit het geld. Elke combinatie x elke vraag is een aanroep.
     // Draai altijd eerst met --dry-run om te zien hoeveel dat er zijn.
-    // Kent je gateway andere modelnamen? Draai `pnpm eval:models` voor de lijst.
     "generation": {
-        "model": ["openai/gpt-4o-mini"],
-        "temperature": [0, 0.3, 0.7],
+        "model": [
+            "bedrock/eu.anthropic.claude-sonnet-4-5-20250929-v1:0",
+            "bedrock/eu.anthropic.claude-haiku-4-5-20251001-v1:0",
+            "mistral/mistral-large-latest"
+        ],
+        "temperature": [0, 0.3],
+        // Laat topP op 1 staan tenzij je hem echt wilt onderzoeken: Anthropic weigert een verzoek
+        // met temperature EN top_p tegelijk met een kale "Bad Request". Bij 1 stuurt de harness
+        // hem niet mee (hij doet dan toch niets), waardoor de Claude-modellen gewoon werken.
+        // Zet je hem op iets anders, dan mislukken de Claude-cellen - zichtbaar in het rapport.
         "topP": [1],
         "maxOutputTokens": [1200],
         "systemPrompt": [
