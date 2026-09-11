@@ -43,10 +43,15 @@ export const generationGridSchema = z.object({
 })
 
 /**
- * A source document. The object form exists for the organisation slug: the app keeps tenants apart
- * with an `organisationId` metadata filter (see `server/utils/inkoopbeleid/advisor.ts`), so a sweep
- * that searched both policies at once would measure a pipeline the app never runs - and would
- * flatter itself, because the right answer is reachable from the wrong organisation's document.
+ * A source document, or a whole directory of them. The object form exists for the organisation
+ * slug: the app keeps tenants apart with an `organisationId` metadata filter (see
+ * `server/utils/inkoopbeleid/advisor.ts`), so a sweep that searched both policies at once would
+ * measure a pipeline the app never runs - and would flatter itself, because the right answer is
+ * reachable from the wrong organisation's document.
+ *
+ * The `dir` form is the recommended one: it reads every supported file under that directory
+ * instead of naming one, so dropping a differently-named PDF in `corpus/<organisatie>/` never
+ * needs a config edit. `path` still exists for pinning a single file under a custom title.
  */
 export const corpusEntrySchema = z.union([
     z.string().min(1),
@@ -54,6 +59,10 @@ export const corpusEntrySchema = z.union([
         path: z.string().min(1),
         organisatie: z.string().min(1).default('onbekend'),
         titel: z.string().min(1).optional(),
+    }),
+    z.object({
+        dir: z.string().min(1),
+        organisatie: z.string().min(1).default('onbekend'),
     }),
 ])
 
@@ -116,6 +125,13 @@ export interface RetrievalRun {
     topScore: number
     fragments: RetrievalFragment[]
     durationMs: number
+    /**
+     * Set when the configuration's embedding model failed - a bad model, not a bad chunk size or
+     * topK - so every case sharing it fails together. Left out of recall/mrr rather than counted
+     * as a miss: a model that was never reached did not fail to find the passage, it was never
+     * asked. See `summarise` in `retrieval.ts`.
+     */
+    error: string | null
 }
 
 export interface GenerationRun {

@@ -1,15 +1,16 @@
 import { mkdir, writeFile } from 'node:fs/promises'
-import { containsAllKeywords } from './checks'
 import { loadCases, loadSweep, readCliOptions } from './cli'
 import { loadCorpus, organisationsIn } from './corpus'
 import { assertGatewayReady, loadEnv } from './env'
 import { expandRetrieval, groupByIndex } from './expand'
 import { ALL_ORGANISATIONS, buildStores, corpusFingerprint, embedQuestions, storeFor } from './index-build'
 import { runPath } from './paths'
-import { completedCells, createJsonlWriter, readJsonl } from './store'
+import { errorRun, scoreRun, summarise } from './scoring'
+import { cellKey, completedCells, createJsonlWriter, readJsonl } from './store'
 import { writeCsv } from './report/csv'
 import { writeRetrievalSummary } from './report/markdown'
-import type { RetrievalSummaryRow } from './report/markdown'
+import type { JsonlWriter } from './store'
+import type { MemoryVectorStore } from './vector-store'
 import type { EvalCase, RetrievalConfig, RetrievalRun } from './types'
 
 /**
@@ -78,15 +79,46 @@ async function main(): Promise<void> {
     // Question vectors depend only on the embedding model, never on chunk size or topK, so they
     // are computed once per model instead of once per configuration. On the example grid that is
     // 60 calls where the naive loop makes 720.
+    //
+    // A model that fails here is recorded, not thrown: one broken embedding model should not undo
+    // every group that uses a different, working one. Every configuration built on it is written
+    // below as an error row instead of being attempted, so the run's exit code and the rest of its
+    // groups are unaffected.
     const questionVectors = new Map<string, Map<string, number[]>>()
+    const brokenModels = new Map<string, string>()
     for (const model of sweep.retrieval.embeddingModel) {
-        questionVectors.set(model, await embedQuestions(sweep.name, model, cases))
-        console.log(`Vraag-embeddings klaar voor ${model}`)
+        try {
+            questionVectors.set(model, await embedQuestions(sweep.name, model, cases))
+            console.log(`Vraag-embeddings klaar voor ${model}`)
+        } catch (err) {
+            const message = err instanceof Error ? err.message : String(err)
+            brokenModels.set(model, message)
+            console.warn(`\nLET OP: embeddingmodel "${model}" faalt: ${message}`)
+            console.warn('Elke configuratie met dit model krijgt een foutregel; de rest van de run gaat door.\n')
+        }
     }
 
     for (const [key, bucket] of groups) {
         const shape = bucket[0]!
-        const stores = await buildStores(sweep.name, key, shape, documents, fingerprint, console.log)
+        const brokenReason = brokenModels.get(shape.embeddingModel)
+
+        let stores: Map<string, MemoryVectorStore>
+        if (!brokenReason) {
+            try {
+                stores = await buildStores(sweep.name, key, shape, documents, fingerprint, console.log)
+            } catch (err) {
+                const message = err instanceof Error ? err.message : String(err)
+                console.warn(`\nLET OP: index ${key} bouwen mislukt: ${message}`)
+                console.warn('Elke configuratie in deze groep krijgt een foutregel; de rest van de run gaat door.\n')
+                await writeErrorRuns(writer, done, bucket, cases, message)
+                continue
+            }
+        } else {
+            await writeErrorRuns(writer, done, bucket, cases, brokenReason)
+            console.log(`Index ${key} overgeslagen (embeddingmodel faalt).`)
+            continue
+        }
+
         const maxTopK = Math.max(...bucket.map((c) => c.topK))
         const vectors = questionVectors.get(shape.embeddingModel)!
 
@@ -98,7 +130,7 @@ async function main(): Promise<void> {
             const durationMs = Date.now() - started
 
             for (const config of bucket) {
-                if (done.has(`${config.configId}|${evalCase.id}|0`)) continue
+                if (done.has(cellKey(config.configId, evalCase.id))) continue
                 await writer.append(scoreRun(config, evalCase, hits, durationMs))
             }
         }
@@ -111,7 +143,7 @@ async function main(): Promise<void> {
 
     await writeCsv(`${outDir}/resultaten.csv`, rows, [
         'configId', 'embeddingModel', 'maxChunkSize', 'chunkOverlap', 'topK',
-        'beoordeeldeVragen', 'gevonden', 'recall@k', 'mrr', 'gemiddeldeTopScore',
+        'beoordeeldeVragen', 'gevonden', 'recall@k', 'mrr', 'gemiddeldeTopScore', 'fouten',
     ])
     // Phase 2 reads this to resolve `--retrieval`, and to pick a default when none is given.
     // Re-parsing the CSV would mean re-implementing its locale quirks in the reader.
@@ -123,84 +155,28 @@ async function main(): Promise<void> {
     console.log('  samenvatting.md  - ranglijst met uitleg, winnaar bovenaan')
     console.log('  resultaten.csv   - een regel per configuratie')
     console.log('  runs.jsonl       - de opgehaalde fragmenten per vraag')
-    if (rows[0]) {
+    if (rows[0] && rows[0].fouten === 0) {
         console.log(`\nBeste configuratie: ${rows[0].configId} (recall@k ${rows[0]['recall@k']})`)
         console.log(`Volgende stap: pnpm eval:generate -- --retrieval ${rows[0].configId}`)
+    } else if (rows[0]) {
+        console.warn('\nGeen enkele configuratie kon worden gemeten - elk embeddingmodel in de sweep faalde.')
+        console.warn('Zie de LET OP-regels hierboven en de foutkolom in samenvatting.md.')
     }
 }
 
-function scoreRun(
-    config: RetrievalConfig,
-    evalCase: EvalCase,
-    hits: ReadonlyArray<{ rank: number, score: number, chunk: { source: string, text: string } }>,
-    durationMs: number,
-): RetrievalRun {
-    const fragments = hits.slice(0, config.topK).map((h) => ({
-        rank: h.rank,
-        score: h.score,
-        source: h.chunk.source,
-        text: h.chunk.text,
-    }))
-
-    const scoreable = evalCase.verwachteTrefwoorden.length > 0
-    const firstHit = scoreable
-        ? fragments.find((f) => containsAllKeywords(f.text, evalCase.verwachteTrefwoorden))
-        : undefined
-
-    return {
-        configId: config.configId,
-        caseId: evalCase.id,
-        scoreable,
-        hit: firstHit !== undefined,
-        firstHitRank: firstHit?.rank ?? 0,
-        reciprocalRank: firstHit ? 1 / firstHit.rank : 0,
-        topScore: fragments[0]?.score ?? 0,
-        fragments,
-        durationMs,
-    }
-}
-
-function summarise(
-    configs: readonly RetrievalConfig[],
-    runs: readonly RetrievalRun[],
-): RetrievalSummaryRow[] {
-    const byConfig = new Map<string, RetrievalRun[]>()
-    for (const run of runs) {
-        const bucket = byConfig.get(run.configId) ?? []
-        bucket.push(run)
-        byConfig.set(run.configId, bucket)
-    }
-
-    const rows = configs.map((config) => {
-        const runsFor = byConfig.get(config.configId) ?? []
-        const scoreable = runsFor.filter((r) => r.scoreable)
-        const hits = scoreable.filter((r) => r.hit).length
-
-        return {
-            'configId': config.configId,
-            'embeddingModel': config.embeddingModel,
-            'maxChunkSize': config.maxChunkSize,
-            'chunkOverlap': config.chunkOverlap,
-            'topK': config.topK,
-            'beoordeeldeVragen': scoreable.length,
-            'gevonden': hits,
-            'recall@k': scoreable.length > 0 ? round(hits / scoreable.length) : 0,
-            'mrr': scoreable.length > 0 ? round(mean(scoreable.map((r) => r.reciprocalRank))) : 0,
-            'gemiddeldeTopScore': runsFor.length > 0 ? round(mean(runsFor.map((r) => r.topScore))) : 0,
+async function writeErrorRuns(
+    writer: JsonlWriter,
+    done: ReadonlySet<string>,
+    bucket: readonly RetrievalConfig[],
+    cases: readonly EvalCase[],
+    message: string,
+): Promise<void> {
+    for (const evalCase of cases) {
+        for (const config of bucket) {
+            if (done.has(cellKey(config.configId, evalCase.id))) continue
+            await writer.append(errorRun(config, evalCase, message))
         }
-    })
-
-    // Recall first, then MRR: finding the passage at all beats finding it slightly higher up.
-    rows.sort((a, b) => (b['recall@k'] - a['recall@k']) || (b.mrr - a.mrr))
-    return rows
-}
-
-function mean(values: readonly number[]): number {
-    return values.length === 0 ? 0 : values.reduce((a, b) => a + b, 0) / values.length
-}
-
-function round(value: number): number {
-    return Math.round(value * 1000) / 1000
+    }
 }
 
 main().catch((err: unknown) => {

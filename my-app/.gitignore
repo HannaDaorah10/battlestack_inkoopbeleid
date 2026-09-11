@@ -36,6 +36,7 @@ dependencycheck
 
 # AI-evaluatie (configuratie-sweep) — lokaal, niet naar GitHub
 AI-EVALUATIE-PLAN.md
+AI-EVALUATIE-SNELSTART.md
 tools/eval/corpus/*
 !tools/eval/corpus/.gitkeep
 tools/eval/runs/*

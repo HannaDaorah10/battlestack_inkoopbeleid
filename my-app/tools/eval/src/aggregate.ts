@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { loadSweep, readCliOptions } from './cli'
 import { runPath } from './paths'
 import { parseCsv, writeCsv } from './report/csv'
+import { resolveRetrieval } from './resolve-retrieval'
 
 /**
  * Turn the reviewers' verdicts back into a ranking.
@@ -40,7 +41,10 @@ async function main(): Promise<void> {
     const options = readCliOptions()
     const sweep = await loadSweep(options.config)
 
-    const outDir = runPath(sweep.name, 'generatie')
+    // Same resolution as `eval:generate`, so aggregating without --retrieval reads back the
+    // reviews for the phase-1 winner, and --retrieval <id> reads back a specific other run.
+    const retrieval = await resolveRetrieval(sweep.name, options.retrieval)
+    const outDir = runPath(sweep.name, 'generatie', retrieval.configId)
     const reviewDir = join(outDir, 'beoordelingen')
 
     const sleutel = await readSleutel(join(outDir, 'sleutel.json'))

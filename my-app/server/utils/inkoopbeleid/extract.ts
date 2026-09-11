@@ -71,10 +71,17 @@ async function extractPdf(bytes: Uint8Array): Promise<ExtractResult> {
     // every cold start, and so this module stays importable in a plain node test context.
     const { extractText } = await import('unpdf')
 
+    // unpdf/pdf.js reject a Node `Buffer` outright at runtime ("Please provide binary data as
+    // `Uint8Array`, rather than `Buffer`"), even though `Buffer` is a `Uint8Array` subclass and
+    // satisfies this function's own type signature. Re-view the same memory as a plain
+    // `Uint8Array` (no copy) so a caller that read the file with `fs.readFile` - which returns a
+    // `Buffer` - still works.
+    const view = new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+
     // `mergePages: false` keeps the per-page split, which we then join with a form feed. Page
     // boundaries survive into the chunker that way, so a retrieved excerpt can still be traced
     // back to a page when someone asks "where does it say that?".
-    const { totalPages, text } = await extractText(bytes, { mergePages: false })
+    const { totalPages, text } = await extractText(view, { mergePages: false })
     const pages = Array.isArray(text) ? text : [text]
 
     return {

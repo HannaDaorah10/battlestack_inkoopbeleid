@@ -20,6 +20,8 @@ export interface RetrievalSummaryRow {
     'recall@k': number
     'mrr': number
     'gemiddeldeTopScore': number
+    /** Vragen die niet konden worden gemeten omdat het embeddingmodel of de index faalde. */
+    'fouten': number
 }
 
 export async function writeRetrievalSummary(
@@ -28,7 +30,8 @@ export async function writeRetrievalSummary(
     rows: readonly RetrievalSummaryRow[],
     totalCases: number,
 ): Promise<void> {
-    const winner = rows[0]
+    const winner = rows.find((row) => row.fouten === 0)
+    const failed = rows.filter((row) => row.fouten > 0)
     const skipped = totalCases - (winner?.beoordeeldeVragen ?? 0)
 
     const lines = [
@@ -47,6 +50,9 @@ export async function writeRetrievalSummary(
         '  staat het juiste fragment vooraan in de context die het model krijgt.',
         '- **gemiddeldeTopScore** — hoe sterk de beste match leek volgens het embeddingmodel. Alleen',
         '  vergelijkbaar binnen hetzelfde embeddingmodel, niet ertussen.',
+        '- **fouten** — vragen die niet konden worden gemeten omdat het embeddingmodel of de index',
+        '  van deze configuratie faalde. Telt niet mee in recall@k/mrr: een model dat nooit is',
+        '  aangeroepen heeft het fragment niet gemist, het is er nooit naar gevraagd.',
         '',
     ]
 
@@ -58,18 +64,27 @@ export async function writeRetrievalSummary(
         )
     }
 
+    if (failed.length > 0) {
+        lines.push(
+            `> ${failed.length} configuratie(s) hebben fouten en staan onderaan, ongeacht hun`,
+            '> recall@k van 0: dat getal betekent hier "nooit gemeten", niet "niets gevonden". Zie',
+            '> `runs.jsonl` voor de foutmelding per model.',
+            '',
+        )
+    }
+
     lines.push(
         '## Ranglijst',
         '',
-        '| # | configId | embeddingmodel | chunk | overlap | topK | recall@k | mrr | topscore |',
-        '|---|---|---|---|---|---|---|---|---|',
+        '| # | configId | embeddingmodel | chunk | overlap | topK | recall@k | mrr | topscore | fouten |',
+        '|---|---|---|---|---|---|---|---|---|---|',
     )
 
     rows.forEach((row, index) => {
         lines.push(
             `| ${index + 1} | \`${row.configId}\` | ${row.embeddingModel} | ${row.maxChunkSize} `
             + `| ${row.chunkOverlap} | ${row.topK} | ${nl(row['recall@k'])} | ${nl(row.mrr)} `
-            + `| ${nl(row.gemiddeldeTopScore)} |`,
+            + `| ${nl(row.gemiddeldeTopScore)} | ${row.fouten} |`,
         )
     })
 
@@ -87,6 +102,14 @@ export async function writeRetrievalSummary(
             '```bash',
             `pnpm eval:generate -- --retrieval ${winner.configId}`,
             '```',
+        )
+    } else if (rows.length > 0) {
+        lines.push(
+            '',
+            '## Volgende stap',
+            '',
+            'Geen enkele configuratie kon worden gemeten - elk embeddingmodel in deze sweep faalde.',
+            'Los de fout op (zie `runs.jsonl` of de terminal-uitvoer van de run) en draai fase 1 opnieuw.',
         )
     }
 

@@ -36,6 +36,13 @@ export interface ReviewAnswer {
 
 export interface ReviewPageData {
     sweepName: string
+    /**
+     * Which phase-1 configuration produced the context these answers were generated from. Part of
+     * the page title (and, through `document.title`, of the reviewer's autosave key in
+     * localStorage) so two `beoordeling.html` files from the same sweep but different retrieval
+     * settings never collide when opened in the same browser.
+     */
+    retrievalConfigId: string
     cases: readonly ReviewCase[]
     answers: readonly ReviewAnswer[]
 }
@@ -86,7 +93,7 @@ export function renderReviewPage(data: ReviewPageData): string {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Beoordeling AI-antwoorden - ${escapeHtml(data.sweepName)}</title>
+<title>Beoordeling AI-antwoorden - ${escapeHtml(data.sweepName)} (${escapeHtml(data.retrievalConfigId)})</title>
 <style>${STYLES}</style>
 </head>
 <body>
@@ -133,13 +140,14 @@ ${sections}
 
 <footer class="intro">
     <p class="hint">
-        Gegenereerd voor sweep "${escapeHtml(data.sweepName)}". Uw oordelen staan alleen in deze
-        browser totdat u ze downloadt; er wordt niets verstuurd.
+        Gegenereerd voor sweep "${escapeHtml(data.sweepName)}" (retrieval-configuratie
+        ${escapeHtml(data.retrievalConfigId)}). Uw oordelen staan alleen in deze browser totdat u
+        ze downloadt; er wordt niets verstuurd.
     </p>
 </footer>
 
 <script>${SCRIPT}</script>
-<script id="meta" type="application/json">${jsonForScript({ sweepName: data.sweepName })}</script>
+<script id="meta" type="application/json">${jsonForScript({ sweepName: data.sweepName, retrievalConfigId: data.retrievalConfigId })}</script>
 </body>
 </html>
 `

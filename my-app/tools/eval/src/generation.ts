@@ -12,12 +12,13 @@ import { buildStores, corpusFingerprint, embedQuestions, storeFor } from './inde
 import { generateAnswer } from './gateway'
 import { evalPath, runPath } from './paths'
 import { runPool } from './pool'
+import { resolveRetrieval } from './resolve-retrieval'
 import { cellKey, completedCells, createJsonlWriter, readJsonl } from './store'
 import { blindLabel, buildReviewPage } from './report/html'
 import { writeCsv } from './report/csv'
 import { writeGenerationSummary } from './report/markdown'
 import type { GenerationSummaryRow } from './report/markdown'
-import type { EvalCase, GenerationConfig, GenerationRun, RetrievalConfig } from './types'
+import type { EvalCase, GenerationConfig, GenerationRun } from './types'
 
 /**
  * Phase 2: how do different models, temperatures and system prompts answer the same questions?
@@ -118,7 +119,11 @@ async function main(): Promise<void> {
         })
     }
 
-    const outDir = runPath(sweep.name, 'generatie')
+    // Namespaced by retrieval configuration, not shared across them: two runs of `eval:generate`
+    // against different retrieval configs must never collide on the same runs.jsonl, or the second
+    // run's resume check would see the first run's cells and (wrongly) call itself already done -
+    // it would also silently report the first run's answers as if they came from the second config.
+    const outDir = runPath(sweep.name, 'generatie', retrieval.configId)
     const runsFile = `${outDir}/runs.jsonl`
     const done = completedCells(await readJsonl<GenerationRun>(runsFile))
     if (done.size > 0) console.log(`${done.size} antwoorden stonden er al; die worden overgeslagen.`)
@@ -227,45 +232,6 @@ async function runCell(
     }
 }
 
-/**
- * Which retrieval configuration phase 2 builds its context with.
- *
- * Defaults to the phase-1 winner, but says so out loud. Silently picking one would make a report
- * unreproducible: two runs of "the same" sweep could rest on different retrieval settings without
- * anything in the output showing it.
- */
-async function resolveRetrieval(sweepName: string, wanted: string | null): Promise<RetrievalConfig> {
-    const file = runPath(sweepName, 'retrieval', 'ranglijst.json')
-    let parsed: { configs: RetrievalConfig[], rows: Array<{ configId: string }> }
-
-    try {
-        parsed = JSON.parse(await readFile(file, 'utf8'))
-    } catch {
-        throw new Error(
-            `Geen fase-1 resultaten op ${file}.\n`
-            + 'Draai eerst: pnpm eval:retrieval',
-        )
-    }
-
-    if (wanted) {
-        const found = parsed.configs.find((c) => c.configId === wanted)
-        if (!found) {
-            throw new Error(
-                `Retrieval-configuratie "${wanted}" komt niet voor in ${file}.\n`
-                + `Beschikbaar: ${parsed.configs.map((c) => c.configId).join(', ')}`,
-            )
-        }
-        return found
-    }
-
-    const best = parsed.rows[0]
-    const found = best ? parsed.configs.find((c) => c.configId === best.configId) : undefined
-    if (!found) throw new Error(`${file} bevat geen bruikbare ranglijst; draai fase 1 opnieuw.`)
-
-    console.log(`  geen --retrieval opgegeven; de winnaar van fase 1 wordt gebruikt`)
-    return found
-}
-
 async function loadPrompts(configs: readonly GenerationConfig[]): Promise<Map<string, string>> {
     const prompts = new Map<string, string>()
 
@@ -358,6 +324,7 @@ async function writeReports(
 
     await buildReviewPage(`${outDir}/beoordeling.html`, {
         sweepName,
+        retrievalConfigId,
         cases: cases.map((c) => ({
             id: c.id,
             vraag: c.vraag,

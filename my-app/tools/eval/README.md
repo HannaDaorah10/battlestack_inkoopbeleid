@@ -13,7 +13,7 @@ De harness gebruikt geen database en geen Docker. Je hebt alleen een AI-sleutel 
 ```bash
 # eenmalig
 cp tools/eval/config/sweep.example.json tools/eval/config/sweep.json
-# zet je PDF's in tools/eval/corpus/ en pas sweep.json aan
+# zet je PDF's in tools/eval/corpus/<organisatie>/ en pas sweep.json aan
 
 pnpm eval:models                          # welke modellen heeft je gateway?
 pnpm eval:retrieval -- --dry-run          # hoeveel werk wordt dit?
@@ -44,7 +44,7 @@ gokken. Zet retrieval dus eerst vast.
 
 ## Modellen op deze gateway
 
-Twee dingen die je een mislukte run besparen. Beide zijn gemeten tegen sluis.ai, niet uit een
+Drie dingen die je een mislukte run besparen. Alledrie zijn gemeten tegen sluis.ai, niet uit een
 handleiding overgenomen.
 
 **Geen `openai/...`-modellen.** Deze tenant heeft een EU-residentiebeleid. Een OpenAI-model wordt
@@ -63,12 +63,30 @@ staat (bij 1 doet hij toch niets), zodat de Claude-modellen in een standaardswee
 Zet je `topP` bewust op iets anders, dan mislukken de Claude-cellen — die verschijnen dan met hun
 foutmelding in het rapport, de rest van de run gaat door.
 
+**`pnpm eval:models` toont een model dat de gateway zelf niet kan aanroepen.**
+`vertex/text-multilingual-embedding-002` staat in de modellenlijst, maar een echte aanroep krijgt
+terug:
+
+```
+Publisher model `projects/<project>/locations/eu/publishers/google/models/text-multilingual-embedding-002`
+was not found or your project does not have access to it.
+```
+
+De gateway adverteert het model; het GCP-project achter sluis.ai heeft er kennelijk geen toegang
+toe in `locations/eu`. Dat is bij sluis.ai op te lossen, niet in deze repo. Laat het model dus uit
+je sweep totdat sluis.ai bevestigt dat de toegang klopt.
+
+Een embeddingmodel dat zo faalt, laat de rest van de sweep intact: fase 1 schrijft voor elke
+configuratie met dat model een foutregel (zichtbaar als `fouten` in `samenvatting.md` en
+`resultaten.csv`) en gaat door met de configuraties die wel werken — net als fase 2 met een
+mislukte Claude-cel doet.
+
 Embeddingmodellen geven vectoren van verschillende lengte. Gemeten:
 
 | Model | Dimensies |
 |---|---|
 | `bedrock/eu.cohere.embed-v4:0` | 1536 |
-| `vertex/text-multilingual-embedding-002` | 768 |
+| `vertex/text-multilingual-embedding-002` | 768 (in de lijst, maar zie hierboven — momenteel niet bruikbaar) |
 | `nebius/Qwen/Qwen3-Embedding-8B` | 4096 |
 
 Voor de harness maakt dat niets uit — elke configuratie krijgt zijn eigen index. Voor de **app**
@@ -83,9 +101,14 @@ indexeren.
 
 ### 1. Documenten klaarzetten
 
-Zet de beleidsdocumenten in `tools/eval/corpus/`. Die map staat in `.gitignore`, dus ze komen niet
-in GitHub terecht. PDF, DOCX, TXT, MD en CSV worden gelezen met dezelfde extractie-code als de app
-(`server/utils/inkoopbeleid/extract.ts`).
+Zet de beleidsdocumenten in `tools/eval/corpus/<organisatie>/`, één map per organisatie, bijvoorbeeld
+`tools/eval/corpus/ons-huis/` en `tools/eval/corpus/welbions/`. Die map staat in `.gitignore`, dus
+ze komen niet in GitHub terecht. PDF, DOCX, TXT, MD en CSV worden gelezen met dezelfde
+extractie-code als de app (`server/utils/inkoopbeleid/extract.ts`).
+
+De bestandsnaam zelf maakt niet uit: `sweep.json` wijst naar de map, niet naar een specifiek
+bestand, en de harness leest alles wat er ondersteund in staat. Meerdere bestanden in dezelfde map
+tellen als afzonderlijke documenten van diezelfde organisatie.
 
 Een gescande PDF zonder tekstlaag werkt niet — de harness stopt met die melding in plaats van
 overal nul te scoren. Die moet eerst door OCR.
@@ -141,6 +164,11 @@ Levert in `runs/<naam>/retrieval/`:
 Kijk of het verschil tussen nummer 1 en 2 groot genoeg is om iets te betekenen. Bij zestien vragen
 scheelt één vraag al ruim zes procent — dat is ruis, geen resultaat.
 
+Faalt een embeddingmodel (verkeerde naam, geen toegang, tenant-probleem), dan krijgen alleen de
+configuraties die dat model gebruiken een `fouten`-telling en verschijnen ze onderaan de ranglijst;
+de rest van de run gaat gewoon door. Een `fouten`-configuratie heeft altijd recall@k 0 — dat
+betekent hier "nooit gemeten", niet "niets gevonden". Zie `runs.jsonl` voor de foutmelding zelf.
+
 ### 5. Fase 2 draaien
 
 ```bash
@@ -150,7 +178,10 @@ pnpm eval:generate -- --retrieval r_ab12cd34
 
 Zonder `--retrieval` pakt hij de winnaar van fase 1 en zegt dat hij dat doet.
 
-Levert in `runs/<naam>/generatie/`:
+Levert in `runs/<naam>/generatie/<retrievalConfigId>/` — elke retrieval-configuratie krijgt zijn
+eigen submap, dus `pnpm eval:generate -- --retrieval r_A` en daarna `--retrieval r_B` op dezelfde
+sweep botsen niet: het is niet één gedeeld `runs.jsonl`, dus de tweede aanroep denkt niet dat alles
+al gedaan is en de rapporten van de een overschrijven nooit die van de ander:
 
 | Bestand | Voor wie |
 |---|---|
@@ -159,6 +190,10 @@ Levert in `runs/<naam>/generatie/`:
 | `samenvatting.md` | jij: objectieve signalen, tokens, duur per configuratie |
 | `resultaten.csv` | jij: één regel per antwoord, voor Excel |
 | `runs.jsonl` | jij: ruwe antwoorden |
+
+Wil je meerdere retrieval-configuraties naast elkaar door fase 2 halen om te zien of de winnaar van
+fase 1 ook echt de beste antwoorden geeft? Draai `eval:generate` gewoon opnieuw met een ander
+`--retrieval r_...` — dat schrijft in zijn eigen submap, niets van de vorige run raakt kwijt.
 
 ### 6. Laten beoordelen
 
@@ -182,11 +217,15 @@ De pagina print netjes: Ctrl+P geeft een PDF met één vraag per pagina.
 
 ### 7. Beoordelingen samenvoegen
 
-Zet de teruggestuurde CSV's in `runs/<naam>/generatie/beoordelingen/` en draai:
+Zet de teruggestuurde CSV's in `runs/<naam>/generatie/<retrievalConfigId>/beoordelingen/` en draai:
 
 ```bash
 pnpm eval:aggregate
+pnpm eval:aggregate -- --retrieval r_ab12cd34   # voor een andere run dan de fase-1-winnaar
 ```
+
+Zonder `--retrieval` pakt hij, net als `eval:generate`, de winnaar van fase 1 — dezelfde
+configuratie dus, tenzij je bewust een andere hebt gedraaid.
 
 Levert `ranglijst.csv` en `ranglijst.md`: per configuratie het percentage goed en fout, met de
 modelnaam er eindelijk bij. Plus een lijst met de antwoorden waarover beoordelaars het **oneens**

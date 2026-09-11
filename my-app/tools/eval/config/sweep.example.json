@@ -2,13 +2,15 @@
     // Kopieer dit bestand naar config/sweep.json en pas het aan. Regels met // zijn commentaar.
     "name": "adviseur-v1",
 
-    // Jouw documenten, in tools/eval/corpus/ (die map staat in .gitignore).
+    // Jouw documenten, in tools/eval/corpus/<organisatie>/ (die map staat in .gitignore).
+    // "dir" leest elk ondersteund bestand in die map in - de bestandsnaam zelf doet er niet toe,
+    // dus een PDF hernoemen of vervangen vraagt geen wijziging hier.
     // De "organisatie" is niet optioneel: de app houdt organisaties gescheiden bij het zoeken,
     // dus een sweep die beide beleidsstukken door elkaar doorzoekt meet iets makkelijkers dan
     // wat de app werkelijk doet.
     "corpus": [
-        { "path": "corpus/ons-huis-inkoopbeleid-2025-2028.pdf", "organisatie": "ons-huis", "titel": "Inkoopbeleid Ons Huis 2025-2028" },
-        { "path": "corpus/welbions-inkoopwijzer-2023.pdf", "organisatie": "welbions", "titel": "Inkoopwijzer Welbions 2023" }
+        { "dir": "corpus/ons-huis", "organisatie": "ons-huis" },
+        { "dir": "corpus/welbions", "organisatie": "welbions" }
     ],
 
     "questions": "cases/vragen.jsonl",
@@ -20,13 +22,20 @@
 
     // FASE 1 - alleen embeddings, geen chatmodel. Draai deze eerst.
     // Configuraties die alleen in topK verschillen delen een index, dus topK is bijna gratis.
-    // De twee modellen hieronder geven vectoren van verschillende lengte (1536 en 768). Voor de
+    // De twee modellen hieronder geven vectoren van verschillende lengte (1536 en 4096). Voor de
     // harness maakt dat niets uit; in de app moet NUXT_RAG_EMBEDDING_DIMENSIONS bij de winnaar
     // passen (nu 1536, wat overeenkomt met cohere embed-v4).
+    //
+    // vertex/text-multilingual-embedding-002 stond hier ook, en staat ook in `pnpm eval:models`,
+    // maar Google wijst hem af: "Publisher model ... was not found or your project does not have
+    // access to it" in locations/eu. De gateway adverteert het model dus wel, maar het GCP-project
+    // achter sluis.ai heeft er kennelijk (nog) geen toegang toe - dat is bij sluis.ai op te lossen,
+    // niet hier. Zet hem pas terug zodra dat is bevestigd; een falend model laat de rest van de
+    // sweep intact (zie "fouten" in samenvatting.md), maar meet natuurlijk zelf niets.
     "retrieval": {
         "embeddingModel": [
             "bedrock/eu.cohere.embed-v4:0",
-            "vertex/text-multilingual-embedding-002"
+            "nebius/Qwen/Qwen3-Embedding-8B"
         ],
         "maxChunkSize": [500, 700, 1000],
         "chunkOverlap": [100, 200],
