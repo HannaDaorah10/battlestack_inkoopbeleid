@@ -50,7 +50,11 @@
             "bedrock/eu.anthropic.claude-haiku-4-5-20251001-v1:0",
             "mistral/mistral-large-latest"
         ],
-        "temperature": [0, 0.3],
+        // Alleen 0: de eerste run (4-9-2026) liet tussen 0 en 0,3 nauwelijks verschil zien, en
+        // elke extra waarde verdubbelt het aantal antwoorden dat een collega moet beoordelen.
+        // Voor beleidsantwoorden wil je bovendien dat dezelfde vraag hetzelfde antwoord geeft.
+        // De antwoorden met 0,3 blijven in runs.jsonl staan; terugzetten kost dus niets.
+        "temperature": [0],
         // Laat topP op 1 staan tenzij je hem echt wilt onderzoeken: Anthropic weigert een verzoek
         // met temperature EN top_p tegelijk met een kale "Bad Request". Bij 1 stuurt de harness
         // hem niet mee (hij doet dan toch niets), waardoor de Claude-modellen gewoon werken.

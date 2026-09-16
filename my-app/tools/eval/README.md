@@ -139,10 +139,20 @@ moet staan. Neem daarom de grensbedragen van de juiste drempelregel, niet het an
 Vermijd losse kleine getallen als trefwoord: `"2"` komt in vrijwel elk fragment voor. Bedragen en
 procedurenamen (`"meervoudig onderhands"`, `"categoriemanagement"`) zijn veel bruikbaarder.
 
-Vragen zonder trefwoorden tellen niet mee in de score van fase 1, maar verschijnen wél in het
-beoordelingsrapport van fase 2. Gebruik dat bewust: de startset bevat twee **controlevragen** waar
+Vragen zonder trefwoorden tellen niet mee in de score van fase 1, maar kunnen wél in het
+beoordelingsrapport van fase 2 staan. Gebruik dat bewust: de startset bevat twee **controlevragen** waar
 het beleid niets over zegt. Een goed antwoord daarop is "dat staat niet in de documenten" — daarmee
 zie je welke configuratie eerlijk is en welke iets verzint.
+
+**Welke vragen gaan naar de beoordelaars?** Alleen de vragen met `"beoordelen": true`. Fase 1 gebruikt
+altijd alle vragen (dat kost niemand tijd); in fase 2 is elke vraag een antwoord extra per
+configuratie dat iemand moet lezen. De startset markeert er 8 van de 16: bij 6 configuraties is dat
+48 antwoorden, ongeveer 25 minuten werk. Gekozen is één vraag per soort (drempel diensten, drempel
+werken, hoogste drempel, mandaat, principe, integriteit, Welbions, controlevraag), met voorkeur
+voor vragen waarbij fase 1 de juiste passage vond — dan zit het verschil tussen de antwoorden in
+het model, niet in het zoeken. q05 (mandaat) is een bewuste uitzondering: daar vindt het zoeken de
+passage níet, en dat toont of een model dan zelf een tekenbevoegdheid verzint. Markeert het bestand
+geen enkele vraag, dan gaan ze allemaal mee.
 
 De meegeleverde trefwoorden komen uit `server/database/seeds/005-inkoopbeleid.ts`, dat de echte
 drempelbedragen en mandaten van Ons Huis bevat. Controleer ze wel tegen jouw PDF: staat een bedrag
@@ -206,14 +216,24 @@ verstuurt niets. Voorbeeldtekst voor de mail:
 > een AI-adviseur die we aan het uitproberen zijn. Welke instelling welk antwoord gaf staat er
 > expres niet bij — het gaat om het antwoord, niet om de naam van het model.
 >
-> Open het bestand in je browser en geef per antwoord aan of het goed, twijfelachtig of fout is.
-> Vooral de bedragen en het aantal offertes zijn belangrijk. Twijfel je, zet er dan kort bij waarom
-> — die toelichting is vaak waardevoller dan het oordeel zelf.
+> Open het bestand in je browser en geef elk antwoord een cijfer van 1 tot 10, zoals een
+> schoolcijfer. Meerdere antwoorden mogen hetzelfde cijfer krijgen. Staat er iets in dat niet
+> klopt (vooral bedragen, aantal offertes, wie tekent), vink dan "Bevat een feitelijke fout" aan.
+> Het kost ongeveer 25 minuten.
 >
 > Je hoeft het niet in één keer af te maken; je antwoorden blijven bewaard in je browser. Klik aan
 > het eind op "Download mijn beoordeling" en stuur me dat bestandje terug.
 
+Waarom een cijfer én een vinkje? Met alleen goed/twijfel/fout (de eerste versie van deze pagina)
+werd "twijfel" gebruikt voor "goed, maar minder goed dan het antwoord ernaast", waardoor je niet kon
+zien welk van meerdere goede antwoorden het beste was. Het cijfer lost dat op. Het vinkje staat er
+los naast, zodat een fout bedrag niet verdwijnt achter een verder nette 6.
+
 De pagina print netjes: Ctrl+P geeft een PDF met één vraag per pagina.
+
+Genereer je de pagina opnieuw, dan worden `beoordeling.html` en `sleutel.*` overschreven en krijgen
+de configuraties mogelijk andere letters. Heb je de vorige versie al verstuurd, bewaar die bestanden
+dan eerst in een eigen submap; de sleutel hoort bij de pagina die je beoordelaar heeft.
 
 ### 7. Beoordelingen samenvoegen
 
@@ -227,9 +247,19 @@ pnpm eval:aggregate -- --retrieval r_ab12cd34   # voor een andere run dan de fas
 Zonder `--retrieval` pakt hij, net als `eval:generate`, de winnaar van fase 1 — dezelfde
 configuratie dus, tenzij je bewust een andere hebt gedraaid.
 
-Levert `ranglijst.csv` en `ranglijst.md`: per configuratie het percentage goed en fout, met de
-modelnaam er eindelijk bij. Plus een lijst met de antwoorden waarover beoordelaars het **oneens**
-waren — vaak het interessantste deel van het rapport.
+Levert `ranglijst.csv` en `ranglijst.md`, met de modelnaam er eindelijk bij. Per configuratie:
+
+- het **gemiddelde cijfer**, en een **gecorrigeerd** gemiddelde dat rekening houdt met hoe streng
+  elke beoordelaar gemiddeld is (bij één beoordelaar zijn die gelijk);
+- het aantal **onvoldoendes** (5 of lager) en het aantal antwoorden met een **feitelijke fout**.
+
+De ranglijst sorteert eerst op het kleinste aandeel feitelijke fouten en dan op het gecorrigeerde
+cijfer: een stellig fout drempelbedrag weegt zwaarder dan een minder mooi antwoord. Daaronder een
+lijst met de antwoorden waarover beoordelaars het **oneens** waren (3 punten of meer verschil, of
+oneens over de feitelijke fout) — vaak het interessantste deel van het rapport.
+
+Een CSV van de oude goed/twijfel/fout-pagina wordt met een waarschuwing overgeslagen: die oordelen
+zijn niet om te rekenen naar cijfers zonder getallen te verzinnen.
 
 ---
 

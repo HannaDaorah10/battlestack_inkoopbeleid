@@ -4,7 +4,7 @@ import {
     formatContextBlock,
 } from '../../../server/utils/inkoopbeleid/advice-prompt'
 import { checkAnswer } from './checks'
-import { loadCases, loadSweep, readCliOptions } from './cli'
+import { loadCases, loadSweep, readCliOptions, selectForReview } from './cli'
 import { documentsFor, loadCorpus } from './corpus'
 import { assertGatewayReady, loadEnv } from './env'
 import { expandGeneration, indexKey } from './expand'
@@ -53,12 +53,19 @@ async function main(): Promise<void> {
         throw new Error(`${options.config} heeft geen "generation"-blok; voeg dat toe om fase 2 te draaien.`)
     }
 
-    const cases = await loadCases(sweep.questions, options.limit)
+    // --limit applies to the review set, not the whole file: a smoke test of phase 2 should run
+    // the first N questions a reviewer would actually see.
+    const allCases = await loadCases(sweep.questions, null)
+    const selected = selectForReview(allCases)
+    const cases = options.limit === null ? selected : selected.slice(0, options.limit)
     const configs = expandGeneration(sweep.generation)
     const samples = sweep.generation.samples
     const totalCalls = configs.length * cases.length * samples
 
     console.log(`Sweep "${sweep.name}" - fase 2 (generatie)`)
+    if (selected.length < allCases.length) {
+        console.log(`  ${selected.length} van de ${allCases.length} vragen staan op "beoordelen"; alleen die gaan naar de beoordelaars`)
+    }
     console.log(`  ${configs.length} configuraties x ${cases.length} vragen x ${samples} trekking(en) = ${totalCalls} aanroepen`)
 
     if (totalCalls > sweep.maxCalls) {
@@ -159,7 +166,13 @@ async function main(): Promise<void> {
         }
     })
 
-    const runs = await readJsonl<GenerationRun>(runsFile)
+    // runs.jsonl keeps every answer ever paid for, including those from configurations or
+    // questions since dropped from the sweep. Keeping them means re-adding a setting costs
+    // nothing; reporting them would put answers in front of reviewers that nobody asked about.
+    const configIds = new Set(configs.map((c) => c.configId))
+    const caseIds = new Set(cases.map((c) => c.id))
+    const runs = (await readJsonl<GenerationRun>(runsFile)).filter((run) =>
+        configIds.has(run.configId) && caseIds.has(run.caseId) && run.sampleIndex < samples)
     await writeReports(sweep.name, outDir, retrieval.configId, configs, cases, runs, contexts)
 
     console.log(`\nKlaar. Resultaten in ${outDir}`)

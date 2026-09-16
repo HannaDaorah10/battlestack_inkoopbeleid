@@ -114,6 +114,30 @@ describe('renderReviewPage', () => {
         expect(renderReviewPage(data)).toBe(renderReviewPage(data))
     })
 
+    it('asks for a grade from 1 to 10 on every answer, not Goed/Twijfel/Fout', { timeout: 120_000 }, () => {
+        const html = renderReviewPage(data)
+        const answered = data.answers.length
+        expect(html.match(/data-cijfer="1"/g)).toHaveLength(answered)
+        expect(html.match(/data-cijfer="10"/g)).toHaveLength(answered)
+        expect(html).not.toContain('data-oordeel')
+    })
+
+    it('offers a separate factual-error tick on every answer', { timeout: 120_000 }, () => {
+        const html = renderReviewPage(data)
+        expect(html.match(/Bevat een feitelijke fout<\/span>/g)).toHaveLength(data.answers.length)
+    })
+
+    it('downloads grades in the columns eval:aggregate reads', { timeout: 120_000 }, () => {
+        expect(renderReviewPage(data)).toContain('beoordelaar;caseId;label;trekking;cijfer;feitfout;opmerking')
+    })
+
+    it('estimates the time from the number of answers, rounded to five minutes', { timeout: 120_000 }, () => {
+        const answers = Array.from({ length: 48 }, (_, i) => ({
+            label: 'A', caseId: 'q01', sampleIndex: i, answer: 'x', error: null, flags: [],
+        }))
+        expect(renderReviewPage({ ...data, answers })).toContain('Reken op ongeveer 25 minuten')
+    })
+
     it('translates a flag into something a non-technical reader can act on', { timeout: 120_000 }, () => {
         expect(renderReviewPage(data)).toContain('Noemt een bedrag dat niet in het beleidsdocument staat')
     })

@@ -16,6 +16,12 @@ import { FLAG_LABELS } from '../checks'
  * - The order of the answers is shuffled per question, with a seed derived from the question id.
  *   Readers favour whatever sits at the top, and a fixed order would hand that bonus to the same
  *   configuration on every question. Seeding it keeps the page reproducible.
+ *
+ * Each answer gets a school grade from 1 to 10 and, separately, a "contains a factual error" tick.
+ * An earlier version asked for Goed/Twijfel/Fout, and reviewers ended up using "Twijfel" for
+ * "correct, but weaker than the one next to it" - which made the best of several good answers
+ * impossible to find. The grade carries that distinction; the tick keeps a wrong amount from
+ * hiding behind an otherwise decent grade.
  */
 
 export interface ReviewCase {
@@ -87,6 +93,9 @@ export function renderReviewPage(data: ReviewPageData): string {
 
     const questionCount = data.cases.length
     const perQuestion = data.cases.length > 0 ? Math.round(data.answers.length / data.cases.length) : 0
+    // About half a minute per answer, rounded up to five: a precise-looking "23 minuten" promises
+    // an accuracy this guess does not have.
+    const minutes = Math.max(5, Math.ceil((data.answers.length * 0.5) / 5) * 5)
 
     return `<!doctype html>
 <html lang="nl">
@@ -98,29 +107,40 @@ export function renderReviewPage(data: ReviewPageData): string {
 </head>
 <body>
 <header class="intro">
-    <h1>Welk antwoord is goed?</h1>
+    <h1>Hoe goed is elk antwoord?</h1>
     <p class="lead">
         Hieronder staan ${questionCount} vragen over het inkoopbeleid. Per vraag ziet u ongeveer
         ${perQuestion} antwoorden, gegeven door verschillende instellingen van de AI-adviseur.
         Welke instelling welk antwoord gaf, staat er expres niet bij: het gaat om het antwoord,
-        niet om de naam van het model.
+        niet om de naam van het model. Reken op ongeveer ${minutes} minuten.
     </p>
+    <h2>Geef elk antwoord een cijfer van 1 tot 10</h2>
+    <p>
+        Zoals een schoolcijfer: een 6 is voldoende. Meerdere antwoorden mogen hetzelfde cijfer
+        krijgen. Zijn ze allemaal goed, dan krijgt het beste gewoon het hoogste cijfer.
+    </p>
+    <table class="schaaluitleg">
+        <tr><th>9-10</th><td>Klopt, is volledig, noemt de bron. Zo door te sturen naar een collega.</td></tr>
+        <tr><th>7-8</th><td>Klopt, maar kan vollediger, korter of duidelijker.</td></tr>
+        <tr><th>6</th><td>Klopt in de kern, maar mist iets belangrijks of is rommelig.</td></tr>
+        <tr><th>4-5</th><td>Onvolledig of misleidend: u zou het zo niet willen gebruiken.</td></tr>
+        <tr><th>1-3</th><td>Fout of onbruikbaar.</td></tr>
+    </table>
     <h2>Waar let u op?</h2>
     <ol>
         <li><strong>Klopt het?</strong> Vooral bedragen, aantallen offertes en wie moet tekenen.
-            Als u twijfelt, kijk in het beleidsdocument zelf - een antwoord dat overtuigend klinkt
-            maar niet klopt, is het gevaarlijkst.</li>
+            Staat er iets in dat niet klopt, vink dan <strong>Bevat een feitelijke fout</strong>
+            aan, ook als de rest van het antwoord goed is. Zo'n antwoord verdient meestal niet
+            meer dan een 5.</li>
         <li><strong>Staat de bron erbij?</strong> Een antwoord hoort te verwijzen naar het document
             waar het vandaan komt.</li>
         <li><strong>Is het te lezen?</strong> Zou u dit zo naar een collega sturen?</li>
-        <li><strong>Wordt er eerlijk "ik weet het niet" gezegd</strong> als het beleid er niets
-            over zegt? Dat is een goed antwoord, geen slecht.</li>
+        <li><strong>Wordt er eerlijk "dat staat niet in het beleid" gezegd</strong> als het beleid er
+            niets over zegt? Dan is dat een goed antwoord, geen slecht.</li>
     </ol>
     <p>
-        Kies per antwoord <strong>Goed</strong>, <strong>Twijfel</strong> of <strong>Fout</strong>.
-        Twijfelt u, licht het dan kort toe - die toelichting is vaak waardevoller dan het oordeel.
+        Een toelichting is niet verplicht, maar bij een laag cijfer erg nuttig: waarom is het niet goed?
         U hoeft niet in een keer klaar te zijn: uw antwoorden blijven in deze browser bewaard.
-        Reken op ongeveer ${Math.max(5, Math.round(questionCount * perQuestion * 0.5))} minuten.
     </p>
     <div class="who no-print">
         <label for="beoordelaar">Uw naam</label>
@@ -176,6 +196,8 @@ ${cards}
 </section>`
 }
 
+const GRADES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const
+
 function renderAnswer(caseId: string, answer: ReviewAnswer): string {
     const key = `${caseId}|${answer.label}|${answer.sampleIndex}`
 
@@ -193,11 +215,17 @@ function renderAnswer(caseId: string, answer: ReviewAnswer): string {
             <h3>Configuratie ${escapeHtml(answer.label)}</h3>
             ${body}
             ${flags}
-            <div class="oordeel no-print" role="group" aria-label="Oordeel over configuratie ${escapeHtml(answer.label)}">
-                <button type="button" data-oordeel="goed">Goed</button>
-                <button type="button" data-oordeel="twijfel">Twijfel</button>
-                <button type="button" data-oordeel="fout">Fout</button>
+            <div class="cijfer no-print">
+                <span class="cijfer-kop">Cijfer</span>
+                <div class="cijfers" role="group" aria-label="Cijfer voor configuratie ${escapeHtml(answer.label)}">
+${GRADES.map((n) => `                    <button type="button" data-cijfer="${n}" aria-pressed="false">${n}</button>`).join('\n')}
+                </div>
+                <div class="schaal" aria-hidden="true"><span>fout</span><span>voldoende</span><span>uitstekend</span></div>
             </div>
+            <label class="feitfout no-print">
+                <input type="checkbox">
+                <span>Bevat een feitelijke fout</span>
+            </label>
             <label class="opmerking no-print">
                 <span>Toelichting (optioneel)</span>
                 <textarea rows="2" placeholder="Wat klopt er niet, of wat is juist goed?"></textarea>
@@ -328,17 +356,25 @@ button.secondary { color: var(--muted); }
     display: flex;
     flex-direction: column;
 }
-.antwoord[data-gekozen="goed"] { border-color: var(--goed); box-shadow: inset 3px 0 0 var(--goed); }
-.antwoord[data-gekozen="twijfel"] { border-color: var(--twijfel); box-shadow: inset 3px 0 0 var(--twijfel); }
-.antwoord[data-gekozen="fout"] { border-color: var(--fout); box-shadow: inset 3px 0 0 var(--fout); }
+.antwoord[data-band="goed"] { border-color: var(--goed); box-shadow: inset 3px 0 0 var(--goed); }
+.antwoord[data-band="voldoende"] { border-color: var(--twijfel); box-shadow: inset 3px 0 0 var(--twijfel); }
+.antwoord[data-band="onvoldoende"],
+.antwoord[data-feitfout="ja"] { border-color: var(--fout); box-shadow: inset 3px 0 0 var(--fout); }
+.schaaluitleg { border-collapse: collapse; margin: .4rem 0 .8rem; font-size: .95rem; }
+.schaaluitleg th { text-align: left; white-space: nowrap; padding: .2rem 1rem .2rem 0; vertical-align: top; }
+.schaaluitleg td { padding: .2rem 0; }
 .tekst { flex: 1; }
 .tekst p { margin: 0 0 .7rem; }
 .fout { color: var(--fout); }
 .vlaggen { margin: .4rem 0 .8rem; padding-left: 1.1rem; color: var(--fout); font-size: .88rem; }
-.oordeel { display: flex; gap: .4rem; margin-top: .6rem; }
-.oordeel button[aria-pressed="true"][data-oordeel="goed"] { background: var(--goed); color: var(--paper); border-color: var(--goed); }
-.oordeel button[aria-pressed="true"][data-oordeel="twijfel"] { background: var(--twijfel); color: var(--paper); border-color: var(--twijfel); }
-.oordeel button[aria-pressed="true"][data-oordeel="fout"] { background: var(--fout); color: var(--paper); border-color: var(--fout); }
+.cijfer { margin-top: .6rem; }
+.cijfer-kop { display: block; font-size: .85rem; color: var(--muted); margin-bottom: .2rem; }
+.cijfers { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: .2rem; }
+.cijfers button { padding: .4rem 0; min-width: 0; text-align: center; font-variant-numeric: tabular-nums; }
+.cijfers button[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.schaal { display: flex; justify-content: space-between; font-size: .75rem; color: var(--muted); margin-top: .15rem; }
+.feitfout { display: flex; gap: .4rem; align-items: center; margin-top: .6rem; font-size: .92rem; cursor: pointer; }
+.feitfout input { width: 1.05rem; height: 1.05rem; accent-color: var(--fout); }
 .opmerking { display: block; margin-top: .6rem; }
 .opmerking span { display: block; font-size: .85rem; color: var(--muted); margin-bottom: .2rem; }
 .opmerking textarea { width: 100%; font: inherit; padding: .5rem; border: 1px solid var(--line); border-radius: 6px; resize: vertical; }
@@ -354,7 +390,9 @@ button.secondary { color: var(--muted); }
 
 const SCRIPT = `
 (function () {
-    var sleutel = 'inkoopbeleid-beoordeling-' + document.title;
+    // A different prefix from the Goed/Twijfel/Fout version of this page, so verdicts saved there
+    // under the same title are not read back as if they were grades.
+    var sleutel = 'inkoopbeleid-cijfers-' + document.title;
     var opgeslagen = {};
 
     try { opgeslagen = JSON.parse(localStorage.getItem(sleutel) || '{}'); } catch (e) { opgeslagen = {}; }
@@ -380,27 +418,48 @@ const SCRIPT = `
     kaarten.forEach(function (kaart) {
         var key = kaart.getAttribute('data-key');
         var staat = opgeslagen[key] || {};
-        var knoppen = Array.prototype.slice.call(kaart.querySelectorAll('[data-oordeel]'));
+        var knoppen = Array.prototype.slice.call(kaart.querySelectorAll('[data-cijfer]'));
+        var vinkje = kaart.querySelector('.feitfout input');
         var opmerking = kaart.querySelector('textarea');
+
+        function band(cijfer) {
+            if (!cijfer) return null;
+            if (cijfer <= 5) return 'onvoldoende';
+            if (cijfer <= 7) return 'voldoende';
+            return 'goed';
+        }
 
         function toon() {
             knoppen.forEach(function (knop) {
-                knop.setAttribute('aria-pressed', String(knop.getAttribute('data-oordeel') === staat.oordeel));
+                knop.setAttribute('aria-pressed', String(Number(knop.getAttribute('data-cijfer')) === staat.cijfer));
             });
-            if (staat.oordeel) kaart.setAttribute('data-gekozen', staat.oordeel);
-            else kaart.removeAttribute('data-gekozen');
+            var b = band(staat.cijfer);
+            if (b) kaart.setAttribute('data-band', b);
+            else kaart.removeAttribute('data-band');
+            if (staat.feitfout) kaart.setAttribute('data-feitfout', 'ja');
+            else kaart.removeAttribute('data-feitfout');
+            if (vinkje) vinkje.checked = !!staat.feitfout;
         }
 
         knoppen.forEach(function (knop) {
             knop.addEventListener('click', function () {
-                var waarde = knop.getAttribute('data-oordeel');
-                // Clicking the active choice clears it, so a misclick does not force a verdict.
-                staat.oordeel = staat.oordeel === waarde ? null : waarde;
+                var waarde = Number(knop.getAttribute('data-cijfer'));
+                // Clicking the active grade clears it, so a misclick does not force a verdict.
+                staat.cijfer = staat.cijfer === waarde ? null : waarde;
                 opgeslagen[key] = staat;
                 toon();
                 bewaar();
             });
         });
+
+        if (vinkje) {
+            vinkje.addEventListener('change', function () {
+                staat.feitfout = vinkje.checked;
+                opgeslagen[key] = staat;
+                toon();
+                bewaar();
+            });
+        }
 
         if (opmerking) {
             opmerking.value = staat.opmerking || '';
@@ -417,7 +476,7 @@ const SCRIPT = `
     function voortgang() {
         var gedaan = kaarten.filter(function (kaart) {
             var staat = opgeslagen[kaart.getAttribute('data-key')];
-            return staat && staat.oordeel;
+            return staat && (staat.cijfer || staat.feitfout);
         }).length;
         var el = document.getElementById('voortgang');
         if (el) el.textContent = gedaan + ' van ' + kaarten.length + ' beoordeeld';
@@ -425,13 +484,13 @@ const SCRIPT = `
 
     function csv() {
         var naam = (naamVeld && naamVeld.value) || 'onbekend';
-        var regels = ['beoordelaar;caseId;label;trekking;oordeel;opmerking'];
+        var regels = ['beoordelaar;caseId;label;trekking;cijfer;feitfout;opmerking'];
         kaarten.forEach(function (kaart) {
             var key = kaart.getAttribute('data-key');
             var staat = opgeslagen[key] || {};
-            if (!staat.oordeel && !staat.opmerking) return;
+            if (!staat.cijfer && !staat.feitfout && !staat.opmerking) return;
             var delen = key.split('|');
-            regels.push([naam, delen[0], delen[1], delen[2], staat.oordeel || '', staat.opmerking || '']
+            regels.push([naam, delen[0], delen[1], delen[2], staat.cijfer || '', staat.feitfout ? 'ja' : 'nee', staat.opmerking || '']
                 .map(function (veld) {
                     var tekst = String(veld);
                     return /[";\\r\\n]/.test(tekst) ? '"' + tekst.replace(/"/g, '""') + '"' : tekst;

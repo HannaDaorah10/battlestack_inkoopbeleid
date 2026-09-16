@@ -97,6 +97,18 @@ export async function loadCases(file: string, limit: number | null): Promise<Eva
     return limit === null ? cases : cases.slice(0, limit)
 }
 
+/**
+ * The questions phase 2 answers and puts in the review page: those marked `"beoordelen": true`.
+ *
+ * Every question costs a reviewer one answer per configuration, so the review set is kept small
+ * on purpose while phase 1, which costs nobody's time, keeps the full list. A question file that
+ * marks nothing predates the flag and gets reviewed in full, as before.
+ */
+export function selectForReview(cases: readonly EvalCase[]): EvalCase[] {
+    const marked = cases.filter((c) => c.beoordelen)
+    return marked.length > 0 ? marked : [...cases]
+}
+
 function formatIssues(issues: ReadonlyArray<{ path: PropertyKey[], message: string }>): string {
     return issues.map((i) => `  - ${i.path.join('.') || '(root)'}: ${i.message}`).join('\n')
 }

@@ -17,6 +17,12 @@ export const caseSchema = z.object({
      */
     verwachteTrefwoorden: z.array(z.string()).default([]),
     tags: z.array(z.string()).default([]),
+    /**
+     * Whether phase 2 puts this question in front of reviewers. Phase 1 is automatic and uses every
+     * question; people do not have that time, so the review set is a deliberate subset. When no
+     * question sets this, phase 2 falls back to all of them - see `selectForReview`.
+     */
+    beoordelen: z.boolean().default(false),
 })
 
 export type EvalCase = z.infer<typeof caseSchema>

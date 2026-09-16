@@ -44,13 +44,18 @@
 
     // FASE 2 - hier zit het geld. Elke combinatie x elke vraag is een aanroep.
     // Draai altijd eerst met --dry-run om te zien hoeveel dat er zijn.
+    // Elke configuratie is ook een antwoord extra per vraag voor je beoordelaars: 6 configuraties
+    // x 8 vragen (zie "beoordelen" in cases/vragen.jsonl) is ongeveer 25 minuten werk. Voeg
+    // alleen waarden toe waarvan je echt verwacht dat ze verschil maken.
     "generation": {
         "model": [
             "bedrock/eu.anthropic.claude-sonnet-4-5-20250929-v1:0",
             "bedrock/eu.anthropic.claude-haiku-4-5-20251001-v1:0",
             "mistral/mistral-large-latest"
         ],
-        "temperature": [0, 0.3],
+        // 0 geeft op dezelfde vraag steeds hetzelfde antwoord - wat je bij beleid wilt. 0 en 0,3
+        // naast elkaar gaf in de praktijk nauwelijks verschil, voor twee keer zoveel leeswerk.
+        "temperature": [0],
         // Laat topP op 1 staan tenzij je hem echt wilt onderzoeken: Anthropic weigert een verzoek
         // met temperature EN top_p tegelijk met een kale "Bad Request". Bij 1 stuurt de harness
         // hem niet mee (hij doet dan toch niets), waardoor de Claude-modellen gewoon werken.
