@@ -74,7 +74,10 @@ export default defineNuxtConfig({
             maxChunkSize: 700,
             chunkOverlap: 100,
             topK: 5,
-            embeddingModel: 'openai/text-embedding-3-small',
+            // See the matching comment in server/mastra/utils/env-defaults.ts: this tenant's
+            // residency policy rejects openai/* models outright, so that can't be the fallback here
+            // either. bedrock/eu.cohere.embed-v4:0 returns 1536 dimensions, matching the value above.
+            embeddingModel: 'bedrock/eu.cohere.embed-v4:0',
         },
     },
 

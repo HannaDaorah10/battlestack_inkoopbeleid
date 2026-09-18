@@ -42,12 +42,16 @@ function readConfig(): RagConfig {
         }
     }
     const rag = config.rag ?? {}
+    // These `??` fallbacks only matter if `runtimeConfig.rag` itself were ever undefined, which it
+    // never is: nuxt.config.ts always declares the full shape. Kept in sync with those values
+    // anyway (700/100/5/1536, bedrock/eu.cohere.embed-v4:0) so the two defaults can't silently
+    // disagree with each other.
     return {
-        maxChunkSize: Number(rag.maxChunkSize ?? 512),
-        chunkOverlap: Number(rag.chunkOverlap ?? 50),
+        maxChunkSize: Number(rag.maxChunkSize ?? 700),
+        chunkOverlap: Number(rag.chunkOverlap ?? 100),
         topK: Number(rag.topK ?? 5),
         embeddingDimensions: Number(rag.embeddingDimensions ?? 1536),
-        embeddingModel: String(rag.embeddingModel ?? 'openai/text-embedding-3-small'),
+        embeddingModel: String(rag.embeddingModel ?? 'bedrock/eu.cohere.embed-v4:0'),
         databaseUrl: String(config.databaseUrl ?? ''),
     }
 }
@@ -115,7 +119,7 @@ async function initIndex(cfg: RagConfig): Promise<void> {
                 + `Set the env var to ${dimension}, or drop the index `
                 + `(DROP TABLE ${INDEX_NAME};) and restart to rebuild it at ${cfg.embeddingDimensions}. `
                 + 'The dimension must equal what the active embedding model returns '
-                + '(openai/text-embedding-3-small returns 1536).'
+                + '(bedrock/eu.cohere.embed-v4:0 returns 1536).'
         console.error(`[rag] ${message}`)
         throw createError({ statusCode: 500, statusMessage: message })
     }
