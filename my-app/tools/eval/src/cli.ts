@@ -13,6 +13,8 @@ export interface CliOptions {
     limit: number | null
     /** Phase 2 only: which retrieval configuration to build context with. */
     retrieval: string | null
+    /** Phase 2 only: how many configurations (ranked by checks.ts flags) reach beoordeling.html. */
+    top: number
 }
 
 export function readCliOptions(argv = process.argv.slice(2)): CliOptions {
@@ -28,6 +30,7 @@ export function readCliOptions(argv = process.argv.slice(2)): CliOptions {
             'dry-run': { type: 'boolean', default: false },
             'limit': { type: 'string' },
             'retrieval': { type: 'string' },
+            'top': { type: 'string', default: '3' },
         },
         allowPositionals: false,
     })
@@ -37,11 +40,17 @@ export function readCliOptions(argv = process.argv.slice(2)): CliOptions {
         throw new Error(`--limit moet een positief geheel getal zijn, kreeg "${values.limit}".`)
     }
 
+    const top = Number(values.top)
+    if (!Number.isInteger(top) || top < 1) {
+        throw new Error(`--top moet een positief geheel getal zijn, kreeg "${values.top}".`)
+    }
+
     return {
         config: values.config ?? 'config/sweep.json',
         dryRun: values['dry-run'] ?? false,
         limit,
         retrieval: values.retrieval ?? null,
+        top,
     }
 }
 

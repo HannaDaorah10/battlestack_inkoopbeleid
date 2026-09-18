@@ -13,6 +13,7 @@ import { generateAnswer } from './gateway'
 import { evalPath, runPath } from './paths'
 import { runPool } from './pool'
 import { resolveRetrieval } from './resolve-retrieval'
+import { selectConfigsForReview } from './review-filter'
 import { cellKey, completedCells, createJsonlWriter, readJsonl } from './store'
 import { blindLabel, buildReviewPage } from './report/html'
 import { writeCsv } from './report/csv'
@@ -173,7 +174,16 @@ async function main(): Promise<void> {
     const caseIds = new Set(cases.map((c) => c.id))
     const runs = (await readJsonl<GenerationRun>(runsFile)).filter((run) =>
         configIds.has(run.configId) && caseIds.has(run.caseId) && run.sampleIndex < samples)
-    await writeReports(sweep.name, outDir, retrieval.configId, configs, cases, runs, contexts)
+
+    // Every configuration still gets generated above - checks.ts needs an actual answer to flag -
+    // this only narrows which ones reach beoordeling.html, ranked by fewest failed cells then
+    // fewest flags (see review-filter.ts).
+    const reviewConfigIds = new Set(selectConfigsForReview(configs.map((c) => c.configId), runs, options.top))
+    if (reviewConfigIds.size < configs.length) {
+        console.log(`  ${reviewConfigIds.size} van de ${configs.length} configuraties gaan naar beoordeling.html (--top ${options.top})`)
+    }
+
+    await writeReports(sweep.name, outDir, retrieval.configId, configs, cases, runs, contexts, reviewConfigIds)
 
     console.log(`\nKlaar. Resultaten in ${outDir}`)
     console.log('  beoordeling.html - stuur dit naar je collega\'s')
@@ -267,6 +277,7 @@ async function writeReports(
     cases: readonly EvalCase[],
     runs: readonly GenerationRun[],
     contexts: ReadonlyMap<string, CaseContext>,
+    reviewConfigIds: ReadonlySet<string>,
 ): Promise<void> {
     const labels = new Map(configs.map((c, i) => [c.configId, blindLabel(i)]))
 
@@ -332,6 +343,7 @@ async function writeReports(
             invoerTokens: own.reduce((a, r) => a + (r.promptTokens ?? 0), 0),
             uitvoerTokens: own.reduce((a, r) => a + (r.completionTokens ?? 0), 0),
             vlaggen,
+            beoordeeld: reviewConfigIds.has(config.configId),
         }
     })
 
@@ -347,7 +359,8 @@ async function writeReports(
             fragmenten: contexts.get(c.id)?.sources ?? [],
             rubriek: c.rubriek,
         })),
-        answers: runs.map((run) => ({
+        // Only the configurations that made the --top cut: see the call site's comment.
+        answers: runs.filter((run) => reviewConfigIds.has(run.configId)).map((run) => ({
             label: labels.get(run.configId) ?? '?',
             caseId: run.caseId,
             sampleIndex: run.sampleIndex,

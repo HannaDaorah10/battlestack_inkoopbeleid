@@ -188,6 +188,17 @@ pnpm eval:generate -- --retrieval r_ab12cd34
 
 Zonder `--retrieval` pakt hij de winnaar van fase 1 en zegt dat hij dat doet.
 
+**Niet elke configuratie gaat naar `beoordeling.html`.** Elke configuratie wordt wel aangeroepen —
+je kunt een configuratie pas op haar antwoorden beoordelen als die antwoorden bestaan — maar alleen
+de `--top` configuraties met de minste fouten en de minste vlaggen uit `checks.ts` (zie
+"Objectieve signalen" hierboven) komen in de pagina voor je collega's terecht. De rest blijft
+gewoon zichtbaar in `samenvatting.md` (kolom "beoordeeld") en in `resultaten.csv`/`runs.jsonl`.
+Standaard `--top 3`; zet hem hoger om meer configuraties te laten beoordelen:
+
+```bash
+pnpm eval:generate -- --retrieval r_ab12cd34 --top 5
+```
+
 Levert in `runs/<naam>/generatie/<retrievalConfigId>/` — elke retrieval-configuratie krijgt zijn
 eigen submap, dus `pnpm eval:generate -- --retrieval r_A` en daarna `--retrieval r_B` op dezelfde
 sweep botsen niet: het is niet één gedeeld `runs.jsonl`, dus de tweede aanroep denkt niet dat alles
@@ -267,6 +278,8 @@ zijn niet om te rekenen naar cijfers zonder getallen te verzinnen.
 
 - `--dry-run` vouwt het raster uit en telt de aanroepen zonder er één te doen. Doe dit altijd eerst.
 - `--limit 3` gebruikt alleen de eerste drie vragen, voor een rooktest.
+- `--top` (fase 2, standaard 3) bepaalt hoeveel configuraties naar `beoordeling.html` gaan, niet
+  hoeveel er worden aangeroepen — dat blijven er evenveel als het raster in `sweep.json` telt.
 - `maxCalls` in `sweep.json` is een harde bovengrens; de run stopt daar en meldt dat.
 - **Hervatten werkt.** Resultaten worden per antwoord weggeschreven. Breek je af met Ctrl+C en start
   je opnieuw, dan worden gedane cellen overgeslagen — je betaalt ze niet twee keer.

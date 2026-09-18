@@ -131,6 +131,8 @@ export interface GenerationSummaryRow {
     invoerTokens: number
     uitvoerTokens: number
     vlaggen: Record<string, number>
+    /** Whether this configuration made the `--top` cut into beoordeling.html. */
+    beoordeeld: boolean
 }
 
 export async function writeGenerationSummary(
@@ -141,6 +143,7 @@ export async function writeGenerationSummary(
     caseCount: number,
 ): Promise<void> {
     const flagKeys = Object.keys(FLAG_LABELS)
+    const beoordeeldCount = rows.filter((r) => r.beoordeeld).length
 
     const lines = [
         `# Generatie-sweep "${sweepName}"`,
@@ -151,19 +154,25 @@ export async function writeGenerationSummary(
         'Dit bestand bevat **geen oordeel over kwaliteit**. Dat staat in `beoordeling.html`, en dat',
         'oordeel vel jij. Wat hier staat, zijn de dingen die een computer objectief kan vaststellen.',
         '',
+        `Van de ${rows.length} configuraties gaan er ${beoordeeldCount} naar \`beoordeling.html\` -`,
+        'de configuraties met de minste fouten en vlaggen hieronder (zie kolom "beoordeeld"). Zet',
+        '`--top` hoger om er meer door te laten; de rest staat wel hieronder en in',
+        '`resultaten.csv`/`runs.jsonl`, alleen niet in de pagina voor je collega\'s.',
+        '',
         '## Objectieve signalen',
         '',
         ...flagKeys.map((key) => `- **${key}** — ${FLAG_LABELS[key]}`),
         '',
-        '| label | configId | model | temp | topP | prompt | antw. | fouten | gem. lengte | gem. duur |',
-        '|---|---|---|---|---|---|---|---|---|---|',
+        '| label | configId | model | temp | topP | prompt | antw. | fouten | gem. lengte | gem. duur | beoordeeld |',
+        '|---|---|---|---|---|---|---|---|---|---|---|',
     ]
 
     for (const row of rows) {
         lines.push(
             `| ${row.label} | \`${row.configId}\` | ${row.model} | ${nl(row.temperature)} `
             + `| ${nl(row.topP)} | ${row.systemPrompt} | ${row.antwoorden} | ${row.fouten} `
-            + `| ${Math.round(row.gemiddeldeLengte)} | ${formatDuration(row.gemiddeldeDuurMs)} |`,
+            + `| ${Math.round(row.gemiddeldeLengte)} | ${formatDuration(row.gemiddeldeDuurMs)} `
+            + `| ${row.beoordeeld ? 'ja' : 'nee'} |`,
         )
     }
 
