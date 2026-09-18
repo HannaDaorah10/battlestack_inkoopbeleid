@@ -23,18 +23,29 @@ export default defineNitroPlugin(async () => {
         console.warn('[db-migrate-on-boot] no runtimeConfig.databaseUrl, skipping')
         return
     }
-    const migrationsFolder = pickMigrationsFolder()
-    if (!migrationsFolder) {
-        // No journal is the normal state for a `db:push`-managed project, so skip quietly.
-        // drizzle-orm's migrator would otherwise throw "Can't find meta/_journal.json".
-        return
-    }
 
     const client = postgres(connectionString, { max: 1 })
-    const db = drizzle(client)
     try {
         // The lock spans this one connection, so other pods block here until release; a no-op migrate returns in well under a second.
         await client`SELECT pg_advisory_lock(${MIGRATE_ADVISORY_LOCK_KEY})`
+
+        // Required before any `vector(N)` column can exist. `rag_vectors` is created lazily by
+        // `@mastra/pg`'s `PgVector.createIndex()` on first ingest/query, outside the drizzle schema
+        // entirely, so no drizzle migration ever runs this - it was previously only applied by the
+        // scaffold CLI's local `db:push` wrapper (`server/database/extensions/01_pgvector.sql`),
+        // which a deployed container never invokes. Run unconditionally, ahead of the
+        // migrationsFolder check below, so both a `db:push`-managed dev database and a
+        // migrations-managed production one get it without a manual step.
+        await client`CREATE EXTENSION IF NOT EXISTS vector`
+
+        const migrationsFolder = pickMigrationsFolder()
+        if (!migrationsFolder) {
+            // No journal is the normal state for a `db:push`-managed project, so skip quietly.
+            // drizzle-orm's migrator would otherwise throw "Can't find meta/_journal.json".
+            return
+        }
+
+        const db = drizzle(client)
         await baselineIfPushManaged(client, migrationsFolder)
         const t0 = Date.now()
         await runMigrate(db, { migrationsFolder })
