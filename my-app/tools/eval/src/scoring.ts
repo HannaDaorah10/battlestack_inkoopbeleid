@@ -74,7 +74,11 @@ export function summarise(
         // Runs with an error never reached the index - their embedding model or store failed -
         // so they are excluded here rather than counted as misses, the same distinction phase 2
         // draws between an answer and a cell that errored before producing one.
-        const ok = runsFor.filter((r) => r.error === null)
+        // `?? null` matters for runs.jsonl rows written before this module existed: those predate
+        // the `error` field entirely, so it reads back as `undefined`, not `null`. Without the
+        // fallback, `undefined === null` is false and a fully successful old-format run silently
+        // gets counted as an error instead of a hit.
+        const ok = runsFor.filter((r) => (r.error ?? null) === null)
         const scoreable = ok.filter((r) => r.scoreable)
         const hits = scoreable.filter((r) => r.hit).length
 

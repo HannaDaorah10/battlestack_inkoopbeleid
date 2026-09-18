@@ -309,7 +309,9 @@ async function writeReports(
 
     const summary: GenerationSummaryRow[] = configs.map((config) => {
         const own = runs.filter((r) => r.configId === config.configId)
-        const ok = own.filter((r) => r.error === null)
+        // `?? null`: see the matching comment in scoring.ts. Same resumable-JSONL shape, same risk
+        // if this field's meaning ever changes under an existing runs.jsonl.
+        const ok = own.filter((r) => (r.error ?? null) === null)
         const vlaggen: Record<string, number> = {}
         for (const run of own) {
             for (const flag of run.flags) vlaggen[flag] = (vlaggen[flag] ?? 0) + 1

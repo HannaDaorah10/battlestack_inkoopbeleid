@@ -72,6 +72,17 @@ describe('summarise', () => {
         expect(row).toMatchObject({ 'beoordeeldeVragen': 1, 'gevonden': 1, 'recall@k': 1, 'fouten': 1 })
     })
 
+    it('treats a run written before the error field existed as a hit, not an error', { timeout: 120_000 }, () => {
+        // Rows written by a pre-refactor version of this harness have no `error` key at all
+        // (JSON.parse gives `undefined`, not `null`), and resume-by-cellKey means such rows can
+        // sit in runs.jsonl forever without ever being rewritten in the current shape.
+        const legacyRow = okRun()
+        delete (legacyRow as { error?: string | null }).error
+
+        const [row] = summarise([config()], [legacyRow])
+        expect(row).toMatchObject({ 'beoordeeldeVragen': 1, 'gevonden': 1, 'recall@k': 1, 'fouten': 0 })
+    })
+
     it('ranks a config that was actually measured at zero above one that never ran', { timeout: 120_000 }, () => {
         const measuredZero = config({ configId: 'r_measured' })
         const neverRan = config({ configId: 'r_broken' })
