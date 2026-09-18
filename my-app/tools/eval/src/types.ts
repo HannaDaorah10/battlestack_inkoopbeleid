@@ -23,6 +23,12 @@ export const caseSchema = z.object({
      * question sets this, phase 2 falls back to all of them - see `selectForReview`.
      */
     beoordelen: z.boolean().default(false),
+    /**
+     * One sentence for reviewers: what a complete answer must contain (which amount, which
+     * condition, which source). Only meaningful alongside `beoordelen: true` - phase 1 never shows
+     * it to anyone, so a question nobody reviews has no reason to carry one.
+     */
+    rubriek: z.string().optional(),
 })
 
 export type EvalCase = z.infer<typeof caseSchema>
