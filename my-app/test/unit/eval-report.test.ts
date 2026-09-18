@@ -163,6 +163,25 @@ describe('renderReviewPage', () => {
         expect(html).not.toContain('<img src=x')
         expect(html).toContain('&lt;img src=x')
     })
+
+    it('shows the rubriek next to a question that has one', { timeout: 120_000 }, () => {
+        const html = renderReviewPage({
+            ...data,
+            cases: [{ ...data.cases[0]!, rubriek: 'Moet twee offertes noemen, met bron.' }],
+        })
+        expect(html).toContain('Moet twee offertes noemen, met bron.')
+    })
+
+    it('shows no rubriek block for a question without one', { timeout: 120_000 }, () => {
+        const html = renderReviewPage(data)
+        expect(html).not.toContain('class="rubriek"')
+    })
+
+    it('shows the fixed grading scale reviewers must use', { timeout: 120_000 }, () => {
+        const html = renderReviewPage(data)
+        expect(html).toContain('Volledig en correct, met de juiste bron.')
+        expect(html).toContain('Verzonnen of volledig naast de vraag.')
+    })
 })
 
 describe('writeRetrievalSummary', () => {

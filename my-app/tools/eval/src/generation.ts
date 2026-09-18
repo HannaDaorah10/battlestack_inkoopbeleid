@@ -345,6 +345,7 @@ async function writeReports(
             vraag: c.vraag,
             organisatie: c.organisatie,
             fragmenten: contexts.get(c.id)?.sources ?? [],
+            rubriek: c.rubriek,
         })),
         answers: runs.map((run) => ({
             label: labels.get(run.configId) ?? '?',

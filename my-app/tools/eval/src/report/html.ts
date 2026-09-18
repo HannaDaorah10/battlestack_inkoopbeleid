@@ -29,6 +29,8 @@ export interface ReviewCase {
     vraag: string
     organisatie: string
     fragmenten: string[]
+    /** One sentence on what a complete answer must contain. Only questions with `beoordelen: true` carry one. */
+    rubriek?: string
 }
 
 export interface ReviewAnswer {
@@ -120,12 +122,15 @@ export function renderReviewPage(data: ReviewPageData): string {
         krijgen. Zijn ze allemaal goed, dan krijgt het beste gewoon het hoogste cijfer.
     </p>
     <table class="schaaluitleg">
-        <tr><th>9-10</th><td>Klopt, is volledig, noemt de bron. Zo door te sturen naar een collega.</td></tr>
-        <tr><th>7-8</th><td>Klopt, maar kan vollediger, korter of duidelijker.</td></tr>
-        <tr><th>6</th><td>Klopt in de kern, maar mist iets belangrijks of is rommelig.</td></tr>
-        <tr><th>4-5</th><td>Onvolledig of misleidend: u zou het zo niet willen gebruiken.</td></tr>
-        <tr><th>1-3</th><td>Fout of onbruikbaar.</td></tr>
+        <tr><th>9-10</th><td>Volledig en correct, met de juiste bron.</td></tr>
+        <tr><th>7-8</th><td>Correct, maar mist nuance of bron.</td></tr>
+        <tr><th>5-6</th><td>Deels correct, of te vaag om op te handelen.</td></tr>
+        <tr><th>3-4</th><td>Grotendeels fout of niet onderbouwd.</td></tr>
+        <tr><th>1-2</th><td>Verzonnen of volledig naast de vraag.</td></tr>
     </table>
+    <p class="hint">Staat er bij een vraag een <strong>rubriek</strong> (wat een volledig antwoord
+        moet bevatten)? Gebruik die samen met deze schaal - de rubriek zegt wat er in moet staan,
+        de schaal hierboven blijft hetzelfde voor elke vraag.</p>
     <h2>Waar let u op?</h2>
     <ol>
         <li><strong>Klopt het?</strong> Vooral bedragen, aantallen offertes en wie moet tekenen.
@@ -183,12 +188,16 @@ function renderCase(
     const sources = evalCase.fragmenten.length > 0
         ? `<p class="bronnen">Gezochte documenten: ${escapeHtml(evalCase.fragmenten.join(', '))}</p>`
         : '<p class="bronnen waarschuwing">Er zijn geen fragmenten in de documenten gevonden voor deze vraag.</p>'
+    const rubriek = evalCase.rubriek
+        ? `<p class="rubriek"><strong>Een volledig antwoord:</strong> ${escapeHtml(evalCase.rubriek)}</p>`
+        : ''
 
     return `<section class="vraag" id="case-${escapeHtml(evalCase.id)}">
     <div class="vraag-kop">
         <span class="teller">Vraag ${position} van ${total}</span>
         <h2>${escapeHtml(evalCase.vraag)}</h2>
         ${sources}
+        ${rubriek}
     </div>
     <div class="antwoorden">
 ${cards}
@@ -344,6 +353,8 @@ button.secondary { color: var(--muted); }
 .vraag-kop h2 { margin: .3rem 0 .4rem; font-size: 1.25rem; }
 .bronnen { color: var(--muted); font-size: .88rem; margin: 0 0 1rem; }
 .bronnen.waarschuwing { color: var(--fout); }
+.rubriek { background: var(--ground); border: 1px solid var(--line); border-radius: 6px; padding: .5rem .8rem; font-size: .92rem; margin: 0 0 1rem; }
+.rubriek strong { color: var(--muted); font-weight: 600; }
 .antwoorden {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(21rem, 1fr));
