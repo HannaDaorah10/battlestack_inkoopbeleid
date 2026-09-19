@@ -13,6 +13,7 @@ import { generateAnswer } from './gateway'
 import { evalPath, runPath } from './paths'
 import { runPool } from './pool'
 import { resolveRetrieval } from './resolve-retrieval'
+import { searchStore } from './search'
 import { selectConfigsForReview } from './review-filter'
 import { cellKey, completedCells, createJsonlWriter, readJsonl } from './store'
 import { blindLabel, buildReviewPage } from './report/html'
@@ -94,7 +95,7 @@ async function main(): Promise<void> {
     }
 
     const retrieval = await resolveRetrieval(sweep.name, options.retrieval)
-    console.log(`  retrieval vastgezet op ${retrieval.configId} (${retrieval.embeddingModel}, chunk ${retrieval.maxChunkSize}, overlap ${retrieval.chunkOverlap}, topK ${retrieval.topK})`)
+    console.log(`  retrieval vastgezet op ${retrieval.configId} (${retrieval.embeddingModel}, chunk ${retrieval.maxChunkSize}, overlap ${retrieval.chunkOverlap}, topK ${retrieval.topK}, modus ${retrieval.retrieval})`)
 
     assertGatewayReady()
 
@@ -110,7 +111,15 @@ async function main(): Promise<void> {
     const contexts = new Map<string, CaseContext>()
     for (const evalCase of cases) {
         const scoped = documentsFor(documents, evalCase.organisatie)
-        const hits = storeFor(stores, evalCase.organisatie).query(vectors.get(evalCase.id)!, retrieval.topK)
+        // Retrieved the same way the winning phase-1 configuration was measured, hybrid included:
+        // answering from context a different retrieval mode produced would evaluate a pipeline
+        // nobody chose.
+        const hits = searchStore(storeFor(stores, evalCase.organisatie), {
+            vector: vectors.get(evalCase.id)!,
+            question: evalCase.vraag,
+            mode: retrieval.retrieval,
+            topK: retrieval.topK,
+        })
         const sources = hits.map((h) => ({
             title: h.chunk.title,
             source: h.chunk.source,

@@ -9,6 +9,7 @@ function config(overrides: Partial<RetrievalConfig> = {}): RetrievalConfig {
         maxChunkSize: 500,
         chunkOverlap: 100,
         topK: 5,
+        retrieval: 'dense',
         ...overrides,
     }
 }

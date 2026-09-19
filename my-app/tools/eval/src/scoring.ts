@@ -88,6 +88,7 @@ export function summarise(
             'maxChunkSize': config.maxChunkSize,
             'chunkOverlap': config.chunkOverlap,
             'topK': config.topK,
+            'modus': config.retrieval,
             'beoordeeldeVragen': scoreable.length,
             'gevonden': hits,
             'recall@k': scoreable.length > 0 ? round(hits / scoreable.length) : 0,

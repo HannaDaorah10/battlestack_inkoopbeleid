@@ -36,11 +36,20 @@ export type EvalCase = z.infer<typeof caseSchema>
 const nonEmptyNumbers = z.array(z.number()).min(1)
 const nonEmptyStrings = z.array(z.string().min(1)).min(1)
 
+/**
+ * `dense` searches vectors only; `hybrid` also runs a keyword search and fuses both rankings with
+ * RRF, mirroring `NUXT_RAG_RETRIEVAL` in the app. Defaults to `['dense']` so a sweep file written
+ * before this axis existed keeps expanding to exactly the configurations it did before.
+ */
+export const retrievalModeSchema = z.enum(['dense', 'hybrid'])
+export type RetrievalMode = z.infer<typeof retrievalModeSchema>
+
 export const retrievalGridSchema = z.object({
     embeddingModel: nonEmptyStrings,
     maxChunkSize: z.array(z.number().int().positive()).min(1),
     chunkOverlap: z.array(z.number().int().nonnegative()).min(1),
     topK: z.array(z.number().int().positive()).min(1),
+    retrieval: z.array(retrievalModeSchema).min(1).default(['dense']),
 })
 
 export const generationGridSchema = z.object({
@@ -102,6 +111,7 @@ export interface RetrievalConfig {
     maxChunkSize: number
     chunkOverlap: number
     topK: number
+    retrieval: RetrievalMode
 }
 
 /** One expanded cell of the generation grid. */

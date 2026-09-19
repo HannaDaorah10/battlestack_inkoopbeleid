@@ -16,9 +16,11 @@
     "questions": "cases/vragen.jsonl",
 
     // LET OP - modelnamen. Deze sluis-tenant staat alleen EU-providers toe: bedrock, mistral,
-    // nebius, scaleway, vertex en sluis. Een `openai/...`-model wordt geweigerd met
+    // scaleway, vertex en sluis. Een `openai/...`-model wordt geweigerd met
     // "provider `openai` (jurisdiction `US`) is not permitted by the tenant's residency policy".
-    // Draai `pnpm eval:models` voor de actuele lijst van jouw tenant.
+    // Draai `pnpm eval:models` voor de actuele lijst van jouw tenant - die verandert. `nebius`
+    // stond hier tot 19-9-2026 tussen en is van de tenant verdwenen; de Qwen-embedder heet nu
+    // `scaleway/qwen3-embedding-8b`.
 
     // FASE 1 - alleen embeddings, geen chatmodel. Draai deze eerst.
     // Configuraties die alleen in topK verschillen delen een index, dus topK is bijna gratis.
@@ -35,11 +37,17 @@
     "retrieval": {
         "embeddingModel": [
             "bedrock/eu.cohere.embed-v4:0",
-            "nebius/Qwen/Qwen3-Embedding-8B"
+            "scaleway/qwen3-embedding-8b"
         ],
         "maxChunkSize": [500, 700, 1000],
         "chunkOverlap": [100, 200],
-        "topK": [5, 8]
+        "topK": [5, 8],
+
+        // "dense" zoekt alleen op betekenis (vectoren), "hybrid" zoekt daarnaast op letterlijke
+        // woorden en voegt beide ranglijsten samen met Reciprocal Rank Fusion. Deze as kost geen
+        // extra embeddings: beide modi delen dezelfde index, hybrid doet er alleen een
+        // woordzoekactie bovenop. In de app is dit `NUXT_RAG_RETRIEVAL`.
+        "retrieval": ["dense", "hybrid"]
     },
 
     // FASE 2 - hier zit het geld. Elke combinatie x elke vraag is een aanroep.

@@ -30,7 +30,7 @@ De AI-keten heeft twee schakels die je los kunt afstellen:
 
 | Fase | Wat je varieert | Hoe je beoordeelt | Kosten |
 |---|---|---|---|
-| 1. Retrieval | embeddingmodel, chunkgrootte, overlap, topK | objectief: staat het juiste bedrag in een opgehaald fragment? | alleen embeddings |
+| 1. Retrieval | embeddingmodel, chunkgrootte, overlap, topK, zoekmodus (dense/hybrid) | objectief: staat het juiste bedrag in een opgehaald fragment? | alleen embeddings |
 | 2. Generatie | model, temperature, topP, maxOutputTokens, system prompt | jouw oordeel + objectieve signalen | een aanroep per cel |
 
 Tegelijk sweepen vermenigvuldigt ze. Met 24 retrieval-configuraties, 30 generatie-configuraties en
@@ -54,8 +54,16 @@ geweigerd met:
 provider `openai` (jurisdiction `US`) is not permitted by the tenant's residency policy
 ```
 
-Beschikbaar zijn: `bedrock/`, `mistral/`, `nebius/`, `scaleway/`, `vertex/` en `sluis/`. Draai
-`pnpm eval:models` voor de lijst van jouw tenant — die verandert.
+Beschikbaar zijn: `bedrock/`, `mistral/`, `scaleway/`, `vertex/` en `sluis/`. Draai
+`pnpm eval:models` voor de lijst van jouw tenant — **die verandert echt**. Op 19-9-2026 bleek de
+provider `nebius` verdwenen, inclusief `nebius/Qwen/Qwen3-Embedding-8B` die tot dan in deze sweep
+stond; diezelfde embedder staat er nu als `scaleway/qwen3-embedding-8b`. Controleer de lijst dus
+voordat je een sweep start, niet nadat de helft van je configuraties met `fouten` terugkomt.
+
+**Geen rerank-model.** Een cross-encoder die de top 30 herordent naar een betere top 5 is de
+gebruikelijke volgende stap na hybride zoeken, maar deze tenant biedt er geen: geen enkel model
+in de lijst van 108 is een reranker, en `/v1/rerank`, `/v2/rerank` en `/rerank` geven alledrie
+404. Zodra sluis.ai er wel een aanbiedt, is dit de logische volgende as in fase 1.
 
 **Anthropic weigert `temperature` en `top_p` samen**, met een kale `Bad Request` die niet zegt wat
 er mis is. Eén van de twee werkt prima. De harness stuurt `topP` daarom niet mee zolang hij op 1
@@ -87,7 +95,7 @@ Embeddingmodellen geven vectoren van verschillende lengte. Gemeten:
 |---|---|
 | `bedrock/eu.cohere.embed-v4:0` | 1536 |
 | `vertex/text-multilingual-embedding-002` | 768 (in de lijst, maar zie hierboven — momenteel niet bruikbaar) |
-| `nebius/Qwen/Qwen3-Embedding-8B` | 4096 |
+| `scaleway/qwen3-embedding-8b` | 4096 (dezelfde embedder die hier eerder als `nebius/Qwen/Qwen3-Embedding-8B` stond) |
 
 Voor de harness maakt dat niets uit — elke configuratie krijgt zijn eigen index. Voor de **app**
 wel: `NUXT_RAG_EMBEDDING_DIMENSIONS` moet exact gelijk zijn aan wat het gekozen model teruggeeft,
@@ -297,10 +305,11 @@ De harness hergebruikt de echte code, zodat een meting zegt wat de app doet:
 | PDF/DOCX lezen | `server/utils/inkoopbeleid/extract.ts` |
 | In stukken knippen | `server/utils/rag-chunk.ts` (gedeeld met `ingestText`) |
 | Fragmenten opmaken + prompt bouwen | `server/utils/inkoopbeleid/advice-prompt.ts` (gedeeld met `/api/inkoopbeleid/advies`) |
+| Ranglijsten samenvoegen (RRF) | `server/utils/rag-fusion.ts` (gedeeld met `queryText`) |
 | Gateway, auth, headers | `server/mastra/gateways/openai-compat.ts` |
 | Standaard system prompt | `prompts/adviseur-a-standaard.md`, kopie van `agent.inkoopbeleid.system` |
 
-Twee dingen doet de harness bewust anders:
+Drie dingen doet de harness bewust anders:
 
 1. **Geen pgvector, maar een vectorlijst in het geheugen.** Elke configuratie heeft zijn eigen
    index nodig, op zijn eigen breedte. In Postgres betekent dat tabellen aanmaken en weggooien per
@@ -310,6 +319,54 @@ Twee dingen doet de harness bewust anders:
    globale instelling is, en biedt geen `temperature` of `topP`. Precies de knoppen die een sweep
    wil verdraaien. De harness bouwt daarom zijn eigen aanroep, met dezelfde prompt en dezelfde
    gateway.
+3. **Het zoeken-op-woorden van `hybrid` is een benadering.** De app laat Postgres dat werk doen
+   (`to_tsvector('dutch', …)`: Nederlandse stamherkenning, een echte stopwoordenlijst,
+   `ts_rank_cd`). Dat kan de harness niet nadoen zonder database, en zonder database draaien is
+   precies wat de harness bruikbaar maakt voor een collega met alleen een sleutel. De harness
+   telt daarom hoeveel verschillende woorden uit de vraag in een fragment voorkomen, zonder
+   stamherkenning — zie `keyword-store.ts` voor de volledige lijst verschillen. Het **samenvoegen**
+   van de twee ranglijsten is wél gedeelde code. Lees een hybrid-uitslag dus als richting, niet
+   als exact cijfer.
+
+---
+
+## Wat de sweep tot nu toe heeft opgeleverd
+
+Gemeten op 19-9-2026, 48 configuraties x 48 vragen, corpus Ons Huis + Welbions.
+
+**Het corpus is kleiner dan de topK.** Dit is de belangrijkste uitkomst, en het zet de rest in
+perspectief. Per organisatie levert chunkgrootte 1000 maar **8 tot 10 fragmenten** op. Met
+`topK: 8` haalt de winnende configuratie dus zo goed als het **hele document** op. Dat betekent
+dat de volgorde nauwelijks uitmaakt voor recall: er is geen diep weggezakt fragment om te redden,
+alleen het risico dat je een goed fragment verdringt. Bij twee beleidsdocumenten is "beter
+zoeken" grotendeels een opgelost probleem — het plafond ligt bij wat er in de documenten staat.
+
+**Hybride zoeken helpt hier niet.** Van de 24 paren (zelfde model, chunk, overlap, topK; alleen de
+modus verschilt) is `hybrid` er **20 slechter**, 3 gelijk en 1 beter. Gemiddelde recall@k: dense
+0,797 tegen hybrid 0,756. De verklaring sluit aan op het bovenstaande: RRF weegt beide paden even
+zwaar, dus een woordzoekactie die vooral veelvoorkomende beleidstermen oplevert (`aanbesteding`
+komt in de Inkoopwijzer overal voor) duwt goede treffers uit een toch al bijna volledige lijst.
+Vraag q22 is het duidelijkste geval: die verliest in 18 van de 24 paren. `NUXT_RAG_RETRIEVAL`
+staat daarom op `dense`; de hybride code blijft staan voor als het corpus ooit groeit.
+
+**De beste configuratie mist alleen wat de vragenlijst zelf niet waar kan maken.** De winnaar
+(`bedrock/eu.cohere.embed-v4:0`, chunk 1000, overlap 200, topK 8, dense) haalt recall@k 0,892: 33
+van de 37 te scoren vragen. Alle vier de missers zijn artefacten van de vragenlijst, niet van het
+zoeken:
+
+| Vraag | Waarom hij niet gevonden kán worden |
+|---|---|
+| q05, q06 | Mandaat/tekenbevoegdheid staat **niet in de PDF** — die trefwoorden komen uit de seed-data |
+| q08 | "verduurzaming" en "betaalbaarheid" staan in **geen enkel fragment samen** bij chunk 1000; `containsAllKeywords` eist dat wel |
+| q09 | Trefwoord is `adviseur inkoop`, het document schrijft **`Inkoopadviseur`** (één woord) |
+
+Let op bij q08: met topK 8 en 8 fragmenten krijgt het model in werkelijkheid **beide** doelen te
+zien. De vraag telt als gemist, het antwoord zou gewoon kloppen. recall@k onderschat hier dus wat
+de adviseur werkelijk voorgeschoteld krijgt — opnieuw een gevolg van een corpus dat kleiner is
+dan de topK.
+
+**Vergelijk 0,692 en 0,892 niet.** De eerdere sweep draaide op 16 vragen, deze op 48. Dat zijn
+verschillende metingen, geen verbetering.
 
 ## Buiten scope
 
@@ -317,6 +374,8 @@ Twee dingen doet de harness bewust anders:
   lange teksten vragen een andere weergave in het rapport.
 - De **toets-functie** (`/api/inkoopbeleid/toets`). Die rekent op databasetabellen, zonder taalmodel.
 - **Automatisch laten scoren door een model.** Bewust niet: jij bepaalt wat goed is.
+- **Herordenen met een rerank-model.** Deze sluis-tenant biedt er geen (zie "Modellen op deze
+  gateway"). Zodra dat verandert is het een derde waarde voor de `retrieval`-as.
 
 ## Onderhoud
 

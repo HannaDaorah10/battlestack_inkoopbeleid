@@ -18,6 +18,7 @@ function config(configId: string): RetrievalConfig {
         maxChunkSize: 500,
         chunkOverlap: 100,
         topK: 5,
+        retrieval: 'dense',
     }
 }
 

@@ -6,11 +6,12 @@ import { expandRetrieval, groupByIndex } from './expand'
 import { ALL_ORGANISATIONS, buildStores, corpusFingerprint, embedQuestions, storeFor } from './index-build'
 import { runPath } from './paths'
 import { errorRun, scoreRun, summarise } from './scoring'
+import { searchStore } from './search'
 import { cellKey, completedCells, createJsonlWriter, readJsonl } from './store'
 import { writeCsv } from './report/csv'
 import { writeRetrievalSummary } from './report/markdown'
 import type { JsonlWriter } from './store'
-import type { MemoryVectorStore } from './vector-store'
+import type { OrganisationStore } from './search'
 import type { EvalCase, RetrievalConfig, RetrievalRun } from './types'
 
 /**
@@ -42,7 +43,7 @@ async function main(): Promise<void> {
         for (const config of configs) {
             console.log(
                 `  ${config.configId}  ${config.embeddingModel}  chunk=${config.maxChunkSize}`
-                + `  overlap=${config.chunkOverlap}  topK=${config.topK}`,
+                + `  overlap=${config.chunkOverlap}  topK=${config.topK}  modus=${config.retrieval}`,
             )
         }
         return
@@ -102,7 +103,7 @@ async function main(): Promise<void> {
         const shape = bucket[0]!
         const brokenReason = brokenModels.get(shape.embeddingModel)
 
-        let stores: Map<string, MemoryVectorStore>
+        let stores: Map<string, OrganisationStore>
         if (!brokenReason) {
             try {
                 stores = await buildStores(sweep.name, key, shape, documents, fingerprint, console.log)
@@ -123,26 +124,46 @@ async function main(): Promise<void> {
         const vectors = questionVectors.get(shape.embeddingModel)!
 
         for (const evalCase of cases) {
-            const started = Date.now()
-            // One query serves every topK in the bucket: the ranking is identical and only the
-            // cut-off differs, so slicing is exactly equivalent to querying again with a smaller K.
-            const hits = storeFor(stores, evalCase.organisatie).query(vectors.get(evalCase.id)!, maxTopK)
-            const durationMs = Date.now() - started
+            const store = storeFor(stores, evalCase.organisatie)
+            const vector = vectors.get(evalCase.id)!
+
+            // One dense query serves every dense topK in the bucket: the ranking is identical and
+            // only the cut-off differs, so slicing is exactly equivalent to querying again with a
+            // smaller K. Hybrid cannot share that way - its candidate depth is derived from topK,
+            // so a different topK fuses a different pool - and is run per configuration below.
+            const denseStarted = Date.now()
+            const denseHits = bucket.some((c) => c.retrieval !== 'hybrid')
+                ? store.vectors.query(vector, maxTopK)
+                : []
+            const denseMs = Date.now() - denseStarted
 
             for (const config of bucket) {
                 if (done.has(cellKey(config.configId, evalCase.id))) continue
-                await writer.append(scoreRun(config, evalCase, hits, durationMs))
+
+                if (config.retrieval !== 'hybrid') {
+                    await writer.append(scoreRun(config, evalCase, denseHits, denseMs))
+                    continue
+                }
+
+                const started = Date.now()
+                const hits = searchStore(store, {
+                    vector,
+                    question: evalCase.vraag,
+                    mode: config.retrieval,
+                    topK: config.topK,
+                })
+                await writer.append(scoreRun(config, evalCase, hits, Date.now() - started))
             }
         }
 
-        console.log(`Index ${key} klaar (${bucket.length} configuratie(s), ${stores.get(ALL_ORGANISATIONS)!.size} chunks)`)
+        console.log(`Index ${key} klaar (${bucket.length} configuratie(s), ${stores.get(ALL_ORGANISATIONS)!.vectors.size} chunks)`)
     }
 
     const runs = await readJsonl<RetrievalRun>(runsFile)
     const rows = summarise(configs, runs)
 
     await writeCsv(`${outDir}/resultaten.csv`, rows, [
-        'configId', 'embeddingModel', 'maxChunkSize', 'chunkOverlap', 'topK',
+        'configId', 'embeddingModel', 'maxChunkSize', 'chunkOverlap', 'topK', 'modus',
         'beoordeeldeVragen', 'gevonden', 'recall@k', 'mrr', 'gemiddeldeTopScore', 'fouten',
     ])
     // Phase 2 reads this to resolve `--retrieval`, and to pick a default when none is given.

@@ -3,7 +3,8 @@ import { chunkDocument } from '../../../server/utils/rag-chunk'
 import { cacheKey, readCache, writeCache } from './cache'
 import { embedTexts } from './gateway'
 import { runPath } from './paths'
-import { MemoryVectorStore } from './vector-store'
+import { addChunk, createStore } from './search'
+import type { OrganisationStore } from './search'
 import type { CorpusDocument } from './corpus'
 import type { EvalCase, RetrievalConfig } from './types'
 
@@ -69,7 +70,7 @@ export async function buildStores(
     documents: readonly CorpusDocument[],
     fingerprint: string,
     log: (message: string) => void = () => {},
-): Promise<Map<string, MemoryVectorStore>> {
+): Promise<Map<string, OrganisationStore>> {
     const file = runPath(sweepName, 'cache', 'index', `${indexKeyValue}-${fingerprint}.json`)
     let cached = await readCache<CachedIndex>(file)
 
@@ -105,24 +106,27 @@ export async function buildStores(
     // callback, so the alternative is a non-null assertion on every use.
     const index = cached
 
-    const stores = new Map<string, MemoryVectorStore>()
-    stores.set(ALL_ORGANISATIONS, new MemoryVectorStore())
+    const stores = new Map<string, OrganisationStore>()
+    stores.set(ALL_ORGANISATIONS, createStore())
     for (const organisatie of new Set(documents.map((d) => d.organisatie))) {
-        stores.set(organisatie, new MemoryVectorStore())
+        stores.set(organisatie, createStore())
     }
 
+    // Vector and keyword indexes are filled in one pass from the same chunk, so the two can never
+    // describe different content for the same organisation.
     index.chunks.forEach((chunk, i) => {
         const vector = index.vectors[i]!
-        stores.get(ALL_ORGANISATIONS)!.add(vector, chunk)
-        stores.get(chunk.organisatie)?.add(vector, chunk)
+        addChunk(stores.get(ALL_ORGANISATIONS)!, vector, chunk)
+        const own = stores.get(chunk.organisatie)
+        if (own) addChunk(own, vector, chunk)
     })
 
     return stores
 }
 
 export function storeFor(
-    stores: Map<string, MemoryVectorStore>,
+    stores: Map<string, OrganisationStore>,
     organisatie: string,
-): MemoryVectorStore {
+): OrganisationStore {
     return stores.get(organisatie) ?? stores.get(ALL_ORGANISATIONS)!
 }

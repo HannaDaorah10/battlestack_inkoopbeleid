@@ -15,6 +15,8 @@ export interface RetrievalSummaryRow {
     'maxChunkSize': number
     'chunkOverlap': number
     'topK': number
+    /** `dense` = vectors only, `hybrid` = vectors + keyword search fused with RRF. */
+    'modus': string
     'beoordeeldeVragen': number
     'gevonden': number
     'recall@k': number
@@ -48,8 +50,14 @@ export async function writeRetrievalSummary(
         '- **mrr** — hoe hoog in de lijst het juiste fragment stond. 1,0 betekent altijd bovenaan,',
         '  0,5 betekent gemiddeld op plek twee. Bij gelijke recall is een hogere mrr beter, want dan',
         '  staat het juiste fragment vooraan in de context die het model krijgt.',
-        '- **gemiddeldeTopScore** — hoe sterk de beste match leek volgens het embeddingmodel. Alleen',
-        '  vergelijkbaar binnen hetzelfde embeddingmodel, niet ertussen.',
+        '- **modus** — `dense` zoekt alleen op betekenis (vectoren). `hybrid` zoekt daarnaast op',
+        '  letterlijke woorden en voegt beide ranglijsten samen met RRF. Let op: het zoeken op',
+        '  woorden is in de harness een *benadering* van wat de app in Postgres doet (geen Nederlandse',
+        '  stamherkenning) — zie `keyword-store.ts`. Lees het verschil tussen dense en hybrid dus als',
+        '  richting, niet als exact cijfer.',
+        '- **gemiddeldeTopScore** — hoe sterk de beste match leek. Bij `dense` is dat de cosinus-',
+        '  gelijkenis (0-1), bij `hybrid` de RRF-score (ruwweg 0,01-0,03). Alleen vergelijkbaar binnen',
+        '  dezelfde modus én hetzelfde embeddingmodel, niet ertussen.',
         '- **fouten** — vragen die niet konden worden gemeten omdat het embeddingmodel of de index',
         '  van deze configuratie faalde. Telt niet mee in recall@k/mrr: een model dat nooit is',
         '  aangeroepen heeft het fragment niet gemist, het is er nooit naar gevraagd.',
@@ -76,14 +84,14 @@ export async function writeRetrievalSummary(
     lines.push(
         '## Ranglijst',
         '',
-        '| # | configId | embeddingmodel | chunk | overlap | topK | recall@k | mrr | topscore | fouten |',
-        '|---|---|---|---|---|---|---|---|---|---|',
+        '| # | configId | embeddingmodel | chunk | overlap | topK | modus | recall@k | mrr | topscore | fouten |',
+        '|---|---|---|---|---|---|---|---|---|---|---|',
     )
 
     rows.forEach((row, index) => {
         lines.push(
             `| ${index + 1} | \`${row.configId}\` | ${row.embeddingModel} | ${row.maxChunkSize} `
-            + `| ${row.chunkOverlap} | ${row.topK} | ${nl(row['recall@k'])} | ${nl(row.mrr)} `
+            + `| ${row.chunkOverlap} | ${row.topK} | ${row.modus} | ${nl(row['recall@k'])} | ${nl(row.mrr)} `
             + `| ${nl(row.gemiddeldeTopScore)} | ${row.fouten} |`,
         )
     })
@@ -94,7 +102,8 @@ export async function writeRetrievalSummary(
             '## Volgende stap',
             '',
             `Bovenaan staat \`${winner.configId}\` (${winner.embeddingModel}, chunk `
-            + `${winner.maxChunkSize}, overlap ${winner.chunkOverlap}, topK ${winner.topK}).`,
+            + `${winner.maxChunkSize}, overlap ${winner.chunkOverlap}, topK ${winner.topK}, `
+            + `modus ${winner.modus}).`,
             '',
             'Kijk eerst of het verschil met nummer 2 groot genoeg is om iets te betekenen: bij een',
             'kleine vragenlijst scheelt één vraag al enkele procenten. Kies daarna zelf, en draai:',
