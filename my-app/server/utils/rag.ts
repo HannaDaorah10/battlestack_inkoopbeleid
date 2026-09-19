@@ -4,6 +4,8 @@ import { createError } from 'h3'
 import { gatewayEmbedding } from '#server/mastra/gateways/openai-compat'
 import { getActiveEmbeddingModelId } from '#server/mastra/utils/ai-model'
 import { chunkDocument } from '#server/utils/rag-chunk'
+import { DEFAULT_RRF_K, candidateDepth, fuseRrf } from '#server/utils/rag-fusion'
+import { ensureKeywordIndex, keywordSearch } from '#server/utils/rag-keyword'
 
 export const INDEX_NAME = 'rag_vectors'
 
@@ -19,7 +21,16 @@ interface RagConfig {
     embeddingDimensions: number
     embeddingModel: string
     databaseUrl: string
+    retrieval: RetrievalMode
+    rrfK: number
 }
+
+/**
+ * `dense` searches vectors only; `hybrid` also runs Postgres full-text search and fuses the two
+ * rankings (see `rag-fusion.ts`). Switchable per environment via `NUXT_RAG_RETRIEVAL` because
+ * which one wins is a measured question, not an assumed one - `tools/eval` sweeps both.
+ */
+export type RetrievalMode = 'dense' | 'hybrid'
 
 /**
  * Metadata equality filter passed straight to pgvector, e.g. `{ organisationId: '…' }`.
@@ -39,6 +50,8 @@ function readConfig(): RagConfig {
             topK?: unknown
             embeddingDimensions?: unknown
             embeddingModel?: unknown
+            retrieval?: unknown
+            rrfK?: unknown
         }
     }
     const rag = config.rag ?? {}
@@ -53,6 +66,10 @@ function readConfig(): RagConfig {
         embeddingDimensions: Number(rag.embeddingDimensions ?? 1536),
         embeddingModel: String(rag.embeddingModel ?? 'bedrock/eu.cohere.embed-v4:0'),
         databaseUrl: String(config.databaseUrl ?? ''),
+        // Anything other than the two known modes falls back to `dense` rather than throwing: a
+        // typo in an env var should degrade retrieval quality, not take the advisor offline.
+        retrieval: String(rag.retrieval ?? 'dense').toLowerCase() === 'hybrid' ? 'hybrid' : 'dense',
+        rrfK: Number(rag.rrfK ?? DEFAULT_RRF_K),
     }
 }
 
@@ -123,6 +140,11 @@ async function initIndex(cfg: RagConfig): Promise<void> {
         console.error(`[rag] ${message}`)
         throw createError({ statusCode: 500, statusMessage: message })
     }
+
+    // Unconditional, not gated on `cfg.retrieval`: the table is only reachable here (PgVector
+    // creates it lazily, so no migration can), and having the column already present is what lets
+    // `NUXT_RAG_RETRIEVAL=hybrid` take effect on a restart instead of needing a backfill first.
+    await ensureKeywordIndex(INDEX_NAME)
 }
 
 export async function ingestText(opts: {
@@ -164,40 +186,85 @@ export async function ingestText(opts: {
     return { chunks: chunks.length }
 }
 
+export interface RagHit {
+    score: number
+    metadata: Record<string, unknown>
+    /** `vector_id` of the chunk. Stable across both retrieval paths, so it identifies a hit. */
+    id: string
+    /**
+     * 1-based rank per path, or null when that path did not return this chunk. Only meaningful in
+     * hybrid mode; dense mode reports the one path it ran.
+     */
+    ranks: Record<string, number | null>
+}
+
 /**
- * Semantic search over the shared index.
+ * Search the shared index, dense-only or hybrid depending on `NUXT_RAG_RETRIEVAL`.
  *
  * `opts.filter` narrows by chunk metadata before scoring, which is how a multi-tenant caller
  * keeps organisations apart (see {@link RagFilter}). Omitting it searches everything ingested
  * by every feature, which is correct for the generic `/dashboard/rag` page and wrong anywhere
- * a tenant boundary exists.
+ * a tenant boundary exists. In hybrid mode the same filter is applied to the keyword path too -
+ * a boundary that only half the query respects is not a boundary.
+ *
+ * CAUTION on `score`: dense mode returns a cosine similarity (roughly 0.3-0.6 here), hybrid mode
+ * returns the RRF score that actually ordered the list (roughly 0.01-0.03). They are different
+ * scales, and anything rendering the number to a user should say which mode produced it rather
+ * than treat the two as comparable.
  */
 export async function queryText(
     query: string,
     opts: { filter?: RagFilter, topK?: number } = {},
-): Promise<{
-    results: Array<{ score: number, metadata: Record<string, unknown> }>
-}> {
+): Promise<{ results: RagHit[] }> {
     const cfg = readConfig()
     await ensureIndex(cfg)
+    const topK = opts.topK ?? cfg.topK
+    // Undefined rather than `{}`: an empty object is a filter with no conditions, which the
+    // pg translator still compiles into a WHERE clause.
+    const filter = opts.filter && Object.keys(opts.filter).length > 0 ? opts.filter : undefined
+
     const { embeddings } = await embedMany({
         model: await getModel(cfg),
         values: [query],
     })
 
-    const raw = await getStore(cfg).query({
+    const depth = cfg.retrieval === 'hybrid' ? candidateDepth(topK) : topK
+    const densePromise = getStore(cfg).query({
         indexName: INDEX_NAME,
         queryVector: embeddings[0]!,
-        topK: opts.topK ?? cfg.topK,
-        // Undefined rather than `{}`: an empty object is a filter with no conditions, which the
-        // pg translator still compiles into a WHERE clause.
-        filter: opts.filter && Object.keys(opts.filter).length > 0 ? opts.filter : undefined,
+        topK: depth,
+        filter,
     })
 
-    const results = raw.map((r) => ({
-        score: r.score,
-        metadata: r.metadata ?? {},
-    }))
+    if (cfg.retrieval !== 'hybrid') {
+        const raw = await densePromise
+        return {
+            results: raw.map((r, i) => ({
+                id: String(r.id ?? ''),
+                score: r.score,
+                metadata: r.metadata ?? {},
+                ranks: { dense: i + 1 },
+            })),
+        }
+    }
 
-    return { results }
+    // Both paths hit the same Postgres and neither depends on the other, so they run together.
+    const [dense, keyword] = await Promise.all([
+        densePromise,
+        keywordSearch({ table: INDEX_NAME, query, filter, limit: depth }),
+    ])
+
+    const fused = fuseRrf({
+        dense: dense.map((r) => ({ id: String(r.id ?? ''), metadata: r.metadata ?? {} })),
+        keyword,
+    }, { k: cfg.rrfK, topK })
+
+    return {
+        results: fused.map((hit) => ({
+            id: hit.id,
+            score: hit.score,
+            metadata: hit.metadata,
+            ranks: hit.ranks,
+        })),
+    }
 }

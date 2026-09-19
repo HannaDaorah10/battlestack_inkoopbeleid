@@ -78,6 +78,12 @@ export default defineNuxtConfig({
             // residency policy rejects openai/* models outright, so that can't be the fallback here
             // either. bedrock/eu.cohere.embed-v4:0 returns 1536 dimensions, matching the value above.
             embeddingModel: 'bedrock/eu.cohere.embed-v4:0',
+            // 'dense' (vectors only) or 'hybrid' (vectors + Postgres full-text, fused with RRF).
+            // Default stays dense until the sweep in tools/eval says hybrid is actually better on
+            // this corpus; the full-text column is created either way, so flipping this needs a
+            // restart and nothing else.
+            retrieval: 'dense',
+            rrfK: 60,
         },
     },
 
