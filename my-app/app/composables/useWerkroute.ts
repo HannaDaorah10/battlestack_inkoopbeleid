@@ -2,6 +2,7 @@ import { BOUWSTEEN_INKOOPBELEID } from '#shared/werkinstructies/bouwsteen-0-2'
 import type { Bouwsteen, WerkinstructieStap } from '#shared/werkinstructies/types'
 import {
     schermenVoorStap,
+    stapIndexVoorStatus,
     volgendePositie,
     voortgangPercentage,
     vorigePositie,
@@ -58,11 +59,16 @@ export async function useWerkroute(policyId: MaybeRefOrGetter<string>) {
     const id = computed(() => toValue(policyId))
 
     const headers = useRequestHeaders(['cookie'])
-    const { data, status, refresh } = await useAsyncData<StappenResponse>(
+    // Bewust NIET hier awaiten. Alles wat hieronder `onMounted` registreert, moet dat doen
+    // voordat deze functie voor het eerst wacht: na een `await` in een geneste composable is de
+    // component-instantie weg en voert Vue een `onMounted` stilletjes nooit uit. Precies dat
+    // zorgde ervoor dat de route altijd opnieuw bij "Start" begon. Gewacht wordt onderaan.
+    const asyncData = useAsyncData<StappenResponse>(
         () => `werkroute-${id.value}`,
         () => $fetch(`/api/inkoopbeleid/policies/${id.value}/stappen`, { headers }),
         { watch: [id] },
     )
+    const { data, status, refresh } = asyncData
 
     // --- Wat er is ingevuld ---------------------------------------------------------------
     // Lokale kopie naast de server-data: de tekstvakken zijn `v-model`-gebonden en moeten
@@ -89,16 +95,13 @@ export async function useWerkroute(policyId: MaybeRefOrGetter<string>) {
      * `policies.status` kent dezelfde vijf stappen, dus de route hoort te openen waar het beleid
      * werkelijk is. Zonder dit begint een halfvoltooid traject elke keer weer bij stap 1.
      */
-    const stapVanStatus = computed(() => {
-        const i = bouwsteen.stappen.findIndex((s) => s.status === data.value?.policy.status)
-        return i === -1 ? 0 : i
-    })
+    const stapVanStatus = computed(() => stapIndexVoorStatus(bouwsteen, data.value?.policy.status))
 
     const gestart = ref(false)
-    // Meteen op de stap van de status, niet pas in `onMounted`. De status is er al tijdens het
-    // serverrenderen, dus anders tekent de server stap 1 en springt de pagina bij hydratie
-    // zichtbaar door naar de echte stap.
-    const stapIndex = ref(stapVanStatus.value)
+    // Wordt onderaan, na het ophalen, op de stap van de status gezet: niet pas in `onMounted`.
+    // De status is er al tijdens het serverrenderen, dus anders tekent de server stap 1 en
+    // springt de pagina bij hydratie zichtbaar door naar de echte stap.
+    const stapIndex = ref(0)
     const schermIndex = ref(0)
 
     const positie = computed<Positie>(() => ({
@@ -147,8 +150,21 @@ export async function useWerkroute(policyId: MaybeRefOrGetter<string>) {
         }
     }
 
-    onMounted(herstelPositie)
-    watch([stapIndex, schermIndex], bewaarPositie)
+    // Pas na het herstellen gaan bewaren: anders overschrijft het zetten van de startpositie
+    // (de stap van de status) de bewaarde plek voordat die gelezen is.
+    onMounted(() => {
+        herstelPositie()
+        watch([stapIndex, schermIndex], bewaarPositie)
+    })
+
+    // Na `herstelPositie` geregistreerd, zodat de stapstatus de herstelde positie ziet.
+    const { stapStatus } = useStapStatus({
+        opslagSleutel: () => `werkroute:stappen:${id.value}`,
+        bouwsteen,
+        stapIndex,
+        schermIndex,
+        afgerondTot: stapVanStatus,
+    })
 
     // --- Afgeleide schermstaat ------------------------------------------------------------
     const stap = computed<WerkinstructieStap>(
@@ -336,6 +352,9 @@ export async function useWerkroute(policyId: MaybeRefOrGetter<string>) {
         return s.uitwerking.filter((v) => isVeldGevuld(s.id, v.id)).length
     }
 
+    await asyncData
+    stapIndex.value = stapVanStatus.value
+
     return {
         bouwsteen,
         data,
@@ -350,6 +369,7 @@ export async function useWerkroute(policyId: MaybeRefOrGetter<string>) {
         scherm,
         positie,
         percentage,
+        stapStatus,
         heeftVolgende,
         heeftVorige,
         ga,

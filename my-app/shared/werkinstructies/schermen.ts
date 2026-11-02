@@ -48,6 +48,28 @@ export function schermenVoorStap(stap: WerkinstructieStap): Scherm[] {
     ]
 }
 
+/**
+ * De stap waar een inkoopbeleid met deze status in zit.
+ *
+ * Een beleid in de eindstatus ("vastgesteld") heeft alle stappen achter zich en opent op de
+ * laatste stap. Een onbekende of ontbrekende status begint bij de eerste.
+ */
+export function stapIndexVoorStatus(bouwsteen: Bouwsteen, status: string | null | undefined): number {
+    if (!status) return 0
+    if (status === bouwsteen.eindStatus) return Math.max(bouwsteen.stappen.length - 1, 0)
+    const i = bouwsteen.stappen.findIndex((s) => s.status === status)
+    return i === -1 ? 0 : i
+}
+
+/**
+ * De status waar het afronden van deze stap het beleid naartoe brengt: de status van de
+ * volgende stap, of de eindstatus na de laatste stap.
+ */
+export function statusNaStap(bouwsteen: Bouwsteen, stapIndex: number): string | null {
+    if (!bouwsteen.stappen[stapIndex]) return null
+    return bouwsteen.stappen[stapIndex + 1]?.status ?? bouwsteen.eindStatus
+}
+
 /** Alle schermen van de hele bouwsteen bij elkaar opgeteld. */
 export function totaalSchermen(bouwsteen: Bouwsteen): number {
     return bouwsteen.stappen.reduce((som, stap) => som + schermenVoorStap(stap).length, 0)

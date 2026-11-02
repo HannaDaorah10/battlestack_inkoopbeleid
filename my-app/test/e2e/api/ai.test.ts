@@ -55,7 +55,9 @@ describe('e2e: ai model admin', () => {
     it.skipIf(!serverUp)('admin can update a config model', async () => {
         const adminCookie = await loginAsAdmin()
         const list = await apiGet<ModelConfig[]>('/api/ai/configs', adminCookie)
-        const target = list.data?.[0]
+        // The chat row: an embedding row now refuses a model whose vector width does not fit
+        // the index, and a chat model is not an embedding model at all.
+        const target = list.data?.find((c) => c.key === 'chat')
         if (!target) return
         const next = 'openai/gpt-4o-mini'
         const { status, data } = await apiPut<ModelConfig>(

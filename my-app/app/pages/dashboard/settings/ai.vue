@@ -55,6 +55,9 @@ async function updateModelConfig(id: string, model: string) {
             = (error as { data?: { statusMessage?: string } })?.data?.statusMessage
                 ?? t('mastraAdmin.errorGeneric')
         toast.add({ title: t('mastraAdmin.errorTitle'), description: message, color: 'error', duration: 0 })
+        // The server refused (e.g. an embedding model with the wrong vector width): put the
+        // picker back on what is actually stored, instead of showing a model that is not active.
+        await refreshConfigs()
     }
 }
 

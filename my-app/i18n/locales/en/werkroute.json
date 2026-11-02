@@ -58,7 +58,15 @@
             "doneTitle": "{document} is ready",
             "doneBody": "This document is built from your answers and carries over as input for the next step.",
             "empty": "(still empty)",
-            "quality": "Quality criteria · {gedaan} of {totaal} check questions ticked. The step is complete when:"
+            "quality": "Quality criteria. The step is complete when:",
+            "placeholderBeleid": "Write the text here as it will appear in the policy…",
+            "doneBodyLast": "This document is built from your answers. That completes the last step of this building block.",
+            "doneChapters": "The texts from this step are also in the chapters of the policy.",
+            "doneChaptersLink": "View the chapters",
+            "openFields": "{n} part(s) still empty.",
+            "openChecks": "{n} check question(s) not ticked yet.",
+            "openAdvice": "You can continue anyway, but preferably go over these points first.",
+            "checksDone": "Check questions: {gedaan} of {totaal} ticked."
         },
         "gesprekken": {
             "number": "{eenheid} {n}",

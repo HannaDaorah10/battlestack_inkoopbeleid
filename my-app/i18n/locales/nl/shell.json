@@ -25,7 +25,8 @@
             "documents": "Documenten",
             "advisor": "Adviseur",
             "check": "Toets een inkoop",
-            "deviations": "Afwijkingen"
+            "deviations": "Afwijkingen",
+            "rules": "Drempels en mandaten"
         }
     }
 }

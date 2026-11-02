@@ -193,6 +193,7 @@ export const BOUWSTEEN_INKOOPBELEID: Bouwsteen = {
         + 'wat je doet en welk document je oplevert.',
     ],
     eindresultaat: 'een vastgesteld inkoopbeleid, inclusief communicatie- en implementatieafspraak',
+    eindStatus: 'vastgesteld',
     hulpmiddelen: [
         HULPMIDDEL_DOCUMENTEN,
         HULPMIDDEL_ADVISEUR,
@@ -516,9 +517,11 @@ export const BOUWSTEEN_INKOOPBELEID: Bouwsteen = {
             ],
             documentTitel: 'Concept-inkoopbeleid',
             documentSoort: 'Concept',
+            beleidstekst: true,
             uitwerking: [
                 {
                     id: 'inleiding-doel-reikwijdte',
+                    hoofdstuk: 'toepassing',
                     label: 'Inleiding, doel en reikwijdte van het beleid',
                     hint: 'De kernboodschap: waarom is dit beleid nodig en waar geeft het richting aan? Hoort bij hoofdstuk 1 Toepassing.',
                     aanpakIndex: 2,
@@ -527,6 +530,7 @@ export const BOUWSTEEN_INKOOPBELEID: Bouwsteen = {
                 },
                 {
                     id: 'organisatiedoelstellingen-opdrachtgeverschap',
+                    hoofdstuk: 'opdrachtgeverschap',
                     label: 'Verbinding met organisatiedoelstellingen en opdrachtgeverschap',
                     hint: 'Hoort bij hoofdstuk 2 Opdrachtgeverschap. Begin hier, niet bij de procedures.',
                     aanpakIndex: 3,
@@ -535,6 +539,7 @@ export const BOUWSTEEN_INKOOPBELEID: Bouwsteen = {
                 },
                 {
                     id: 'uitgangspunten-inkoopdoelen',
+                    hoofdstuk: 'inkoopdoelen',
                     label: 'Uitgangspunten en inkoopdoelen',
                     hint: 'Hoort bij hoofdstuk 3 Inkoopdoelen. Leg de doelen ook als losse doelen vast bij het beleid.',
                     aanpakIndex: 4,
@@ -543,6 +548,7 @@ export const BOUWSTEEN_INKOOPBELEID: Bouwsteen = {
                 },
                 {
                     id: 'beleidskaders-spelregels',
+                    hoofdstuk: 'beleidskaders',
                     label: 'Beleidskaders en spelregels voor inkopen',
                     hint: 'Hoort bij hoofdstuk 4 Inkoopbeleidskaders en spelregels.',
                     aanpakIndex: 4,
@@ -551,6 +557,7 @@ export const BOUWSTEEN_INKOOPBELEID: Bouwsteen = {
                 },
                 {
                     id: 'procedures-drempelbedragen',
+                    hoofdstuk: 'procedures',
                     label: 'Procedures, drempelbedragen en afwijkingsmogelijkheden',
                     hint: 'Hoort bij hoofdstuk 6. De drempelbedragen zelf staan als gegevens in de app; toets ze hier.',
                     aanpakIndex: 4,
@@ -559,6 +566,7 @@ export const BOUWSTEEN_INKOOPBELEID: Bouwsteen = {
                 },
                 {
                     id: 'rollen-governance',
+                    hoofdstuk: 'inkooporganisatie',
                     label: 'Rollen, verantwoordelijkheden en governance',
                     hint: 'Hoort bij hoofdstuk 7 Inkooporganisatie.',
                     aanpakIndex: 5,
@@ -567,6 +575,7 @@ export const BOUWSTEEN_INKOOPBELEID: Bouwsteen = {
                 },
                 {
                     id: 'categorie-contract-leveranciersmanagement',
+                    hoofdstuk: 'categoriemanagement',
                     label: 'Categoriemanagement, contractmanagement en leveranciersmanagement',
                     hint: 'Hoort bij hoofdstuk 5 Categoriemanagement.',
                     aanpakIndex: 5,
@@ -722,7 +731,7 @@ export const BOUWSTEEN_INKOOPBELEID: Bouwsteen = {
             id: 'vaststellen',
             number: '0.2.5',
             title: 'Vaststellen inkoopbeleid',
-            status: 'vastgesteld',
+            status: 'vaststellen',
             doelgroep: DOELGROEP,
             kern: 'Inkoopbeleid formeel laten vaststellen, communiceren, implementeren en archiveren.',
             vervolg: 'Toepassing van het beleid in inkooptrajecten, contractmanagement en sturing op de uitvoering.',
@@ -784,6 +793,7 @@ export const BOUWSTEEN_INKOOPBELEID: Bouwsteen = {
             ],
             documentTitel: 'Vastgesteld inkoopbeleid',
             documentSoort: 'Beleid',
+            beleidstekst: true,
             uitwerking: [
                 {
                     id: 'vaststellingsroute',

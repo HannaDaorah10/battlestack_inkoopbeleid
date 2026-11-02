@@ -44,6 +44,7 @@
                 :scherm-index="schermIndex"
                 :schermen="schermen"
                 :percentage="percentage"
+                :stap-status="stapStatus"
                 @ga="gaMetBewaren"
             />
 
@@ -156,6 +157,7 @@
 
 <script setup lang="ts">
 import type { Positie } from '#shared/werkinstructies/schermen'
+import { statusNaStap } from '#shared/werkinstructies/schermen'
 import type { CheckSoort } from '~/composables/useWerkroute'
 
 definePageMeta({ fullBleed: true })
@@ -177,6 +179,7 @@ const {
     schermen,
     scherm,
     percentage,
+    stapStatus,
     heeftVolgende,
     heeftVorige,
     ga,
@@ -276,16 +279,15 @@ async function opVerwijderGesprek(itemId: string) {
  *
  * Twee voorwaarden: het beleid staat in de status van de huidige stap (anders zou het
  * afrondscherm van stap 1 aanbieden om een beleid dat al in "bespreken" staat terug te zetten),
- * en de volgende stap staat in `allowedTransitions` van de server.
+ * en de status na deze stap staat in `allowedTransitions` van de server. Na de laatste stap is
+ * dat de eindstatus ("vastgesteld"), zodat juist stap 5 de knop krijgt en stap 4 niet meer.
  */
 const statusVolgende = computed<string | null>(() => {
     const huidig = data.value?.policy.status
     if (!huidig || huidig !== stap.value.status) return null
-    const volgendeStap = bouwsteen.stappen[stapIndex.value + 1]
-    if (!volgendeStap) return null
-    return data.value?.allowedTransitions.includes(volgendeStap.status)
-        ? volgendeStap.status
-        : null
+    const naar = statusNaStap(bouwsteen, stapIndex.value)
+    if (!naar) return null
+    return data.value?.allowedTransitions.includes(naar) ? naar : null
 })
 
 const statusBezig = ref(false)

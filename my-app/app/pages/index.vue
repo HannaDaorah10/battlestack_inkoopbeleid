@@ -1,15 +1,12 @@
 <template>
-    <UCard>
-        <template #header>
-            <h1 class="adj-card-title">
-                Welcome
-            </h1>
-        </template>
-        <p>This project was scaffolded with battlestack. Check the README for next steps.</p>
-    </UCard>
+    <div />
 </template>
 
 <script setup lang="ts">
-// `/` redirect logic lives in `app/middleware/auth.global.ts` (auth feature).
-// This page is only rendered when no auth feature is installed.
+// De homepagina is de bouwsteen Inkoopbeleid. Hier stond nog de scaffoldtekst ("This project
+// was scaffolded with battlestack"), die zichtbaar werd via het logo. Niet-ingelogde bezoekers
+// gaan via `auth.global.ts` eerst naar /login.
+definePageMeta({
+    middleware: () => navigateTo('/dashboard/inkoopbeleid', { replace: true }),
+})
 </script>

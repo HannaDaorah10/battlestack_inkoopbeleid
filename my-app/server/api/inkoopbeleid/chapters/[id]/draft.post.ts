@@ -1,14 +1,22 @@
-import { eq } from 'drizzle-orm'
+import { asc, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { db } from '#server/database/client'
-import { policies, policyChapters, policyGoals } from '#server/database/schema/inkoopbeleid'
+import {
+    mandates,
+    organisations,
+    policies,
+    policyChapters,
+    policyGoals,
+    thresholds,
+} from '#server/database/schema/inkoopbeleid'
+import { routeAntwoordenVoorHoofdstuk } from '#server/utils/inkoopbeleid/route-hoofdstukken'
 import { mastra } from '#server/mastra'
 import { requireUuidRouterParam } from '#server/utils/auth'
 import {
     assertGatewayConfigured,
     retrieveContext,
 } from '#server/utils/inkoopbeleid/advisor'
-import { NO_CONTEXT_NOTICE } from '#server/utils/inkoopbeleid/advice-prompt'
+import { buildChapterDraftPrompt } from '#server/utils/inkoopbeleid/advice-prompt'
 import { tryLogAudit } from '#server/utils/audit-bridge'
 
 const schema = z.object({
@@ -40,9 +48,11 @@ export default defineEventHandler(async (event) => {
             policyId: policies.id,
             policyTitle: policies.title,
             organisationId: policies.organisationId,
+            organisationName: organisations.name,
         })
         .from(policyChapters)
         .innerJoin(policies, eq(policyChapters.policyId, policies.id))
+        .innerJoin(organisations, eq(policies.organisationId, organisations.id))
         .where(eq(policyChapters.id, id))
         .limit(1)
 
@@ -52,10 +62,24 @@ export default defineEventHandler(async (event) => {
 
     assertGatewayConfigured()
 
-    const goals = await db
-        .select({ name: policyGoals.name, description: policyGoals.description })
-        .from(policyGoals)
-        .where(eq(policyGoals.policyId, row.policyId))
+    const [goals, thresholdRows, mandateRows, routeAntwoorden] = await Promise.all([
+        db
+            .select({ name: policyGoals.name, description: policyGoals.description })
+            .from(policyGoals)
+            .where(eq(policyGoals.policyId, row.policyId))
+            .orderBy(asc(policyGoals.sortOrder)),
+        db
+            .select()
+            .from(thresholds)
+            .where(eq(thresholds.organisationId, row.organisationId))
+            .orderBy(asc(thresholds.ruleSet), asc(thresholds.purchaseType), asc(thresholds.minAmountCents)),
+        db
+            .select()
+            .from(mandates)
+            .where(eq(mandates.organisationId, row.organisationId))
+            .orderBy(desc(mandates.ceilingAmountCents)),
+        routeAntwoordenVoorHoofdstuk(db, { policyId: row.policyId, chapterKey: row.key }),
+    ])
 
     // Retrieve on the chapter's subject, not on a generic query: a search for "Procedures,
     // drempelbedragen en werkwijze" pulls the tier tables, where a search for the policy title
@@ -66,18 +90,17 @@ export default defineEventHandler(async (event) => {
         topK: 8,
     })
 
-    const prompt = [
-        'Context:',
-        contextBlock || NO_CONTEXT_NOTICE,
-        '',
-        `Beleidsdocument: ${row.policyTitle}`,
-        `Hoofdstuk ${row.number}: ${row.title}`,
-        goals.length > 0
-            ? `Inkoopdoelen van deze organisatie: ${goals.map((g) => g.name).join(', ')}`
-            : 'Deze organisatie heeft nog geen inkoopdoelen vastgelegd.',
-        '',
-        `Schrijf de tekst van hoofdstuk ${row.number} (${row.title}).`,
-    ].join('\n')
+    const prompt = buildChapterDraftPrompt({
+        contextBlock,
+        organisationName: row.organisationName,
+        policyTitle: row.policyTitle,
+        chapterNumber: row.number,
+        chapterTitle: row.title,
+        goals,
+        thresholds: thresholdRows,
+        mandates: mandateRows,
+        routeAntwoorden,
+    })
 
     const agent = mastra.getAgent('inkoopbeleid-redacteur')
     const result = await agent.generate(prompt)

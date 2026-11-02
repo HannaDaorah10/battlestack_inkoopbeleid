@@ -8,12 +8,13 @@ import { POLICY_CHAPTER_COUNT } from '#server/utils/inkoopbeleid/chapters'
  * completeness signal are unit-testable without a database or a fixed system time.
  */
 
-/** The five steps in the order a policy walks them. */
+/** The five steps in the order a policy walks them, then the adopted end state. */
 export const POLICY_STATUS_ORDER: readonly PolicyStatus[] = [
     PolicyStatus.Analyse,
     PolicyStatus.Herijken,
     PolicyStatus.Opstellen,
     PolicyStatus.Bespreken,
+    PolicyStatus.Vaststellen,
     PolicyStatus.Vastgesteld,
 ]
 
@@ -32,7 +33,9 @@ const TRANSITIONS: Readonly<Record<PolicyStatus, readonly PolicyStatus[]>> = {
     [PolicyStatus.Analyse]: [PolicyStatus.Herijken],
     [PolicyStatus.Herijken]: [PolicyStatus.Opstellen, PolicyStatus.Analyse],
     [PolicyStatus.Opstellen]: [PolicyStatus.Bespreken, PolicyStatus.Herijken],
-    [PolicyStatus.Bespreken]: [PolicyStatus.Vastgesteld, PolicyStatus.Opstellen],
+    [PolicyStatus.Bespreken]: [PolicyStatus.Vaststellen, PolicyStatus.Opstellen],
+    // Adoption can still bounce back: a board that refuses to adopt sends it back to discussion.
+    [PolicyStatus.Vaststellen]: [PolicyStatus.Vastgesteld, PolicyStatus.Bespreken],
     [PolicyStatus.Vastgesteld]: [PolicyStatus.Opstellen],
 }
 

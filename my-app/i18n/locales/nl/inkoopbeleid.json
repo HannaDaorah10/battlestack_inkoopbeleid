@@ -72,8 +72,10 @@
                 "herijken": "Uitgangspunten opnieuw ijken met de stakeholders.",
                 "opstellen": "Het concept schrijven.",
                 "bespreken": "Het concept bespreken en laten beoordelen.",
-                "vastgesteld": "Formeel vastgesteld en geldig."
-            }
+                "vastgesteld": "Formeel vastgesteld en geldig.",
+                "vaststellen": "Het beleid formeel laten vaststellen, communiceren en implementeren."
+            },
+            "vaststellen": "Vaststellen"
         },
         "completeness": {
             "heading": "Volledigheid",
@@ -91,10 +93,11 @@
             "edit": "Bewerk hoofdstuk",
             "draft": "Laat de adviseur dit hoofdstuk schrijven",
             "drafting": "De adviseur schrijft…",
-            "draftReady": "Concept klaar. Bekijk het en sla op als het klopt.",
+            "draftReady": "Concept klaar. Bekijk het en neem het over als het klopt.",
             "useDraft": "Neem het concept over",
             "discardDraft": "Verwerp het concept",
-            "saved": "Hoofdstuk opgeslagen"
+            "saved": "Hoofdstuk opgeslagen",
+            "editDraft": "Bewerk het concept eerst"
         },
         "goals": {
             "heading": "Inkoopdoelen",
@@ -176,7 +179,7 @@
         "check": {
             "title": "Toets een inkoop",
             "subtitle": "Vul het bedrag en het soort inkoop in. Je krijgt de procedure, het aantal offertes en wie mag tekenen.",
-            "amount": "Bedrag (incl. btw)",
+            "amount": "Bedrag (excl. btw)",
             "amountHint": "Hele contract, niet één jaar. Bij een jaarcontract vul je het jaarbedrag in en kies je \"per jaar\".",
             "purchaseType": "Soort inkoop",
             "recurrence": "Frequentie",
@@ -207,7 +210,10 @@
                 "department": "Afdeling",
                 "ceiling": "Tekengrens",
                 "scope": "Bereik"
-            }
+            },
+            "mandateNoneDefined": "Er zijn nog geen mandaten vastgelegd voor deze organisatie.",
+            "noThresholdsDefined": "Er zijn nog geen drempelbedragen vastgelegd voor deze organisatie.",
+            "rulesPrecedence": "Getoond voor de gekozen regelset. Een rij voor een specifiek soort inkoop gaat voor op een rij voor alle soorten."
         },
         "purchaseType": {
             "werken": "Werken",
@@ -252,7 +258,7 @@
             "empty": "Er zijn nog geen afwijkingen vastgelegd.",
             "subject": "Waar gaat het over",
             "subjectPlaceholder": "Bijvoorbeeld: spoedreparatie dakbedekking Vogelbuurt",
-            "amount": "Bedrag (incl. btw)",
+            "amount": "Bedrag (excl. btw)",
             "purchaseType": "Soort inkoop",
             "ruleSkipped": "Welke regel is niet gevolgd",
             "ruleSkippedPlaceholder": "Bijvoorbeeld: 2 offertes bij € 30.000",
@@ -267,6 +273,28 @@
                 "ruleSkipped": "Niet gevolgde regel",
                 "approverRole": "Goedgekeurd door"
             }
+        },
+        "rules": {
+            "title": "Drempels en mandaten",
+            "subtitle": "Leg vast welke procedure bij welk bedrag hoort en wie tot welk bedrag mag tekenen. Toets een inkoop en de volledigheid van het beleid gebruiken deze gegevens.",
+            "thresholdsHint": "Een rij per categorie. Het bedrag \"tot\" telt niet mee in de categorie: een categorie tot € 50.000 geldt tot en met € 49.999,99. Een rij voor een specifiek soort inkoop gaat voor op een rij voor alle soorten.",
+            "mandatesHint": "Een rij per rol, met het hoogste bedrag dat die rol alleen mag tekenen.",
+            "noThresholds": "Er zijn nog geen drempelbedragen vastgelegd.",
+            "noMandates": "Er zijn nog geen mandaten vastgelegd.",
+            "addThreshold": "Voeg drempelcategorie toe",
+            "addMandate": "Voeg mandaat toe",
+            "from": "Vanaf (excl. btw)",
+            "to": "Tot (excl. btw)",
+            "toHint": "Leeg laten voor de hoogste categorie.",
+            "quotes": "minimaal {n} offerte(s)",
+            "advisorRequired": "Adviseur inkoop betrekken",
+            "ceiling": "Mag tekenen tot {amount}",
+            "rolePlaceholder": "Bijvoorbeeld: Manager vastgoed",
+            "scopePlaceholder": "Bijvoorbeeld: binnen het vastgestelde budget",
+            "remove": "Verwijder",
+            "added": "Toegevoegd",
+            "removed": "Verwijderd",
+            "manage": "Drempels en mandaten invullen"
         }
     }
 }

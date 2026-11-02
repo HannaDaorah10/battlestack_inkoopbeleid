@@ -127,6 +127,17 @@
                         {{ flag.label }}
                     </li>
                 </ul>
+                <UButton
+                    v-if="!detail.completeness.hasThresholds || !detail.completeness.hasMandates"
+                    to="/dashboard/inkoopbeleid/regels"
+                    size="sm"
+                    color="neutral"
+                    variant="outline"
+                    icon="i-lucide-scale"
+                    class="mt-3"
+                >
+                    {{ t('inkoopbeleid.rules.manage') }}
+                </UButton>
             </UCard>
         </div>
 
@@ -279,12 +290,19 @@
                             </UButton>
                         </div>
                     </template>
-                    <p
+                    <!-- Als opgemaakte tekst, niet als ruwe Markdown: een lezer hoort geen ## en ###
+                         te zien. Ingeklapt tot een paar regels; bewerken toont de hele tekst. -->
+                    <div
                         v-else-if="chapter.contentMarkdown.trim()"
-                        class="mt-2 line-clamp-4 whitespace-pre-wrap text-sm text-muted"
+                        class="relative mt-2 max-h-32 overflow-hidden text-sm text-muted"
                     >
-                        {{ chapter.contentMarkdown }}
-                    </p>
+                        <UEditor
+                            :model-value="chapter.contentMarkdown"
+                            content-type="markdown"
+                            :editable="false"
+                        />
+                        <div class="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-linear-to-t from-(--ui-bg)" />
+                    </div>
                     <p
                         v-else
                         class="mt-2 text-sm text-muted italic"
@@ -315,12 +333,14 @@
                             class="w-full"
                         />
                     </UFormField>
+                    <!-- Keuzerondjes en geen keuzelijst: na het sluiten van de keuzelijst ging de
+                         eerste klik in het reactieveld verloren, en daarmee de getypte tekst. -->
                     <UFormField :label="t('inkoopbeleid.reviews.decision.label')">
-                        <USelect
+                        <URadioGroup
                             v-model="review.decision"
                             :items="decisionItems"
                             value-key="value"
-                            class="w-full"
+                            orientation="horizontal"
                         />
                     </UFormField>
                 </div>
@@ -391,17 +411,36 @@
                         :description="t('inkoopbeleid.advisor.ungrounded')"
                         class="mb-3"
                     />
-                    <pre class="max-h-96 overflow-auto whitespace-pre-wrap rounded-md bg-elevated p-3 text-sm">{{ draftResult?.draft }}</pre>
+                    <div class="max-h-96 overflow-auto rounded-md bg-elevated p-3 text-sm">
+                        <UEditor
+                            v-if="draftResult"
+                            :model-value="draftResult.draft"
+                            content-type="markdown"
+                            :editable="false"
+                        />
+                    </div>
                     <template #footer>
-                        <div class="flex justify-end gap-2">
+                        <div class="flex flex-wrap justify-end gap-2">
                             <UButton
                                 color="neutral"
                                 variant="outline"
+                                :disabled="savingDraft"
                                 @click="showDraft = false"
                             >
                                 {{ t('inkoopbeleid.chapters.discardDraft') }}
                             </UButton>
-                            <UButton @click="acceptDraft">
+                            <UButton
+                                color="neutral"
+                                variant="outline"
+                                :disabled="savingDraft"
+                                @click="editDraft"
+                            >
+                                {{ t('inkoopbeleid.chapters.editDraft') }}
+                            </UButton>
+                            <UButton
+                                :loading="savingDraft"
+                                @click="acceptDraft"
+                            >
                                 {{ t('inkoopbeleid.chapters.useDraft') }}
                             </UButton>
                         </div>
@@ -501,7 +540,7 @@ useHead({ title: () => detail.value?.policy.title ?? t('inkoopbeleid.title') })
 
 function statusColor(s: string) {
     if (s === 'vastgesteld') return 'success' as const
-    if (s === 'bespreken') return 'warning' as const
+    if (s === 'bespreken' || s === 'vaststellen') return 'warning' as const
     return 'neutral' as const
 }
 function decisionColor(d: string) {
@@ -653,7 +692,35 @@ async function draftChapter(chapter: Chapter) {
     }
 }
 
-function acceptDraft() {
+const savingDraft = ref(false)
+
+/**
+ * "Neem het concept over" slaat het concept meteen op in het hoofdstuk.
+ *
+ * Eerder opende deze knop alleen de editor met het concept erin, en moest daarna nog op "Bewaar
+ * hoofdstuk" worden geklikt. Wie dat niet deed (de knoptekst suggereert dat je klaar bent) was na
+ * herladen alles kwijt. Wie het concept eerst wil bijschaven, kiest "Bewerk het concept eerst".
+ */
+async function acceptDraft() {
+    if (!draftResult.value || !draftChapterId.value || savingDraft.value) return
+    savingDraft.value = true
+    try {
+        await $fetch(`/api/inkoopbeleid/chapters/${draftChapterId.value}`, {
+            method: 'PUT',
+            body: { contentMarkdown: draftResult.value.draft },
+        })
+        if (editingId.value === draftChapterId.value) editingId.value = null
+        showDraft.value = false
+        await refresh()
+        toast.add({ title: t('inkoopbeleid.chapters.saved'), color: 'success' })
+    } catch (e) {
+        notifyError(e)
+    } finally {
+        savingDraft.value = false
+    }
+}
+
+function editDraft() {
     if (!draftResult.value || !draftChapterId.value) return
     editingId.value = draftChapterId.value
     editingContent.value = draftResult.value.draft
@@ -663,15 +730,21 @@ function acceptDraft() {
 // --- Reviews --------------------------------------------------------------------------
 type ReviewDecisionValue = 'comment' | 'approve' | 'reject'
 
+/**
+ * "Hele beleid" als echte waarde en niet als `null`: een keuzelijstitem zonder waarde behandelt
+ * de onderliggende Select niet als keuze. Pas bij het versturen wordt het weer null.
+ */
+const WHOLE_POLICY = 'policy'
+
 const review = reactive({
-    chapterId: null as string | null,
+    chapterId: WHOLE_POLICY as string,
     decision: 'comment' as ReviewDecisionValue,
     comment: '',
 })
 const postingReview = ref(false)
 
 const chapterItems = computed(() => [
-    { label: t('inkoopbeleid.reviews.wholePolicy'), value: null },
+    { label: t('inkoopbeleid.reviews.wholePolicy'), value: WHOLE_POLICY },
     ...(detail.value?.chapters ?? []).map((c) => ({
         label: `${c.number}. ${c.title}`,
         value: c.id,
@@ -699,7 +772,8 @@ async function submitReview() {
         await $fetch(`/api/inkoopbeleid/policies/${policyId.value}/reviews`, {
             method: 'POST',
             body: {
-                chapterId: review.chapterId,
+                chapterId: review.chapterId === WHOLE_POLICY ? null : review.chapterId,
+
                 decision: review.decision,
                 comment: review.comment.trim(),
             },

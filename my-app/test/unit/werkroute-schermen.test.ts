@@ -5,6 +5,8 @@ import {
     doorlopenSchermen,
     schermenVoorStap,
     sectieVoorScherm,
+    stapIndexVoorStatus,
+    statusNaStap,
     tipVoorTaak,
     totaalSchermen,
     volgendePositie,
@@ -12,6 +14,7 @@ import {
     vorigePositie,
 } from '#shared/werkinstructies/schermen'
 import type { Bouwsteen, WerkinstructieStap } from '#shared/werkinstructies/types'
+import { POLICY_CHAPTER_TEMPLATE } from '#server/utils/inkoopbeleid/chapters'
 
 const bouwsteen = BOUWSTEEN_INKOOPBELEID
 
@@ -191,7 +194,33 @@ describe('de content van bouwsteen 0.2', { timeout: 120_000 }, () => {
 
     it('koppelt elke stap aan een status van policies.status', () => {
         expect(bouwsteen.stappen.map((s) => s.status))
-            .toEqual(['analyse', 'herijken', 'opstellen', 'bespreken', 'vastgesteld'])
+            .toEqual(['analyse', 'herijken', 'opstellen', 'bespreken', 'vaststellen'])
+        expect(bouwsteen.eindStatus).toBe('vastgesteld')
+    })
+
+    it('laat de status pas na de laatste stap op de eindstatus komen', () => {
+        // Stap 4 leidt naar "vaststellen", niet al naar "vastgesteld".
+        expect(statusNaStap(bouwsteen, 3)).toBe('vaststellen')
+        expect(statusNaStap(bouwsteen, 4)).toBe('vastgesteld')
+        expect(statusNaStap(bouwsteen, 99)).toBeNull()
+    })
+
+    it('opent een beleid op de stap van zijn status', () => {
+        expect(stapIndexVoorStatus(bouwsteen, 'analyse')).toBe(0)
+        expect(stapIndexVoorStatus(bouwsteen, 'vaststellen')).toBe(4)
+        expect(stapIndexVoorStatus(bouwsteen, 'vastgesteld')).toBe(4)
+        expect(stapIndexVoorStatus(bouwsteen, 'iets-ouds')).toBe(0)
+        expect(stapIndexVoorStatus(bouwsteen, undefined)).toBe(0)
+    })
+
+    it('koppelt de onderdelen van stap 0.2.3 aan bestaande hoofdstukken', () => {
+        const hoofdstukken = new Set(POLICY_CHAPTER_TEMPLATE.map((c) => c.key))
+        const gekoppeld = bouwsteen.stappen.flatMap((s) => s.uitwerking).filter((v) => v.hoofdstuk)
+        expect(gekoppeld.length).toBe(7)
+        for (const v of gekoppeld) expect(hoofdstukken.has(v.hoofdstuk!)).toBe(true)
+        // Een hoofdstuk wordt door hoogstens een onderdeel gevuld, anders overschrijven ze elkaar.
+        const keys = gekoppeld.map((v) => v.hoofdstuk)
+        expect(new Set(keys).size).toBe(keys.length)
     })
 
     it('gebruikt overal unieke sleutels, zodat opgeslagen werk nooit botst', () => {

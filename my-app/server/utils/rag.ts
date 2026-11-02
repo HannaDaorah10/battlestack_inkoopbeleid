@@ -147,6 +147,44 @@ async function initIndex(cfg: RagConfig): Promise<void> {
     await ensureKeywordIndex(INDEX_NAME)
 }
 
+/**
+ * Refuse an embedding whose width does not match the index, with a message an admin can act on.
+ *
+ * Without this, a model switch at `/dashboard/settings/ai` (say to a 4096-dimension model while
+ * the index stores 1536) only surfaced as pgvector's "expects 1536 dimensions but got 4096" from
+ * deep inside the upsert, shown to an end user who uploaded a Word file and cannot fix it.
+ */
+function assertEmbeddingWidth(embedding: readonly number[] | undefined, cfg: RagConfig, modelId: string): void {
+    const got = embedding?.length ?? 0
+    if (got === cfg.embeddingDimensions) return
+    const message
+        = `Het embeddingmodel "${modelId}" levert vectoren van ${got} dimensies, maar de zoekindex `
+            + `verwacht er ${cfg.embeddingDimensions}. Kies bij Instellingen > AI een embeddingmodel met `
+            + `${cfg.embeddingDimensions} dimensies (bijvoorbeeld bedrock/eu.cohere.embed-v4:0), of bouw de `
+            + 'index opnieuw op voor het nieuwe model.'
+    console.error(`[rag] ${message}`)
+    throw createError({
+        statusCode: 409,
+        statusMessage: message,
+        data: { code: 'embedding-dimension-mismatch', expected: cfg.embeddingDimensions, got, model: modelId },
+    })
+}
+
+/**
+ * Embed one probe string with `modelId` and report whether its width fits the index.
+ *
+ * Used by the admin model picker so switching to an incompatible embedding model is refused at
+ * the moment of switching, instead of breaking every later upload and search.
+ */
+export async function probeEmbeddingModel(modelId: string): Promise<{ dimensions: number, expected: number }> {
+    const cfg = readConfig()
+    const { embeddings } = await embedMany({
+        model: gatewayEmbedding(modelId),
+        values: ['inkoopbeleid'],
+    })
+    return { dimensions: embeddings[0]?.length ?? 0, expected: cfg.embeddingDimensions }
+}
+
 export async function ingestText(opts: {
     title: string
     source: string
@@ -170,6 +208,7 @@ export async function ingestText(opts: {
         model: await getModel(cfg),
         values: chunks.map((c) => c.text),
     })
+    assertEmbeddingWidth(embeddings[0], cfg, _embeddingModelId ?? cfg.embeddingModel)
 
     await getStore(cfg).upsert({
         indexName: INDEX_NAME,
@@ -227,6 +266,7 @@ export async function queryText(
         model: await getModel(cfg),
         values: [query],
     })
+    assertEmbeddingWidth(embeddings[0], cfg, _embeddingModelId ?? cfg.embeddingModel)
 
     const depth = cfg.retrieval === 'hybrid' ? candidateDepth(topK) : topK
     const densePromise = getStore(cfg).query({

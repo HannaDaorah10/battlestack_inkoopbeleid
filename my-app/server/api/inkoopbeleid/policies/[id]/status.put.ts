@@ -4,6 +4,7 @@ import { db } from '#server/database/client'
 import { policies, PolicyStatus } from '#server/database/schema/inkoopbeleid'
 import { requireUuidRouterParam } from '#server/utils/auth'
 import { canTransition, isRevision } from '#server/utils/inkoopbeleid/workflow'
+import { vulLegeHoofdstukkenUitRoute } from '#server/utils/inkoopbeleid/route-hoofdstukken'
 import { tryLogAudit } from '#server/utils/audit-bridge'
 
 const schema = z.object({
@@ -65,6 +66,12 @@ export default defineEventHandler(async (event) => {
             statusCode: 409,
             statusMessage: 'Policy status changed in another request, reload and try again',
         })
+    }
+
+    // Het opstellen is klaar: wat de route voor de hoofdstukken heeft opgeleverd, hoort nu in
+    // het beleid te staan. Vult alleen lege hoofdstukken, dus losse bewerkingen blijven staan.
+    if (current.status === PolicyStatus.Opstellen) {
+        await vulLegeHoofdstukkenUitRoute(db, id)
     }
 
     await tryLogAudit(event, 'inkoopbeleid.policy.status.changed', user.id, {

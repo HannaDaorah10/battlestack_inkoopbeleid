@@ -38,12 +38,18 @@ import { files } from './files'
 
 // --- Vocabularies -----------------------------------------------------------------------
 
-/** The 5 steps of 0.2: Analyse -> Herijken -> Opstellen -> Bespreken -> Vaststellen. */
+/**
+ * The 5 steps of 0.2 (Analyse -> Herijken -> Opstellen -> Bespreken -> Vaststellen), plus the
+ * state after the last one. `vaststellen` is the formal adoption step being worked on;
+ * `vastgesteld` is the outcome. Collapsing the two made the route offer "vastgesteld" at the end
+ * of step 4, before step 5 had even started.
+ */
 export enum PolicyStatus {
     Analyse = 'analyse',
     Herijken = 'herijken',
     Opstellen = 'opstellen',
     Bespreken = 'bespreken',
+    Vaststellen = 'vaststellen',
     Vastgesteld = 'vastgesteld',
 }
 

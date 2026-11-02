@@ -4,7 +4,7 @@
              in een inkt-balk en schuift de navigatie er als paneel overheen. -->
         <div class="flex items-center justify-between bg-inverted px-4 py-3 lg:hidden">
             <NuxtLink
-                to="/"
+                to="/dashboard/inkoopbeleid"
                 :aria-label="appName"
             >
                 <img
@@ -42,7 +42,7 @@
             <div class="mb-5 flex items-start justify-between gap-2 ps-2">
                 <!-- Het logo staat één keer per scherm, linksboven in de navigatie. -->
                 <NuxtLink
-                    to="/"
+                    to="/dashboard/inkoopbeleid"
                     :aria-label="appName"
                 >
                     <img
@@ -303,6 +303,7 @@ const nav = computed<NavItem[]>(() => {
                 { label: t('shell.inkoopbeleidNav.documents'), to: '/dashboard/inkoopbeleid/documenten', icon: 'i-lucide-file-text' },
                 { label: t('shell.inkoopbeleidNav.advisor'), to: '/dashboard/inkoopbeleid/adviseur', icon: 'i-lucide-message-circle-question' },
                 { label: t('shell.inkoopbeleidNav.check'), to: '/dashboard/inkoopbeleid/toets', icon: 'i-lucide-calculator' },
+                { label: t('shell.inkoopbeleidNav.rules'), to: '/dashboard/inkoopbeleid/regels', icon: 'i-lucide-scale' },
                 { label: t('shell.inkoopbeleidNav.deviations'), to: '/dashboard/inkoopbeleid/afwijkingen', icon: 'i-lucide-triangle-alert' },
             ],
         })

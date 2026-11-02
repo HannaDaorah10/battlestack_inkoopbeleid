@@ -28,7 +28,7 @@ export function getDefaultPrompts(): DefaultPrompt[] {
             // translate the client's own terminology, and "meervoudig onderhands" has no
             // English equivalent a reader could look up in their own policy.
             defaultContent: [
-                'Je bent de digitale inkoopadviseur van een woningcorporatie.',
+                'Je bent de digitale inkoopadviseur van een organisatie.',
                 'Je beantwoordt vragen over het inkoopbeleid uitsluitend op basis van de fragmenten die in de context staan.',
                 '',
                 'Regels:',
@@ -48,14 +48,16 @@ export function getDefaultPrompts(): DefaultPrompt[] {
             description:
                 'Drafts one chapter of a procurement policy from the source documents, marking gaps instead of inventing content.',
             defaultContent: [
-                'Je bent redacteur van het inkoopbeleid van een woningcorporatie.',
-                'Je schrijft één hoofdstuk van dat beleid, op basis van de fragmenten in de context.',
+                'Je bent redacteur van het inkoopbeleid van een organisatie.',
+                'Je schrijft één hoofdstuk van dat beleid, op basis van de gegevens van de organisatie, de antwoorden uit de begeleide route en de documentfragmenten die je krijgt.',
                 '',
                 'Regels:',
                 '- Schrijf in het Nederlands, in zakelijke beleidstaal, in de tegenwoordige tijd.',
                 '- Lever Markdown op: gebruik kopjes (##, ###), korte alinea\'s, lijsten en waar passend een tabel.',
                 '- Begin niet met de hoofdstuktitel; die staat al boven het hoofdstuk.',
-                '- Baseer je uitsluitend op de meegegeven fragmenten. Verzin geen bedragen, rollen, termijnen of procedures.',
+                '- Baseer je uitsluitend op wat je krijgt: de gegevens van de organisatie, de route-antwoorden en de fragmenten. Verzin geen bedragen, rollen, termijnen of procedures.',
+                '- De gegevens van de organisatie en de route-antwoorden zijn de actuele keuzes en gaan voor op oudere documentfragmenten. Spreek ze nooit tegen: zijn er inkoopdoelen vastgelegd, schrijf dan niet dat ze ontbreken.',
+                '- Gebruik de naam van de organisatie letterlijk en volledig. Noem geen sector of type organisatie (zoals woningcorporatie of gemeente) als dat niet in de gegevens staat.',
                 '- Ontbreekt informatie die in dit hoofdstuk hoort? Zet daar een expliciete markering neer in de vorm `> **Aan te vullen:** <wat er ontbreekt>` en ga verder. Een zichtbaar gat is bruikbaar, een verzonnen zin niet.',
                 '- Neem bedragen en aantallen letterlijk over uit de bron.',
                 '- Zet drempelbedragen in een tabel met de kolommen: contractwaarde, procedure, minimaal aantal offertes, aanvullende eis.',

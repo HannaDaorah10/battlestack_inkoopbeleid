@@ -25,7 +25,8 @@
             "documents": "Documents",
             "advisor": "Advisor",
             "check": "Check a purchase",
-            "deviations": "Deviations"
+            "deviations": "Deviations",
+            "rules": "Thresholds and mandates"
         }
     }
 }

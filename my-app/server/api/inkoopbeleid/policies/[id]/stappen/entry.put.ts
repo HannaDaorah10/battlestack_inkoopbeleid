@@ -1,8 +1,10 @@
+import { and, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { db } from '#server/database/client'
 import { policyStepEntries } from '#server/database/schema/inkoopbeleid'
 import { requireUuidRouterParam } from '#server/utils/auth'
 import { requirePolicy, requireVeld } from '#server/utils/inkoopbeleid/werkroute'
+import { schrijfOnderdeelNaarHoofdstuk } from '#server/utils/inkoopbeleid/route-hoofdstukken'
 
 const schema = z.object({
     stepKey: z.string().min(1).max(100),
@@ -28,31 +30,55 @@ export default defineEventHandler(async (event) => {
     const body = await readValidatedBody(event, schema.parse)
 
     await requirePolicy(id)
-    requireVeld(body.stepKey, body.fieldKey)
+    const veld = requireVeld(body.stepKey, body.fieldKey)
 
     const now = new Date()
-    const [saved] = await db
-        .insert(policyStepEntries)
-        .values({
-            policyId: id,
-            stepKey: body.stepKey,
-            fieldKey: body.fieldKey,
-            content: body.content,
-        })
-        .onConflictDoUpdate({
-            target: [
-                policyStepEntries.policyId,
-                policyStepEntries.stepKey,
-                policyStepEntries.fieldKey,
-            ],
-            set: { content: body.content, updatedAt: now },
-        })
-        .returning({
-            stepKey: policyStepEntries.stepKey,
-            fieldKey: policyStepEntries.fieldKey,
-            content: policyStepEntries.content,
-            updatedAt: policyStepEntries.updatedAt,
-        })
+    // In een transactie met de hoofdstuk-sync: de vorige tekst is wat bepaalt of het hoofdstuk
+    // nog een ongewijzigde kopie is, dus lezen, schrijven en doorzetten horen bij elkaar.
+    const saved = await db.transaction(async (tx) => {
+        const [vorige] = await tx
+            .select({ content: policyStepEntries.content })
+            .from(policyStepEntries)
+            .where(and(
+                eq(policyStepEntries.policyId, id),
+                eq(policyStepEntries.stepKey, body.stepKey),
+                eq(policyStepEntries.fieldKey, body.fieldKey),
+            ))
+            .limit(1)
+
+        const [rij] = await tx
+            .insert(policyStepEntries)
+            .values({
+                policyId: id,
+                stepKey: body.stepKey,
+                fieldKey: body.fieldKey,
+                content: body.content,
+            })
+            .onConflictDoUpdate({
+                target: [
+                    policyStepEntries.policyId,
+                    policyStepEntries.stepKey,
+                    policyStepEntries.fieldKey,
+                ],
+                set: { content: body.content, updatedAt: now },
+            })
+            .returning({
+                stepKey: policyStepEntries.stepKey,
+                fieldKey: policyStepEntries.fieldKey,
+                content: policyStepEntries.content,
+                updatedAt: policyStepEntries.updatedAt,
+            })
+
+        if (veld.hoofdstuk) {
+            await schrijfOnderdeelNaarHoofdstuk(tx, {
+                policyId: id,
+                chapterKey: veld.hoofdstuk,
+                vorigeInhoud: vorige?.content ?? '',
+                nieuweInhoud: body.content,
+            })
+        }
+        return rij
+    })
 
     return saved
 })

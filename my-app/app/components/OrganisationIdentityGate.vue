@@ -29,9 +29,11 @@
                     />
                 </UFormField>
 
+                <!-- Altijd aanwezig, met vaste hoogte: verscheen de hint pas bij het typen, dan schoof
+                     de knop eronder net op het moment dat je erop wilde klikken. -->
                 <p
-                    v-if="hint"
-                    class="text-xs text-muted"
+                    class="min-h-4 text-xs text-muted"
+                    aria-live="polite"
                 >
                     {{ hint }}
                 </p>

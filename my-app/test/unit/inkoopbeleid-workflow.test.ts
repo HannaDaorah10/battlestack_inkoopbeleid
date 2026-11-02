@@ -17,12 +17,13 @@ const CHAPTERS = (filled: number) =>
     Array.from({ length: 10 }, (_, i) => ({ contentMarkdown: i < filled ? 'inhoud' : '' }))
 
 describe('the workflow graph', () => {
-    it('walks the five steps of 0.2 in order', { timeout: 120_000 }, () => {
+    it('walks the five steps of 0.2 in order, then the adopted end state', { timeout: 120_000 }, () => {
         expect(POLICY_STATUS_ORDER).toEqual([
             'analyse',
             'herijken',
             'opstellen',
             'bespreken',
+            'vaststellen',
             'vastgesteld',
         ])
     })
@@ -31,7 +32,13 @@ describe('the workflow graph', () => {
         expect(canTransition('analyse', 'herijken')).toBe(true)
         expect(canTransition('herijken', 'opstellen')).toBe(true)
         expect(canTransition('opstellen', 'bespreken')).toBe(true)
-        expect(canTransition('bespreken', 'vastgesteld')).toBe(true)
+        expect(canTransition('bespreken', 'vaststellen')).toBe(true)
+        expect(canTransition('vaststellen', 'vastgesteld')).toBe(true)
+    })
+
+    it('only adopts after the adoption step, never straight from discussion', { timeout: 120_000 }, () => {
+        expect(canTransition('bespreken', 'vastgesteld')).toBe(false)
+        expect(canTransition('vaststellen', 'bespreken')).toBe(true)
     })
 
     it('lets a reviewer send a draft back, which is what makes "reject" mean anything', { timeout: 120_000 }, () => {

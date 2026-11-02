@@ -72,8 +72,10 @@
                 "herijken": "Recalibrate the principles with stakeholders.",
                 "opstellen": "Write the draft.",
                 "bespreken": "Discuss the draft and have it reviewed.",
-                "vastgesteld": "Formally adopted and in force."
-            }
+                "vastgesteld": "Formally adopted and in force.",
+                "vaststellen": "Having the policy formally adopted, communicated and implemented."
+            },
+            "vaststellen": "Adoption"
         },
         "completeness": {
             "heading": "Completeness",
@@ -94,7 +96,8 @@
             "draftReady": "Draft ready. Review it and save if it is correct.",
             "useDraft": "Use this draft",
             "discardDraft": "Discard the draft",
-            "saved": "Chapter saved"
+            "saved": "Chapter saved",
+            "editDraft": "Edit the draft first"
         },
         "goals": {
             "heading": "Procurement goals",
@@ -176,7 +179,7 @@
         "check": {
             "title": "Check a purchase",
             "subtitle": "Enter the amount and the type of purchase. You get the procedure, the number of quotes, and who may sign.",
-            "amount": "Amount (incl. VAT)",
+            "amount": "Amount (excl. VAT)",
             "amountHint": "The whole contract, not one year. For an annual contract, enter the yearly amount and choose \"per year\".",
             "purchaseType": "Type of purchase",
             "recurrence": "Frequency",
@@ -207,7 +210,10 @@
                 "department": "Department",
                 "ceiling": "Signing limit",
                 "scope": "Scope"
-            }
+            },
+            "mandateNoneDefined": "No mandates have been recorded for this organisation yet.",
+            "noThresholdsDefined": "No thresholds have been recorded for this organisation yet.",
+            "rulesPrecedence": "Shown for the selected rule set. A row for a specific purchase type takes precedence over a row for all types."
         },
         "purchaseType": {
             "werken": "Works (construction)",
@@ -252,7 +258,7 @@
             "empty": "No deviations recorded yet.",
             "subject": "What is this about",
             "subjectPlaceholder": "For example: emergency roof repair, Vogelbuurt",
-            "amount": "Amount (incl. VAT)",
+            "amount": "Amount (excl. VAT)",
             "purchaseType": "Type of purchase",
             "ruleSkipped": "Which rule was not followed",
             "ruleSkippedPlaceholder": "For example: 2 quotes at € 30,000",
@@ -267,6 +273,28 @@
                 "ruleSkipped": "Rule not followed",
                 "approverRole": "Approved by"
             }
+        },
+        "rules": {
+            "title": "Thresholds and mandates",
+            "subtitle": "Record which procedure applies at which amount and who may sign up to which amount. Check a purchase and the policy completeness use this data.",
+            "thresholdsHint": "One row per tier. The \"to\" amount is not part of the tier: a tier up to € 50,000 covers up to € 49,999.99. A row for a specific purchase type takes precedence over a row for all types.",
+            "mandatesHint": "One row per role, with the highest amount that role may sign on its own.",
+            "noThresholds": "No thresholds recorded yet.",
+            "noMandates": "No mandates recorded yet.",
+            "addThreshold": "Add threshold tier",
+            "addMandate": "Add mandate",
+            "from": "From (excl. VAT)",
+            "to": "To (excl. VAT)",
+            "toHint": "Leave empty for the top tier.",
+            "quotes": "at least {n} quote(s)",
+            "advisorRequired": "Involve the procurement advisor",
+            "ceiling": "May sign up to {amount}",
+            "rolePlaceholder": "For example: Property manager",
+            "scopePlaceholder": "For example: within the approved budget",
+            "remove": "Remove",
+            "added": "Added",
+            "removed": "Removed",
+            "manage": "Fill in thresholds and mandates"
         }
     }
 }

@@ -32,7 +32,7 @@ export default defineNuxtConfig({
         },
 
         public: {
-            appName: 'my-app',
+            appName: 'Digitaal Inkoophuis',
             auditLog: true,
             appUrl: '',
             allowRegistration: false,
@@ -179,8 +179,8 @@ export default defineNuxtConfig({
         registerType: 'autoUpdate',
 
         manifest: {
-            name: 'my-app',
-            short_name: 'my-app',
+            name: 'Digitaal Inkoophuis',
+            short_name: 'Inkoophuis',
             theme_color: '#CF2C28',
             background_color: '#F1F1F1',
             display: 'standalone',

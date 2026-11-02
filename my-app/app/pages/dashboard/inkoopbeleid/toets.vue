@@ -97,8 +97,23 @@
                     </h2>
                 </template>
 
+                <!-- Geen drempels of mandaten vastgelegd is iets anders dan "geen passende
+                     categorie" of "niemand mag dit tekenen": dat eerste is een gat in de
+                     gegevens, en de oplossing is ze invullen. -->
                 <UAlert
-                    v-if="!verdict.threshold"
+                    v-if="!hasThresholds || !hasMandates"
+                    icon="i-lucide-info"
+                    color="warning"
+                    variant="subtle"
+                    :description="[
+                        !hasThresholds ? t('inkoopbeleid.check.noThresholdsDefined') : '',
+                        !hasMandates ? t('inkoopbeleid.check.mandateNoneDefined') : '',
+                    ].filter(Boolean).join(' ')"
+                    :actions="[{ label: t('inkoopbeleid.rules.manage'), to: '/dashboard/inkoopbeleid/regels', color: 'neutral', variant: 'outline' }]"
+                    class="mb-4"
+                />
+                <UAlert
+                    v-else-if="!verdict.threshold"
                     icon="i-lucide-triangle-alert"
                     color="warning"
                     variant="subtle"
@@ -163,7 +178,7 @@
                             v-else
                             class="font-medium text-warning"
                         >
-                            {{ t('inkoopbeleid.check.mandateNone') }}
+                            {{ hasMandates ? t('inkoopbeleid.check.mandateNone') : t('inkoopbeleid.check.mandateNoneDefined') }}
                         </dd>
                     </div>
                 </dl>
@@ -189,14 +204,17 @@
                 </template>
             </UCard>
 
-            <UCard v-if="rules && rules.thresholds.length">
+            <UCard v-if="visibleThresholds.length">
                 <template #header>
                     <h2 class="adj-card-title">
                         {{ t('inkoopbeleid.check.rulesHeading') }}
                     </h2>
+                    <p class="mt-1 text-sm text-muted">
+                        {{ t('inkoopbeleid.check.rulesPrecedence') }}
+                    </p>
                 </template>
                 <UTable
-                    :data="rules.thresholds"
+                    :data="visibleThresholds"
                     :columns="thresholdColumns"
                 >
                     <template #range-cell="{ row }">
@@ -333,7 +351,26 @@ const { data: rules } = await useAsyncData<{ thresholds: ThresholdRow[], mandate
     { watch: [organisationId], default: () => ({ thresholds: [], mandates: [] }) },
 )
 
+const hasThresholds = computed(() => (rules.value?.thresholds.length ?? 0) > 0)
+const hasMandates = computed(() => (rules.value?.mandates.length ?? 0) > 0)
+
+/**
+ * Alleen de tiers van de gekozen regelset, met specifieke inkoopsoorten boven "Alle soorten".
+ * Beide regelsets door elkaar tonen wekte de indruk van overlappende regels zonder voorrang,
+ * terwijl de toets altijd maar een regelset gebruikt.
+ */
+const visibleThresholds = computed(() =>
+    (rules.value?.thresholds ?? [])
+        .filter((r) => r.ruleSet === form.ruleSet)
+        .sort((a, b) =>
+            Number(a.purchaseType === 'any') - Number(b.purchaseType === 'any')
+            || a.purchaseType.localeCompare(b.purchaseType)
+            || a.minAmountCents - b.minAmountCents,
+        ),
+)
+
 const thresholdColumns = computed<TableColumn<ThresholdRow>[]>(() => [
+
     { accessorKey: 'purchaseType', header: t('inkoopbeleid.check.purchaseType') },
     { accessorKey: 'range', header: t('inkoopbeleid.check.columns.range') },
     { accessorKey: 'procedure', header: t('inkoopbeleid.check.columns.procedure') },

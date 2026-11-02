@@ -196,6 +196,7 @@
 
 <script setup lang="ts">
 import { BOUWSTEEN_INKOOPBELEID } from '#shared/werkinstructies/bouwsteen-0-2'
+import { stapIndexVoorStatus } from '#shared/werkinstructies/schermen'
 
 /**
  * Het startpunt van bouwsteen 0.2.
@@ -278,8 +279,7 @@ const enigBeleid = computed(() => (policies.value.length === 1 ? policies.value[
 
 /** "Stap 3 van 5" bij een status, voor de keuzelijst. */
 function stapNummerVoor(status: string): number {
-    const i = bouwsteen.stappen.findIndex((s) => s.status === status)
-    return i === -1 ? 1 : i + 1
+    return stapIndexVoorStatus(bouwsteen, status) + 1
 }
 
 // --- De startknop ---------------------------------------------------------------------------

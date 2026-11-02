@@ -82,6 +82,13 @@ export interface UitwerkingVeld {
     }
     /** Hulpmiddel elders in de app dat bij precies dit onderdeel hoort. */
     hulpmiddel?: Hulpmiddel
+    /**
+     * De `policy_chapters.key` van het hoofdstuk dat dit onderdeel vult. Wat hier wordt
+     * ingevuld, komt in dat hoofdstuk van het beleid terecht, zolang niemand het hoofdstuk
+     * los heeft bewerkt (zie `server/utils/inkoopbeleid/route-hoofdstukken.ts`). Zonder deze
+     * koppeling meldde de route "Concept-inkoopbeleid staat klaar" terwijl het beleid leeg was.
+     */
+    hoofdstuk?: string
 }
 
 /** Een stap uit de werkinstructie, met alle negen secties van het vaste sjabloon. */
@@ -105,6 +112,11 @@ export interface WerkinstructieStap {
     aandachtspunten: string[]
     documentTitel: string
     documentSoort: string
+    /**
+     * Of de werkschermen van deze stap beleidstekst opleveren (opstellen, vaststellen) in plaats
+     * van bevindingen of verslagen. Bepaalt alleen de uitnodigende tekst in het lege veld.
+     */
+    beleidstekst?: boolean
     uitwerking: UitwerkingVeld[]
     /**
      * De status waarin het inkoopbeleid staat terwijl deze stap loopt. Koppelt de route aan
@@ -125,6 +137,13 @@ export interface Bouwsteen {
     /** Twee korte alinea's op het welkomscherm. */
     introductie: string[]
     eindresultaat: string
+    /**
+     * De status van het inkoopbeleid zodra de laatste stap is afgerond. Elke stap heeft een
+     * eigen status (`WerkinstructieStap.status`) waarin het beleid staat terwijl die stap loopt;
+     * dit is de status daarna. Zonder dit veld zou de laatste stap geen statusknop hebben en
+     * zou de voorlaatste stap het beleid al op "vastgesteld" zetten.
+     */
+    eindStatus: string
     /** Blok "Hulpmiddelen en templates" op het welkomscherm (implementatiebesluit 4). */
     hulpmiddelen: Hulpmiddel[]
     stappen: WerkinstructieStap[]

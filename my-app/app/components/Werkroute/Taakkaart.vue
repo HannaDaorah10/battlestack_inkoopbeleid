@@ -102,7 +102,7 @@
                 class="ih-veld"
                 rows="6"
                 :value="tekst"
-                :placeholder="veld.placeholder ?? t('werkroute.taak.placeholder')"
+                :placeholder="veld.placeholder ?? standaardPlaceholder"
                 :aria-label="veld.label"
                 @input="emit('tekst', ($event.target as HTMLTextAreaElement).value)"
             />
@@ -117,9 +117,13 @@
                 <span class="text-xs leading-relaxed text-inkoophuis-tekst-tip">{{ tip }}</span>
             </div>
 
+            <!-- In een nieuw tabblad: de route blijft open op dit onderdeel, zodat je na het
+                 hulpmiddel niet hoeft te zoeken waar je was. -->
             <NuxtLink
                 v-if="veld.hulpmiddel"
                 :to="hulpmiddelPad(veld.hulpmiddel.to)"
+                target="_blank"
+                rel="noopener"
                 class="mt-3.5 inline-flex items-center gap-1.5 text-[12px] font-semibold text-inkoophuis-navy underline decoration-inkoophuis-rood underline-offset-[3px]"
             >
                 <UIcon
@@ -127,6 +131,10 @@
                     class="size-3.5"
                 />
                 {{ t('werkroute.taak.tool', { label: veld.hulpmiddel.label }) }}
+                <UIcon
+                    name="i-lucide-external-link"
+                    class="size-3"
+                />
             </NuxtLink>
         </div>
 
@@ -174,7 +182,14 @@
                 {{ t('werkroute.taak.doneTitle', { document: stap.documentTitel }) }}
             </h2>
             <p class="mb-4.5 text-[13px] leading-relaxed text-inkoophuis-tekst-stil">
-                {{ t('werkroute.taak.doneBody') }}
+                {{ heeftVolgende ? t('werkroute.taak.doneBody') : t('werkroute.taak.doneBodyLast') }}
+                <template v-if="vultHoofdstukken">
+                    {{ t('werkroute.taak.doneChapters') }}
+                    <NuxtLink
+                        :to="`/dashboard/inkoopbeleid/${policyId}`"
+                        class="font-semibold text-inkoophuis-navy underline decoration-inkoophuis-rood underline-offset-[3px]"
+                    >{{ t('werkroute.taak.doneChaptersLink') }}</NuxtLink>
+                </template>
             </p>
 
             <div class="flex flex-col gap-2.5 rounded-xl border border-inkoophuis-lijn bg-inkoophuis-veld px-4.5 py-4">
@@ -203,15 +218,35 @@
                 </div>
             </div>
 
-            <!-- Kwaliteitscriteria zijn advies, geen poort: de knop hieronder blijft altijd
-                 klikbaar. De adviseur beslist zelf of de stap af is; dit is wat hem daarbij
-                 helpt, niet wat het voor hem beslist. -->
+            <!-- Kwaliteitscriteria en controlevragen zijn advies, geen poort: doorgaan blijft
+                 altijd mogelijk. De adviseur beslist zelf of de stap af is. Wat nog open staat,
+                 wordt wel duidelijk benoemd, zodat afronden een bewuste keuze is en geen
+                 vergissing. -->
+            <div
+                v-if="openControlevragen > 0 || legeOnderdelen > 0"
+                class="mt-4 flex gap-2.5 rounded-xl border border-inkoophuis-rood/30 bg-inkoophuis-rood/5 px-4 py-3"
+                role="status"
+            >
+                <UIcon
+                    name="i-lucide-triangle-alert"
+                    class="mt-0.5 size-4 shrink-0 text-inkoophuis-rood"
+                />
+                <p class="text-[12.5px] leading-relaxed text-inkoophuis-tekst">
+                    <span v-if="legeOnderdelen > 0">{{ t('werkroute.taak.openFields', { n: legeOnderdelen }) }}</span>
+                    <span v-if="openControlevragen > 0">{{ t('werkroute.taak.openChecks', { n: openControlevragen }) }}</span>
+                    {{ t('werkroute.taak.openAdvice') }}
+                </p>
+            </div>
+
             <div class="mt-4 rounded-xl bg-inkoophuis-vlak px-4 py-3.5">
-                <p class="mb-2 text-[12.5px] font-semibold text-inkoophuis-navy">
-                    {{ t('werkroute.taak.quality', {
+                <p class="mb-1 text-[12.5px] text-inkoophuis-tekst">
+                    {{ t('werkroute.taak.checksDone', {
                         gedaan: aantalControleAangevinkt,
                         totaal: stap.controlevragen.length,
                     }) }}
+                </p>
+                <p class="mb-2 text-[12.5px] font-semibold text-inkoophuis-navy">
+                    {{ t('werkroute.taak.quality') }}
                 </p>
                 <ul class="ms-4 flex list-disc flex-col gap-1">
                     <li
@@ -316,6 +351,25 @@ const tip = computed(() =>
 
 const aantalControleAangevinkt = computed(() =>
     props.aantalAangevinkt(props.stap.id, 'controle', props.stap.controlevragen.length),
+)
+
+const openControlevragen = computed(() => props.stap.controlevragen.length - aantalControleAangevinkt.value)
+
+const legeOnderdelen = computed(() =>
+    props.stap.uitwerking.filter((v) => !props.isVeldGevuld(props.stap.id, v.id)).length,
+)
+
+/** Of deze stap hoofdstukken van het beleid vult; dan verwijst het afrondscherm ernaar. */
+const vultHoofdstukken = computed(() => props.stap.uitwerking.some((v) => v.hoofdstuk))
+
+/**
+ * In de stappen waar je beleidstekst schrijft (opstellen, vaststellen) is "je bevindingen" de
+ * verkeerde uitnodiging; daar hoort de tekst zelf in het veld.
+ */
+const standaardPlaceholder = computed(() =>
+    props.stap.beleidstekst
+        ? t('werkroute.taak.placeholderBeleid')
+        : t('werkroute.taak.placeholder'),
 )
 
 /**

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
     NO_CONTEXT_NOTICE,
     buildAdvicePrompt,
+    buildChapterDraftPrompt,
     formatContextBlock,
 } from '#server/utils/inkoopbeleid/advice-prompt'
 
@@ -49,5 +50,41 @@ describe('buildAdvicePrompt', () => {
         const prompt = buildAdvicePrompt({ contextBlock: '', question: 'Welke cao geldt?' })
         expect(prompt).toContain(NO_CONTEXT_NOTICE)
         expect(prompt).toContain('Vraag: Welke cao geldt?')
+    })
+})
+
+describe('buildChapterDraftPrompt', () => {
+    const base = {
+        contextBlock: '',
+        organisationName: 'Testorganisatie Claude QA',
+        policyTitle: 'Versie 1',
+        chapterNumber: 3,
+        chapterTitle: 'Inkoopdoelen',
+        goals: [{ name: 'Duurzaam inkopen', description: 'CO2-reductie' }],
+        thresholds: [{
+            ruleSet: 'current',
+            purchaseType: 'diensten_leveringen',
+            minAmountCents: 5_000_000,
+            maxAmountCents: null,
+            procedure: 'meervoudig_onderhands',
+            minQuotes: 3,
+        }],
+        mandates: [],
+        routeAntwoorden: '### Stap 0.2.3 · Uitgangspunten en inkoopdoelen\nSocial return 5%',
+    }
+
+    it('geeft de volledige organisatienaam mee en verbiedt een aangenomen sector', { timeout: 120_000 }, () => {
+        const prompt = buildChapterDraftPrompt(base)
+        expect(prompt).toContain('Organisatie: Testorganisatie Claude QA')
+        expect(prompt).toMatch(/noem geen sector/i)
+    })
+
+    it('neemt inkoopdoelen, drempels en route-antwoorden op, zodat hoofdstukken elkaar niet tegenspreken', { timeout: 120_000 }, () => {
+        const prompt = buildChapterDraftPrompt(base)
+        expect(prompt).toContain('- Duurzaam inkopen: CO2-reductie')
+        expect(prompt).toContain('Meervoudig onderhands, minimaal 3 offerte(s)')
+        expect(prompt).toContain('Social return 5%')
+        expect(prompt).toContain('Er zijn nog geen mandaten vastgelegd.')
+        expect(prompt).toContain(NO_CONTEXT_NOTICE)
     })
 })

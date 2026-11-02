@@ -41,7 +41,7 @@
                         aria-hidden="true"
                     >
                         <UIcon
-                            v-if="i < stapIndex"
+                            v-if="stapStatus(i) === 'afgerond'"
                             name="i-lucide-check"
                             class="size-3"
                         />
@@ -50,7 +50,7 @@
                     <span>
                         <span
                             class="block text-[12.5px] leading-tight font-semibold"
-                            :class="i === stapIndex ? 'text-white' : i < stapIndex ? 'text-white/75' : 'text-white/45'"
+                            :class="titelKlassen(i)"
                         >{{ s.title }}</span>
                         <span class="mt-px block text-[10.5px] text-white/40">
                             {{ statusTekst(i) }}
@@ -94,6 +94,7 @@
 <script setup lang="ts">
 import type { Bouwsteen } from '#shared/werkinstructies/types'
 import type { Positie, Scherm } from '#shared/werkinstructies/schermen'
+import type { StapStatus } from '~/composables/useStapStatus'
 
 const props = defineProps<{
     bouwsteen: Bouwsteen
@@ -102,6 +103,8 @@ const props = defineProps<{
     /** De schermen van de huidige stap; alleen die krijgt een uitgeklapte subroute. */
     schermen: Scherm[]
     percentage: number
+    /** Geopend, afgerond of nog niet gestart, per stapindex. */
+    stapStatus: (i: number) => StapStatus
 }>()
 
 const emit = defineEmits<{ ga: [positie: Positie] }>()
@@ -109,21 +112,29 @@ const emit = defineEmits<{ ga: [positie: Positie] }>()
 const { t } = useI18n()
 
 /**
- * De drie toestanden van een stapcirkel.
+ * De vier toestanden van een stapcirkel.
  *
- * "Afgerond" is hier positie-in-de-route en niet inhoudelijke volledigheid: de gebruiker is
- * voorbij deze stap. Kwaliteitscriteria zijn bewust advies en geen poort, dus de balk mag niet
- * doen alsof een stap pas telt als alles is afgevinkt.
+ * De stap waar je nu in zit is wit, net als zijn titel. Daarnaast: afgerond is groen, geopend
+ * maar niet afgerond is rood, nog niet geopend is grijs. "Afgerond" betekent dat het afrondscherm
+ * bereikt is, niet dat alles is afgevinkt: kwaliteitscriteria zijn bewust advies en geen poort.
  */
 function cirkelKlassen(i: number): string {
-    if (i < props.stapIndex) return 'border-inkoophuis-groen bg-inkoophuis-groen text-white'
-    if (i === props.stapIndex) return 'border-inkoophuis-rood bg-inkoophuis-rood text-white'
+    if (i === props.stapIndex) return 'border-white bg-white text-inkoophuis-navy'
+    const status = props.stapStatus(i)
+    if (status === 'afgerond') return 'border-inkoophuis-groen bg-inkoophuis-groen text-white'
+    if (status === 'bezig') return 'border-inkoophuis-rood bg-inkoophuis-rood text-white'
     return 'border-white/30 bg-transparent text-white/50'
 }
 
+function titelKlassen(i: number): string {
+    if (i === props.stapIndex) return 'text-white'
+    return props.stapStatus(i) === 'nietGestart' ? 'text-white/45' : 'text-white/75'
+}
+
 function statusTekst(i: number): string {
-    if (i < props.stapIndex) return t('werkroute.reisbalk.done')
-    if (i === props.stapIndex) return t('werkroute.reisbalk.busy')
+    const status = props.stapStatus(i)
+    if (status === 'afgerond') return t('werkroute.reisbalk.done')
+    if (status === 'bezig' || i === props.stapIndex) return t('werkroute.reisbalk.busy')
     return t('werkroute.reisbalk.todo')
 }
 </script>

@@ -58,7 +58,15 @@
             "doneTitle": "{document} staat klaar",
             "doneBody": "Dit document is opgebouwd uit je antwoorden en gaat mee als input voor de volgende stap.",
             "empty": "(nog leeg)",
-            "quality": "Kwaliteitscriteria · {gedaan} van {totaal} controlevragen afgevinkt. De stap is afgerond wanneer:"
+            "quality": "Kwaliteitscriteria. De stap is afgerond wanneer:",
+            "placeholderBeleid": "Schrijf hier de tekst zoals die in het beleid komt te staan…",
+            "doneBodyLast": "Dit document is opgebouwd uit je antwoorden. Daarmee is de laatste stap van de bouwsteen klaar.",
+            "doneChapters": "De teksten van deze stap staan ook in de hoofdstukken van het beleid.",
+            "doneChaptersLink": "Bekijk de hoofdstukken",
+            "openFields": "{n} onderdeel/onderdelen nog leeg.",
+            "openChecks": "{n} controlevraag/controlevragen nog niet afgevinkt.",
+            "openAdvice": "Je kunt toch doorgaan, maar loop deze punten bij voorkeur eerst na.",
+            "checksDone": "Controlevragen: {gedaan} van {totaal} afgevinkt."
         },
         "gesprekken": {
             "number": "{eenheid} {n}",
