@@ -90,6 +90,7 @@ if (runtimeConfig.public.allowRegistration !== true) {
 
 const { t } = useI18n()
 
+useHead({ title: () => t('auth.signup.title') })
 const MIN = 12
 
 const signupSchema = z.object({

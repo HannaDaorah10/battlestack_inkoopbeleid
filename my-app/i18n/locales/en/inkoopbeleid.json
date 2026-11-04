@@ -21,7 +21,8 @@
                 "submit": "Continue",
                 "matchHint": "You'll continue with {name}.",
                 "createHint": "New organisation: {name}."
-            }
+            },
+            "createItem": "Create \"{name}\""
         },
         "nav": {
             "overview": "Overview",
@@ -85,7 +86,9 @@
             "mandates": "Signing mandates recorded",
             "validity": "Within the validity period",
             "validityUnknown": "No validity period recorded",
-            "score": "Score"
+            "score": "Score",
+            "savePeriod": "Save period",
+            "periodSaved": "Validity period saved"
         },
         "chapters": {
             "heading": "Chapters",

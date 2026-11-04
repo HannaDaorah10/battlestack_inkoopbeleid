@@ -52,6 +52,7 @@
                         <UFormField :label="t('inkoopbeleid.deviations.purchaseType')">
                             <USelect
                                 v-model="form.purchaseType"
+                                :content="SELECT_CONTENT"
                                 :items="purchaseTypeItems"
                                 value-key="value"
                                 class="w-full"

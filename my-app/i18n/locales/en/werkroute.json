@@ -63,10 +63,12 @@
             "doneBodyLast": "This document is built from your answers. That completes the last step of this building block.",
             "doneChapters": "The texts from this step are also in the chapters of the policy.",
             "doneChaptersLink": "View the chapters",
-            "openFields": "{n} part(s) still empty.",
-            "openChecks": "{n} check question(s) not ticked yet.",
+            "openFields": "{n} part is still empty. | {n} parts are still empty.",
+            "openChecks": "{n} check question is not ticked yet. | {n} check questions are not ticked yet.",
             "openAdvice": "You can continue anyway, but preferably go over these points first.",
-            "checksDone": "Check questions: {gedaan} of {totaal} ticked."
+            "checksDone": "Check questions: {gedaan} of {totaal} ticked.",
+            "incompleteKicker": "Step not complete yet",
+            "finishedPending": "Not adopted yet"
         },
         "gesprekken": {
             "number": "{eenheid} {n}",
@@ -101,7 +103,8 @@
         "status": {
             "heading": "Status of the procurement policy",
             "body": "The policy is currently at {huidig}. This step leads to {volgende}.",
-            "action": "Move to {status}"
+            "action": "Move to {status}",
+            "via": "The policy is behind the route, so it first passes through: {statussen}."
         }
     }
 }

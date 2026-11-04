@@ -121,6 +121,8 @@
 import { z } from 'zod'
 
 const { t, setLocale } = useI18n()
+
+useHead({ title: () => t('dashboard.profile.title') })
 const { user, fetchUser } = useAuth()
 const toast = useToast()
 

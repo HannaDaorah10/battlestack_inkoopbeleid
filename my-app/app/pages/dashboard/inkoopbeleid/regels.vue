@@ -78,6 +78,7 @@
                         <UFormField :label="t('inkoopbeleid.check.purchaseType')">
                             <USelect
                                 v-model="threshold.purchaseType"
+                                :content="SELECT_CONTENT"
                                 :items="purchaseTypeItems"
                                 value-key="value"
                                 class="w-full"
@@ -119,6 +120,7 @@
                         <UFormField :label="t('inkoopbeleid.check.procedure')">
                             <USelect
                                 v-model="threshold.procedure"
+                                :content="SELECT_CONTENT"
                                 :items="procedureItems"
                                 value-key="value"
                                 class="w-full"
@@ -137,6 +139,7 @@
                         <UFormField :label="t('inkoopbeleid.check.extraRequirement')">
                             <USelect
                                 v-model="threshold.extraRequirement"
+                                :content="SELECT_CONTENT"
                                 :items="requirementItems"
                                 value-key="value"
                                 class="w-full"
@@ -145,6 +148,7 @@
                         <UFormField :label="t('inkoopbeleid.check.ruleSet')">
                             <USelect
                                 v-model="threshold.ruleSet"
+                                :content="SELECT_CONTENT"
                                 :items="ruleSetItems"
                                 value-key="value"
                                 class="w-full"

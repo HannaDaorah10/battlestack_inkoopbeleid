@@ -193,6 +193,7 @@ definePageMeta({ layout: 'auth' })
 
 const { t } = useI18n()
 
+useHead({ title: () => t('auth.login.title') })
 const loginSchema = z.object({
     email: z.email(t('auth.login.validation.email')),
     password: z.string().min(1, t('auth.login.validation.password')),

@@ -34,6 +34,7 @@
                     <UFormField :label="t('inkoopbeleid.documents.fieldKind')">
                         <USelect
                             v-model="form.kind"
+                            :content="SELECT_CONTENT"
                             :items="kindItems"
                             value-key="value"
                             class="w-full"

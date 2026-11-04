@@ -144,6 +144,16 @@ describe('the completeness signal', () => {
         expect(c.score).toBeLessThan(0.5)
     })
 
+    it('weighs filled chapters above a single goal', { timeout: 120_000 }, () => {
+        // The case from the retest: 8 of 10 chapters must not score below 1 chapter plus 1 goal.
+        const none = { ...base, goalCount: 0, thresholdCount: 0, mandateCount: 0, periodStart: null, periodEnd: null }
+        const eightChapters = assessCompleteness({ ...none, chapters: CHAPTERS(8) })
+        const oneChapterOneGoal = assessCompleteness({ ...none, chapters: CHAPTERS(1), goalCount: 1 })
+        expect(eightChapters.score).toBe(0.4)
+        expect(oneChapterOneGoal.score).toBeCloseTo(0.18, 1)
+        expect(eightChapters.score).toBeGreaterThan(oneChapterOneGoal.score)
+    })
+
     it('scores an empty policy at 0', { timeout: 120_000 }, () => {
         const c = assessCompleteness({
             chapters: CHAPTERS(0),

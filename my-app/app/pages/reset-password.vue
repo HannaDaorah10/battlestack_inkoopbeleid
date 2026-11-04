@@ -85,6 +85,8 @@ import { z } from 'zod'
 definePageMeta({ layout: 'auth' })
 
 const { t } = useI18n()
+
+useHead({ title: () => t('authRecovery.reset.title') })
 const route = useRoute()
 const token = String(route.query.token ?? '')
 

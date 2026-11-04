@@ -77,9 +77,25 @@ export interface CompletenessSignal {
     hasMandates: boolean
     /** `null` when the policy has no validity period recorded, which is not the same as expired. */
     withinValidityPeriod: boolean | null
-    /** 0..1, rounded to two decimals. */
+    /** 0..1, rounded to two decimals, weighted by {@link COMPLETENESS_WEIGHTS}. */
     score: number
 }
+
+/**
+ * How much each signal counts towards `score`. Sums to 1.
+ *
+ * The chapters are the policy itself, so together they are half the score. A plain average of
+ * the five signals made all ten chapters weigh exactly as much as one recorded goal: eight
+ * chapters filled scored 16%, while one chapter plus one goal scored 22%, which no reader could
+ * square with the checklist next to it.
+ */
+export const COMPLETENESS_WEIGHTS = {
+    chapters: 0.5,
+    goals: 0.125,
+    thresholds: 0.125,
+    mandates: 0.125,
+    validity: 0.125,
+} as const
 
 /**
  * How finished a policy is, as data.
@@ -97,16 +113,16 @@ export function assessCompleteness(input: CompletenessInput): CompletenessSignal
     const hasMandates = input.mandateCount > 0
     const withinValidityPeriod = assessValidity(input)
 
-    const parts = [
-        chapterTotal > 0 ? chaptersFilled / chapterTotal : 0,
-        hasGoals ? 1 : 0,
-        hasThresholds ? 1 : 0,
-        hasMandates ? 1 : 0,
+    const parts: Array<[weight: number, value: number]> = [
+        [COMPLETENESS_WEIGHTS.chapters, chapterTotal > 0 ? chaptersFilled / chapterTotal : 0],
+        [COMPLETENESS_WEIGHTS.goals, hasGoals ? 1 : 0],
+        [COMPLETENESS_WEIGHTS.thresholds, hasThresholds ? 1 : 0],
+        [COMPLETENESS_WEIGHTS.mandates, hasMandates ? 1 : 0],
         // An absent period counts as 0: a policy with no stated validity is incomplete, even
         // though it is not expired. `withinValidityPeriod: null` is what carries that nuance.
-        withinValidityPeriod === true ? 1 : 0,
+        [COMPLETENESS_WEIGHTS.validity, withinValidityPeriod === true ? 1 : 0],
     ]
-    const score = Math.round((parts.reduce((a, b) => a + b, 0) / parts.length) * 100) / 100
+    const score = Math.round(parts.reduce((sum, [w, v]) => sum + w * v, 0) * 100) / 100
 
     return {
         chaptersFilled,

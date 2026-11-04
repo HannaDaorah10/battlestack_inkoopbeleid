@@ -72,9 +72,16 @@
                     class="mb-3"
                 />
 
-                <p class="whitespace-pre-wrap text-sm leading-relaxed">
-                    {{ answer }}
-                </p>
+                <!-- Opgemaakt, niet als ruwe Markdown: het model antwoordt met **vet**, lijsten
+                     en scheidingslijnen, en die horen niet als tekens in beeld. `key` zorgt dat
+                     een nieuw antwoord de editor opnieuw opbouwt in plaats van het oude te tonen. -->
+                <UEditor
+                    :key="answer"
+                    :model-value="answer"
+                    content-type="markdown"
+                    :editable="false"
+                    class="text-sm leading-relaxed"
+                />
 
                 <template #footer>
                     <div v-if="sources.length">

@@ -78,6 +78,7 @@
                             :heeft-vorige="heeftVorige"
                             :heeft-volgende="heeftVolgende"
                             :laatste-van-stap="laatsteVanStap"
+                            :bouwsteen-afgerond="bouwsteenAfgerond"
                             :policy-id="policyId"
                             :is-aangevinkt="isAangevinkt"
                             :is-veld-gevuld="isVeldGevuld"
@@ -107,6 +108,14 @@
                                             {{ t('werkroute.status.body', {
                                                 huidig: t(`inkoopbeleid.status.${data?.policy.status}`),
                                                 volgende: t(`inkoopbeleid.status.${statusVolgende}`),
+                                            }) }}
+                                        </p>
+                                        <p
+                                            v-if="statusPad.length > 1"
+                                            class="text-[11.5px] leading-relaxed text-inkoophuis-tekst-stil"
+                                        >
+                                            {{ t('werkroute.status.via', {
+                                                statussen: statusPad.slice(0, -1).map((s) => t(`inkoopbeleid.status.${s}`)).join(', '),
                                             }) }}
                                         </p>
                                     </div>
@@ -157,7 +166,7 @@
 
 <script setup lang="ts">
 import type { Positie } from '#shared/werkinstructies/schermen'
-import { statusNaStap } from '#shared/werkinstructies/schermen'
+import { statusPadNaStap } from '#shared/werkinstructies/schermen'
 import type { CheckSoort } from '~/composables/useWerkroute'
 
 definePageMeta({ fullBleed: true })
@@ -282,13 +291,22 @@ async function opVerwijderGesprek(itemId: string) {
  * en de status na deze stap staat in `allowedTransitions` van de server. Na de laatste stap is
  * dat de eindstatus ("vastgesteld"), zodat juist stap 5 de knop krijgt en stap 4 niet meer.
  */
+const statusPad = computed<string[]>(() =>
+    statusPadNaStap(bouwsteen, data.value?.policy.status, stapIndex.value),
+)
+
+/**
+ * Het eindpunt van dat pad: wat er op de knop staat. Alleen als de eerste overgang nu volgens de
+ * server mag; de rest van het pad volgt dezelfde regels stap voor stap.
+ */
 const statusVolgende = computed<string | null>(() => {
-    const huidig = data.value?.policy.status
-    if (!huidig || huidig !== stap.value.status) return null
-    const naar = statusNaStap(bouwsteen, stapIndex.value)
-    if (!naar) return null
-    return data.value?.allowedTransitions.includes(naar) ? naar : null
+    const [eerste] = statusPad.value
+    if (!eerste || !data.value?.allowedTransitions.includes(eerste)) return null
+    return statusPad.value[statusPad.value.length - 1] ?? null
 })
+
+/** Of de bouwsteen echt klaar is: het beleid staat op de eindstatus. */
+const bouwsteenAfgerond = computed(() => data.value?.policy.status === bouwsteen.eindStatus)
 
 const statusBezig = ref(false)
 
@@ -296,10 +314,13 @@ async function zetStatus(naar: string | null) {
     if (!naar) return
     statusBezig.value = true
     try {
-        await $fetch(`/api/inkoopbeleid/policies/${policyId.value}/status`, {
-            method: 'PUT',
-            body: { status: naar },
-        })
+        // Stap voor stap, zodat elke overgang door de gewone workflowregels en de auditlog gaat.
+        for (const status of statusPad.value) {
+            await $fetch(`/api/inkoopbeleid/policies/${policyId.value}/status`, {
+                method: 'PUT',
+                body: { status },
+            })
+        }
         await refresh()
         toast.add({
             title: t('inkoopbeleid.status.changed', { status: t(`inkoopbeleid.status.${naar}`) }),

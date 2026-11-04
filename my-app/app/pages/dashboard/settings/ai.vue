@@ -9,7 +9,8 @@ interface ModelConfig {
     model: string
 }
 
-const { t } = useI18n()
+const { t } = useI18n()
+useHead({ title: () => t('mastraAdmin.title') })
 const toast = useToast()
 
 // SSR cookie forward: `requireRole` 401s otherwise.

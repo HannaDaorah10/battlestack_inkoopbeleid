@@ -101,6 +101,8 @@
 
 <script setup lang="ts">
 const { t } = useI18n()
+
+useHead({ title: () => t('rag.title') })
 const toast = useToast()
 
 interface RagResult {

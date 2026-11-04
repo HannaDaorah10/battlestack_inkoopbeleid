@@ -10,6 +10,8 @@ interface UserRow {
 }
 
 const { t } = useI18n()
+
+useHead({ title: () => t('userAdmin.edit.title') })
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
@@ -169,6 +171,7 @@ async function destroy() {
                 <UFormField :label="t('userAdmin.create.role')">
                     <USelect
                         v-model="form.role"
+                        :content="SELECT_CONTENT"
                         :items="roleItems"
                         class="w-full sm:max-w-xs"
                     />

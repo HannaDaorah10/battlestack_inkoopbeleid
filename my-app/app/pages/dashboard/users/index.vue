@@ -19,6 +19,8 @@ interface UserList {
 }
 
 const { t, locale } = useI18n()
+
+useHead({ title: () => t('userAdmin.title') })
 const PAGE_SIZE = 50
 const search = ref('')
 const page = ref(0)
@@ -241,6 +243,7 @@ async function createUser() {
                     <UFormField :label="t('userAdmin.create.role')">
                         <USelect
                             v-model="newUser.role"
+                            :content="SELECT_CONTENT"
                             :items="roleItems"
                             class="w-full"
                         />

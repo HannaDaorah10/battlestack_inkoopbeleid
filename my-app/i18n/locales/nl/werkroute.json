@@ -63,10 +63,12 @@
             "doneBodyLast": "Dit document is opgebouwd uit je antwoorden. Daarmee is de laatste stap van de bouwsteen klaar.",
             "doneChapters": "De teksten van deze stap staan ook in de hoofdstukken van het beleid.",
             "doneChaptersLink": "Bekijk de hoofdstukken",
-            "openFields": "{n} onderdeel/onderdelen nog leeg.",
-            "openChecks": "{n} controlevraag/controlevragen nog niet afgevinkt.",
+            "openFields": "{n} onderdeel is nog leeg. | {n} onderdelen zijn nog leeg.",
+            "openChecks": "{n} controlevraag is nog niet afgevinkt. | {n} controlevragen zijn nog niet afgevinkt.",
             "openAdvice": "Je kunt toch doorgaan, maar loop deze punten bij voorkeur eerst na.",
-            "checksDone": "Controlevragen: {gedaan} van {totaal} afgevinkt."
+            "checksDone": "Controlevragen: {gedaan} van {totaal} afgevinkt.",
+            "incompleteKicker": "Stap nog niet compleet",
+            "finishedPending": "Nog niet vastgesteld"
         },
         "gesprekken": {
             "number": "{eenheid} {n}",
@@ -101,7 +103,8 @@
         "status": {
             "heading": "Status van het inkoopbeleid",
             "body": "Het beleid staat nu op {huidig}. Deze stap leidt naar {volgende}.",
-            "action": "Zet op {status}"
+            "action": "Zet op {status}",
+            "via": "Het beleid loopt achter op de route en gaat daarom eerst langs: {statussen}."
         }
     }
 }

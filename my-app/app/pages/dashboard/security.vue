@@ -439,6 +439,8 @@ interface Passkey {
 }
 
 const { t, te } = useI18n()
+
+useHead({ title: () => t('dashboard.security.title') })
 const toast = useToast()
 const twoFa = use2fa()
 

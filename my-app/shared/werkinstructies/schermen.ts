@@ -70,6 +70,28 @@ export function statusNaStap(bouwsteen: Bouwsteen, stapIndex: number): string | 
     return bouwsteen.stappen[stapIndex + 1]?.status ?? bouwsteen.eindStatus
 }
 
+/**
+ * De statussen waar het beleid doorheen moet om na het afronden van deze stap goed te staan.
+ *
+ * Leeg als het beleid al zo ver is (of verder), of als de status onbekend is. Eén element in het
+ * gewone geval. Meer elementen als het beleid achterloopt op de route: wie in stap 4 "Zet op
+ * Vaststellen" oversloeg en stap 5 afrondt, krijgt [vaststellen, vastgesteld]. Zonder dit had
+ * stap 5 dan geen statusknop en bleef het beleid op "bespreken" staan terwijl de route klaar was.
+ * Altijd vooruit en stap voor stap, zodat elke overgang de gewone workflowregels volgt.
+ */
+export function statusPadNaStap(
+    bouwsteen: Bouwsteen,
+    huidigeStatus: string | null | undefined,
+    stapIndex: number,
+): string[] {
+    if (!huidigeStatus || !bouwsteen.stappen[stapIndex]) return []
+    const volgorde = [...bouwsteen.stappen.map((s) => s.status), bouwsteen.eindStatus]
+    const vanaf = volgorde.indexOf(huidigeStatus)
+    const doel = stapIndex + 1
+    if (vanaf === -1 || vanaf >= doel) return []
+    return volgorde.slice(vanaf + 1, doel + 1)
+}
+
 /** Alle schermen van de hele bouwsteen bij elkaar opgeteld. */
 export function totaalSchermen(bouwsteen: Bouwsteen): number {
     return bouwsteen.stappen.reduce((som, stap) => som + schermenVoorStap(stap).length, 0)

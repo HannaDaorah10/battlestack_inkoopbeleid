@@ -5,6 +5,7 @@
         "errorTitle": "Chat niet beschikbaar",
         "errorGeneric": "Er ging iets mis. Probeer het opnieuw.",
         "errorMissingKey": "NUXT_AI_GATEWAY_KEY ontbreekt in .env. Stel de sleutel in en herstart de dev-server.",
-        "errorMissingUrl": "NUXT_AI_GATEWAY_URL ontbreekt in .env. Stel de gateway-URL in en herstart de dev-server."
+        "errorMissingUrl": "NUXT_AI_GATEWAY_URL ontbreekt in .env. Stel de gateway-URL in en herstart de dev-server.",
+        "title": "Chat"
     }
 }

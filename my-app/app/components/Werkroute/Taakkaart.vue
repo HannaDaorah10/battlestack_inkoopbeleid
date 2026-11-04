@@ -175,8 +175,11 @@
             v-else-if="scherm.soort === 'afronden'"
             class="px-8 pt-[30px] pb-[26px]"
         >
-            <p class="ih-kicker-groen">
-                {{ t('werkroute.taak.doneKicker') }}
+            <!-- "Afgerond" alleen als er niets meer openstaat. Met lege onderdelen of open
+                 controlevragen kun je wel door, maar dan is de stap niet compleet en zegt de kop
+                 dat ook, in plaats van groen te melden dat alles klaar is. -->
+            <p :class="stapCompleet ? 'ih-kicker-groen' : 'ih-kicker'">
+                {{ stapCompleet ? t('werkroute.taak.doneKicker') : t('werkroute.taak.incompleteKicker') }}
             </p>
             <h2 class="mt-1.5 mb-1.5 text-[22px] font-semibold text-inkoophuis-navy">
                 {{ t('werkroute.taak.doneTitle', { document: stap.documentTitel }) }}
@@ -232,9 +235,7 @@
                     class="mt-0.5 size-4 shrink-0 text-inkoophuis-rood"
                 />
                 <p class="text-[12.5px] leading-relaxed text-inkoophuis-tekst">
-                    <span v-if="legeOnderdelen > 0">{{ t('werkroute.taak.openFields', { n: legeOnderdelen }) }}</span>
-                    <span v-if="openControlevragen > 0">{{ t('werkroute.taak.openChecks', { n: openControlevragen }) }}</span>
-                    {{ t('werkroute.taak.openAdvice') }}
+                    {{ openPuntenTekst }}
                 </p>
             </div>
 
@@ -288,8 +289,10 @@
                     class="size-3.5"
                 />
             </button>
+            <!-- Einde van de route. "Bouwsteen afgerond" alleen als het beleid ook echt op de
+                 eindstatus staat; anders wijst de kaartvoet naar de statusknop hierboven. -->
             <span
-                v-else
+                v-else-if="bouwsteenAfgerond"
                 class="ih-kicker-groen inline-flex items-center gap-1.5"
             >
                 <UIcon
@@ -297,6 +300,12 @@
                     class="size-3.5"
                 />
                 {{ t('werkroute.taak.finished') }}
+            </span>
+            <span
+                v-else
+                class="ih-kicker inline-flex items-center gap-1.5"
+            >
+                {{ t('werkroute.taak.finishedPending') }}
             </span>
         </div>
     </div>
@@ -319,6 +328,8 @@ const props = defineProps<{
     heeftVolgende: boolean
     /** Laatste scherm van de stap? Dan luidt de knop anders. */
     laatsteVanStap: boolean
+    /** Staat het beleid op de eindstatus? Alleen dan meldt de laatste kaart "Bouwsteen afgerond". */
+    bouwsteenAfgerond?: boolean
     policyId: string
     isAangevinkt: (stepKey: string, soort: CheckSoort, index: number) => boolean
     isVeldGevuld: (stepKey: string, fieldKey: string) => boolean
@@ -358,6 +369,18 @@ const openControlevragen = computed(() => props.stap.controlevragen.length - aan
 const legeOnderdelen = computed(() =>
     props.stap.uitwerking.filter((v) => !props.isVeldGevuld(props.stap.id, v.id)).length,
 )
+
+const stapCompleet = computed(() => openControlevragen.value === 0 && legeOnderdelen.value === 0)
+
+/**
+ * Eén zin over wat nog openstaat, met enkelvoud of meervoud per aantal. Als één string en niet als
+ * losse spans, zodat er tussen de zinnen altijd een spatie staat.
+ */
+const openPuntenTekst = computed(() => [
+    legeOnderdelen.value > 0 ? t('werkroute.taak.openFields', legeOnderdelen.value) : '',
+    openControlevragen.value > 0 ? t('werkroute.taak.openChecks', openControlevragen.value) : '',
+    t('werkroute.taak.openAdvice'),
+].filter(Boolean).join(' '))
 
 /** Of deze stap hoofdstukken van het beleid vult; dan verwijst het afrondscherm ernaar. */
 const vultHoofdstukken = computed(() => props.stap.uitwerking.some((v) => v.hoofdstuk))

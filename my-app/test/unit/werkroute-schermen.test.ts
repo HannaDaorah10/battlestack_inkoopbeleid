@@ -6,6 +6,7 @@ import {
     schermenVoorStap,
     sectieVoorScherm,
     stapIndexVoorStatus,
+    statusPadNaStap,
     statusNaStap,
     tipVoorTaak,
     totaalSchermen,
@@ -203,6 +204,17 @@ describe('de content van bouwsteen 0.2', { timeout: 120_000 }, () => {
         expect(statusNaStap(bouwsteen, 3)).toBe('vaststellen')
         expect(statusNaStap(bouwsteen, 4)).toBe('vastgesteld')
         expect(statusNaStap(bouwsteen, 99)).toBeNull()
+    })
+
+    it('loopt de status bij als het beleid achter ligt op de route', () => {
+        // Gewoon geval: stap 5 afronden vanuit "vaststellen".
+        expect(statusPadNaStap(bouwsteen, 'vaststellen', 4)).toEqual(['vastgesteld'])
+        // "Zet op Vaststellen" in stap 4 overgeslagen: stap 5 neemt beide overgangen mee.
+        expect(statusPadNaStap(bouwsteen, 'bespreken', 4)).toEqual(['vaststellen', 'vastgesteld'])
+        // Al zo ver of verder: geen knop.
+        expect(statusPadNaStap(bouwsteen, 'vastgesteld', 4)).toEqual([])
+        expect(statusPadNaStap(bouwsteen, 'bespreken', 1)).toEqual([])
+        expect(statusPadNaStap(bouwsteen, 'iets-ouds', 4)).toEqual([])
     })
 
     it('opent een beleid op de stap van zijn status', () => {

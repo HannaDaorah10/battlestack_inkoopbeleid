@@ -19,6 +19,8 @@ interface PromptList {
 }
 
 const { t } = useI18n()
+
+useHead({ title: () => t('prompts.title') })
 // SSR cookie forward: `requireRole` 401s otherwise.
 const headers = useRequestHeaders(['cookie'])
 const toast = useToast()

@@ -24,7 +24,11 @@
                 :loading="creating"
                 class="w-full"
                 @create="onCreate"
-            />
+            >
+                <template #create-item-label="{ item }">
+                    {{ t('inkoopbeleid.organisation.createItem', { name: item }) }}
+                </template>
+            </UInputMenu>
         </UFormField>
     </UCard>
 </template>

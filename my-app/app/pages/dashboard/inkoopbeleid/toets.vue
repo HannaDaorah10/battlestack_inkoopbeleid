@@ -43,6 +43,7 @@
                         >
                             <USelect
                                 v-model="form.purchaseType"
+                                :content="SELECT_CONTENT"
                                 :items="purchaseTypeItems"
                                 value-key="value"
                                 class="w-full"
@@ -52,6 +53,7 @@
                         <UFormField :label="t('inkoopbeleid.check.recurrence')">
                             <USelect
                                 v-model="form.recurrence"
+                                :content="SELECT_CONTENT"
                                 :items="recurrenceItems"
                                 value-key="value"
                                 class="w-full"
@@ -72,6 +74,7 @@
                         <UFormField :label="t('inkoopbeleid.check.ruleSet')">
                             <USelect
                                 v-model="form.ruleSet"
+                                :content="SELECT_CONTENT"
                                 :items="ruleSetItems"
                                 value-key="value"
                                 class="w-full"

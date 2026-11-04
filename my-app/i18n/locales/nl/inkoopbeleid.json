@@ -21,7 +21,8 @@
                 "submit": "Doorgaan",
                 "matchHint": "Je gaat verder bij {name}.",
                 "createHint": "Nieuwe organisatie: {name}."
-            }
+            },
+            "createItem": "Maak \"{name}\" aan"
         },
         "nav": {
             "overview": "Overzicht",
@@ -85,7 +86,9 @@
             "mandates": "Mandaten vastgelegd",
             "validity": "Binnen de geldigheidsperiode",
             "validityUnknown": "Geen geldigheidsperiode vastgelegd",
-            "score": "Score"
+            "score": "Score",
+            "savePeriod": "Bewaar periode",
+            "periodSaved": "Geldigheidsperiode bewaard"
         },
         "chapters": {
             "heading": "Hoofdstukken",

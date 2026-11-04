@@ -16,7 +16,11 @@
                         size="sm"
                         class="min-w-52"
                         @create="onCreateOrganisation"
-                    />
+                    >
+                        <template #create-item-label="{ item }">
+                            {{ t('inkoopbeleid.organisation.createItem', { name: item }) }}
+                        </template>
+                    </UInputMenu>
                 </label>
                 <span class="inline-flex rounded-full border border-inkoophuis-navy/20 bg-inkoophuis-navy/5 px-2.5 py-1 text-[11px] font-bold text-inkoophuis-navy">
                     {{ t('werkroute.level', { niveau: bouwsteen.niveau }) }}

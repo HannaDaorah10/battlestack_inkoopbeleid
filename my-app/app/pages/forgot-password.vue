@@ -63,6 +63,7 @@ definePageMeta({ layout: 'auth' })
 
 const { t } = useI18n()
 
+useHead({ title: () => t('authRecovery.forgot.title') })
 const schema = z.object({
     email: z.email(t('authRecovery.forgot.validation.email')),
 })

@@ -138,6 +138,38 @@
                 >
                     {{ t('inkoopbeleid.rules.manage') }}
                 </UButton>
+
+                <!-- De geldigheidsperiode, hier in te vullen: een beleid dat via de route is
+                     aangemaakt heeft er nog geen, en anders kan de score nooit rond worden. -->
+                <form
+                    class="mt-4 grid grid-cols-1 gap-2 border-t border-default pt-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end"
+                    @submit.prevent="savePeriod"
+                >
+                    <UFormField :label="t('inkoopbeleid.overview.fieldPeriodStart')">
+                        <UInput
+                            v-model="period.start"
+                            type="date"
+                            class="w-full"
+                        />
+                    </UFormField>
+                    <UFormField :label="t('inkoopbeleid.overview.fieldPeriodEnd')">
+                        <UInput
+                            v-model="period.end"
+                            type="date"
+                            class="w-full"
+                        />
+                    </UFormField>
+                    <UButton
+                        type="submit"
+                        size="md"
+                        color="neutral"
+                        variant="outline"
+                        :loading="savingPeriod"
+                        :disabled="!periodChanged"
+                    >
+                        {{ t('inkoopbeleid.completeness.savePeriod') }}
+                    </UButton>
+                </form>
             </UCard>
         </div>
 
@@ -328,6 +360,7 @@
                     <UFormField :label="t('inkoopbeleid.reviews.chapter')">
                         <USelect
                             v-model="review.chapterId"
+                            :content="SELECT_CONTENT"
                             :items="chapterItems"
                             value-key="value"
                             class="w-full"
@@ -585,6 +618,38 @@ function notifyError(e: unknown) {
         color: 'error',
         duration: 0,
     })
+}
+
+// --- Geldigheidsperiode -----------------------------------------------------------------
+const period = reactive({ start: '', end: '' })
+watch(
+    () => [detail.value?.policy.periodStart, detail.value?.policy.periodEnd] as const,
+    ([start, end]) => {
+        period.start = start ?? ''
+        period.end = end ?? ''
+    },
+    { immediate: true },
+)
+const periodChanged = computed(() =>
+    period.start !== (detail.value?.policy.periodStart ?? '')
+    || period.end !== (detail.value?.policy.periodEnd ?? ''),
+)
+const savingPeriod = ref(false)
+
+async function savePeriod() {
+    savingPeriod.value = true
+    try {
+        await $fetch(`/api/inkoopbeleid/policies/${policyId.value}`, {
+            method: 'PUT',
+            body: { periodStart: period.start || null, periodEnd: period.end || null },
+        })
+        await refresh()
+        toast.add({ title: t('inkoopbeleid.completeness.periodSaved'), color: 'success' })
+    } catch (e) {
+        notifyError(e)
+    } finally {
+        savingPeriod.value = false
+    }
 }
 
 // --- Status ---------------------------------------------------------------------------
