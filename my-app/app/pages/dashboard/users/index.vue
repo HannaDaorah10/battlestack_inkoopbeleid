@@ -243,7 +243,6 @@ async function createUser() {
                     <UFormField :label="t('userAdmin.create.role')">
                         <USelect
                             v-model="newUser.role"
-                            :content="SELECT_CONTENT"
                             :items="roleItems"
                             class="w-full"
                         />

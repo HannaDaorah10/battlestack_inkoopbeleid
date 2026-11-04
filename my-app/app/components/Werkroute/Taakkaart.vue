@@ -182,10 +182,12 @@
                 {{ stapCompleet ? t('werkroute.taak.doneKicker') : t('werkroute.taak.incompleteKicker') }}
             </p>
             <h2 class="mt-1.5 mb-1.5 text-[22px] font-semibold text-inkoophuis-navy">
-                {{ t('werkroute.taak.doneTitle', { document: stap.documentTitel }) }}
+                {{ stapCompleet
+                    ? t('werkroute.taak.doneTitle', { document: stap.documentTitel })
+                    : t('werkroute.taak.incompleteTitle', { document: stap.documentTitel }) }}
             </h2>
             <p class="mb-4.5 text-[13px] leading-relaxed text-inkoophuis-tekst-stil">
-                {{ heeftVolgende ? t('werkroute.taak.doneBody') : t('werkroute.taak.doneBodyLast') }}
+                {{ afrondTekst }}
                 <template v-if="vultHoofdstukken">
                     {{ t('werkroute.taak.doneChapters') }}
                     <NuxtLink
@@ -371,6 +373,17 @@ const legeOnderdelen = computed(() =>
 )
 
 const stapCompleet = computed(() => openControlevragen.value === 0 && legeOnderdelen.value === 0)
+
+/**
+ * De uitleg onder de titel. Vier varianten: een complete of onvolledige stap, en wel of niet de
+ * laatste. Een onvolledige stap mag nooit melden dat hij (of de bouwsteen) klaar is.
+ */
+const afrondTekst = computed(() => {
+    if (stapCompleet.value) {
+        return props.heeftVolgende ? t('werkroute.taak.doneBody') : t('werkroute.taak.doneBodyLast')
+    }
+    return props.heeftVolgende ? t('werkroute.taak.incompleteBody') : t('werkroute.taak.incompleteBodyLast')
+})
 
 /**
  * Eén zin over wat nog openstaat, met enkelvoud of meervoud per aantal. Als één string en niet als

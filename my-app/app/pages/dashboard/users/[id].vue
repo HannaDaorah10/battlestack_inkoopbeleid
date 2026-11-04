@@ -171,7 +171,6 @@ async function destroy() {
                 <UFormField :label="t('userAdmin.create.role')">
                     <USelect
                         v-model="form.role"
-                        :content="SELECT_CONTENT"
                         :items="roleItems"
                         class="w-full sm:max-w-xs"
                     />

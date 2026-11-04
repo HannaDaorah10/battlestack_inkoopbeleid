@@ -68,7 +68,10 @@
             "openAdvice": "You can continue anyway, but preferably go over these points first.",
             "checksDone": "Check questions: {gedaan} of {totaal} ticked.",
             "incompleteKicker": "Step not complete yet",
-            "finishedPending": "Not adopted yet"
+            "finishedPending": "Not adopted yet",
+            "incompleteTitle": "{document} is not complete yet",
+            "incompleteBody": "You can move on to the next step, but this document is still missing parts. Fill them in before it serves as input.",
+            "incompleteBodyLast": "This document is still missing parts. Fill them in before having the policy adopted."
         },
         "gesprekken": {
             "number": "{eenheid} {n}",

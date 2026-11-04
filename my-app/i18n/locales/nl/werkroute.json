@@ -68,7 +68,10 @@
             "openAdvice": "Je kunt toch doorgaan, maar loop deze punten bij voorkeur eerst na.",
             "checksDone": "Controlevragen: {gedaan} van {totaal} afgevinkt.",
             "incompleteKicker": "Stap nog niet compleet",
-            "finishedPending": "Nog niet vastgesteld"
+            "finishedPending": "Nog niet vastgesteld",
+            "incompleteTitle": "{document} is nog niet compleet",
+            "incompleteBody": "Je kunt al door naar de volgende stap, maar dit document mist nog onderdelen. Vul ze aan voordat het als input dient.",
+            "incompleteBodyLast": "Dit document mist nog onderdelen. Vul ze aan voordat je het beleid laat vaststellen."
         },
         "gesprekken": {
             "number": "{eenheid} {n}",

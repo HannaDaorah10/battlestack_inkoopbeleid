@@ -155,9 +155,18 @@ export default defineAppConfig({
             ],
         },
 
+        // Geen sluitanimatie op de keuzelijst. Zolang die animatie loopt, blijft het menu in de
+        // pagina hangen en houdt het `pointer-events: none` en de scroll-lock op <body> vast.
+        // Normaal duurt dat 100 ms, maar tekent de browser het tabblad niet (venster op de
+        // achtergrond, een geautomatiseerde test) dan staat de animatie stil en ging de eerste
+        // klik na het kiezen verloren, tot wel seconden lang. Zonder animatie ruimt het menu
+        // meteen op bij het sluiten.
         select: {
             slots: { base: 'rounded-md' },
             variants: {
+                // In de `transition`-variant, want daar zet Nuxt UI de animatie; een override in
+                // de slot zou er door tailwind-merge weer onder raken.
+                transition: { true: { content: 'data-[state=closed]:animate-none' } },
                 size: {
                     md: { base: 'px-[13px] py-[10px] text-base/[1.4] gap-1.5' },
                     lg: { base: 'px-[13px] py-[10px] text-base/[1.4] gap-2' },
@@ -169,6 +178,12 @@ export default defineAppConfig({
             compoundVariants: [
                 { color: 'primary', variant: 'outline', class: 'focus-visible:ring-inverted' },
             ],
+        },
+
+        // Zelfde reden als bij `select`: het gebruikersmenu blokkeert de pagina ook tot de
+        // sluitanimatie voorbij is.
+        dropdownMenu: {
+            slots: { content: 'data-[state=closed]:animate-none' },
         },
 
         selectMenu: {

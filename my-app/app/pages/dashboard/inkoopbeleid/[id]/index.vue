@@ -360,7 +360,6 @@
                     <UFormField :label="t('inkoopbeleid.reviews.chapter')">
                         <USelect
                             v-model="review.chapterId"
-                            :content="SELECT_CONTENT"
                             :items="chapterItems"
                             value-key="value"
                             class="w-full"

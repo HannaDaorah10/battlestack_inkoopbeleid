@@ -77,7 +77,7 @@
                      een nieuw antwoord de editor opnieuw opbouwt in plaats van het oude te tonen. -->
                 <UEditor
                     :key="answer"
-                    :model-value="answer"
+                    :model-value="zonderAntwoordLabel(answer)"
                     content-type="markdown"
                     :editable="false"
                     class="text-sm leading-relaxed"
@@ -135,6 +135,15 @@ useHead({ title: () => t('inkoopbeleid.advisor.title') })
 const question = ref('')
 const asking = ref(false)
 const answer = ref<string | null>(null)
+
+/**
+ * Een eerste regel die alleen "Antwoord:" zegt (vet of niet) weghalen: het scherm zet de kop
+ * "Antwoord" er al boven. De prompt vraagt het model het weg te laten, maar een door een beheerder
+ * aangepaste prompt of een eigenwijs model mag niet opnieuw een dubbele kop opleveren.
+ */
+function zonderAntwoordLabel(tekst: string): string {
+    return tekst.replace(/^\s*(?:#{1,6}\s*)?(?:\*\*|__)?\s*antwoord\b\s*:?\s*(?:\*\*|__)?\s*:?[ \t]*\n?/i, '')
+}
 const sources = ref<AdviceSource[]>([])
 const grounded = ref(true)
 
