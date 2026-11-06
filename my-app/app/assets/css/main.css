@@ -490,3 +490,16 @@
         color: #ffffff;
     }
 }
+
+/*
+ * Geen sluitanimatie op keuzelijsten en menu's (USelect, UDropdownMenu, enz.).
+ * Zolang die animatie loopt, blijft de lijst in de pagina staan en houdt reka `pointer-events:
+ * none` op <body> vast: de eerste klik na een keuze (op een knop, of in een bedragveld) ging
+ * daardoor verloren. Tekent de browser het tabblad trager of niet, dan duurt dat tot seconden.
+ * Met `animation: none` ruimt reka de lijst direct op. Bewust gewone CSS met !important en niet
+ * via app.config: daar haalde tailwind-merge de override weer weg tegen de sluitanimatie van
+ * Nuxt UI, waardoor de vorige fix in de build niet aankwam.
+ */
+[data-reka-popper-content-wrapper] > :is([role='listbox'], [role='menu'])[data-state='closed'] {
+    animation: none !important;
+}
