@@ -10,7 +10,11 @@ const ALLOWED_MIME_TYPES = new Set([
     'image/svg+xml',
     'image/avif',
     'application/pdf',
+    // Word documents: policy sources arrive as .docx at least as often as PDF, and
+    // `server/utils/inkoopbeleid/extract.ts` reads them via mammoth.
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'text/plain',
+    'text/markdown',
     'text/csv',
     'application/zip',
 ])

@@ -2,6 +2,8 @@
 .output
 .data
 .nuxt
+# Written by @nuxt/test-utils on every run; generated state, not source.
+.nuxtrc
 .nitro
 .cache
 dist
@@ -31,3 +33,11 @@ components.d.ts
 *.battlestack.patch
 .scannerwork
 dependencycheck
+
+# AI-evaluatie (configuratie-sweep) — lokaal, niet naar GitHub
+AI-EVALUATIE-PLAN.md
+AI-EVALUATIE-SNELSTART.md
+tools/eval/corpus/*
+!tools/eval/corpus/.gitkeep
+tools/eval/runs/*
+!tools/eval/runs/.gitkeep

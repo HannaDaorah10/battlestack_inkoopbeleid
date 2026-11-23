@@ -1,0 +1,35 @@
+{
+    // The eval harness is not part of the Nuxt build: `my-app/tsconfig.json` only references the
+    // generated .nuxt projects (app/server/shared/node), and none of them include `tools/`. Without
+    // this file `nuxi typecheck` would silently skip every line here.
+    //
+    // Run it with: pnpm eval:typecheck
+    "compilerOptions": {
+        "target": "ES2023",
+        "lib": ["ES2023"],
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "types": ["node"],
+
+        // Same strictness as the app, `noUncheckedIndexedAccess` included: this code indexes into
+        // arrays of embeddings and chunks constantly, which is exactly where that rule earns its
+        // keep.
+        "strict": true,
+        "noUncheckedIndexedAccess": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+        "skipLibCheck": true,
+        "noEmit": true
+    },
+    // The four server modules the harness imports come along, so a change over there that breaks
+    // this side is caught here rather than at runtime, halfway through a paid sweep.
+    "include": [
+        "src/**/*.ts",
+        "../../server/utils/rag-chunk.ts",
+        "../../server/utils/inkoopbeleid/extract.ts",
+        "../../server/utils/inkoopbeleid/advice-prompt.ts",
+        "../../server/mastra/gateways/openai-compat.ts"
+    ]
+}

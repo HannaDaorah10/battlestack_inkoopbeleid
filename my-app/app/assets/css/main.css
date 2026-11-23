@@ -1,2 +1,505 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
+
+/* ===========================================================================
+   Adjust design system · v0.3 (Brand Guidelines 2024, onderhouden door Sevenlab)
+   Bron: "Design system concept development/adjust-tokens.css" + het design-
+   systeemdocument. Dit bestand is de enige plek waar merkwaarden staan.
+
+   Afspraak uit het design system: "Gebruik altijd de token, nooit een losse
+   hexwaarde." Alles hieronder is dus een token; schermen verwijzen ernaar via
+   de Nuxt UI-semantiek (bg-default, text-muted, border-default, …) of via de
+   `.adj-*`-klassen onderaan dit bestand.
+   =========================================================================== */
+
+@theme static {
+    /* ---- Merk: rood (= Nuxt UI `primary`, en ook `error`: het design system
+       zegt "fouten gebruiken hetzelfde rood als het accent") ---------------- */
+    --color-adjust-rood-50: #FBEAE9;
+    --color-adjust-rood-100: #F7D5D3;
+    --color-adjust-rood-200: #F0C4C2;
+    --color-adjust-rood-300: #E59A97;
+    --color-adjust-rood-400: #DA6360;
+    --color-adjust-rood-500: #CF2C28;
+    --color-adjust-rood-600: #B2241F;
+    --color-adjust-rood-700: #931D19;
+    --color-adjust-rood-800: #741714;
+    --color-adjust-rood-900: #5A120F;
+    --color-adjust-rood-950: #380B09;
+
+    /* ---- Merk: inkt/staal (= Nuxt UI `neutral`) --------------------------
+       400 Stil · 500 Gedempt · 700 Staal · 900 Inkt — precies de vier
+       tekstkleuren uit het design system, op de shades die Nuxt UI in light
+       mode gebruikt voor dimmed/muted/default/highlighted. ------------------ */
+    --color-adjust-inkt-50: #F4F6F7;
+    --color-adjust-inkt-100: #E8ECEF;
+    --color-adjust-inkt-200: #D3DAE0;
+    --color-adjust-inkt-300: #B4BEC7;
+    --color-adjust-inkt-400: #93A0AC;
+    --color-adjust-inkt-500: #5F6E7D;
+    --color-adjust-inkt-600: #46586A;
+    --color-adjust-inkt-700: #2B4155;
+    --color-adjust-inkt-800: #1E3040;
+    --color-adjust-inkt-900: #13222C;
+    --color-adjust-inkt-950: #0C1720;
+
+    /* ---- Signaal: succes (#1B7F4D op #EAF4EE, rand #BFDCCB) -------------- */
+    --color-adjust-succes-50: #EAF4EE;
+    --color-adjust-succes-100: #D5E9DE;
+    --color-adjust-succes-200: #BFDCCB;
+    --color-adjust-succes-300: #8DBFA5;
+    --color-adjust-succes-400: #4E9E74;
+    --color-adjust-succes-500: #1B7F4D;
+    --color-adjust-succes-600: #166840;
+    --color-adjust-succes-700: #125334;
+    --color-adjust-succes-800: #0E4028;
+    --color-adjust-succes-900: #0A301E;
+    --color-adjust-succes-950: #051C11;
+
+    /* ---- Signaal: waarschuwing (#9A6200 op #FAF3E0, rand #E8D5A6) -------- */
+    --color-adjust-waarschuwing-50: #FAF3E0;
+    --color-adjust-waarschuwing-100: #F4E7C6;
+    --color-adjust-waarschuwing-200: #E8D5A6;
+    --color-adjust-waarschuwing-300: #D6B063;
+    --color-adjust-waarschuwing-400: #BC8A24;
+    --color-adjust-waarschuwing-500: #9A6200;
+    --color-adjust-waarschuwing-600: #7F5100;
+    --color-adjust-waarschuwing-700: #664100;
+    --color-adjust-waarschuwing-800: #4E3200;
+    --color-adjust-waarschuwing-900: #3A2500;
+    --color-adjust-waarschuwing-950: #211500;
+
+    /* ---- Signaal: info (= Staal, #2B4155 op #EDF1F5, rand #C8D2DC) ------- */
+    --color-adjust-info-50: #EDF1F5;
+    --color-adjust-info-100: #DCE4EB;
+    --color-adjust-info-200: #C8D2DC;
+    --color-adjust-info-300: #9FAEBE;
+    --color-adjust-info-400: #63788D;
+    --color-adjust-info-500: #2B4155;
+    --color-adjust-info-600: #233648;
+    --color-adjust-info-700: #1C2B3A;
+    --color-adjust-info-800: #16222E;
+    --color-adjust-info-900: #111A23;
+    --color-adjust-info-950: #0A1016;
+
+    /* ---- Zand: de warme vlakken en lijnen ------------------------------- */
+    --color-adjust-zand-50: #FBFAF6;
+    --color-adjust-zand-100: #F6F3EA;
+    --color-adjust-zand-200: #F0EBDC;
+    --color-adjust-zand-300: #EAE4D2;
+    --color-adjust-zand-400: #DCD4BF;
+    --color-adjust-zand-500: #D2CAB3;
+    --color-adjust-zand-600: #C6BDA6;
+    --color-adjust-zand-700: #A79D85;
+    --color-adjust-zand-800: #7C7462;
+    --color-adjust-zand-900: #56513F;
+    --color-adjust-zand-950: #2E2B21;
+
+    /* ---- Uitgeschakeld: grijsbeige vlak met gedempte tekst --------------- */
+    --color-adjust-uit: #E3DDCB;
+    --color-adjust-uit-tekst: #9A958A;
+
+    /* ---- Typografie ------------------------------------------------------
+       Instrument Sans is het enige font in applicaties. De schaal hieronder
+       is de typografieschaal uit het design system, één-op-één op de
+       Tailwind-stappen gelegd, zodat er geen tussenmaat kán ontstaan. ------ */
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+    --font-mono: ui-monospace, Menlo, Monaco, 'Cascadia Mono', monospace;
+
+    --text-2xs: 10.5px; /* absolute ondergrens — nooit kleiner */
+    --text-2xs--line-height: 1.45;
+    --text-xs: 11.5px; /* bijschriften, hulptekst, microcopy */
+    --text-xs--line-height: 1.5;
+    --text-sm: 12.5px; /* secundaire tekst: hints, metadata */
+    --text-sm--line-height: 1.55;
+    --text-base: 13px; /* lopende tekst — het werkpaard */
+    --text-base--line-height: 1.6;
+    --text-lg: 15px; /* subkop & paneltitel */
+    --text-lg--line-height: 1.4;
+    --text-xl: 20px; /* kaart- en modaltitel */
+    --text-xl--line-height: 1.3;
+    --text-2xl: 24px; /* sectietitel */
+    --text-2xl--line-height: 1.25;
+    --text-3xl: 32px; /* paginatitel */
+    --text-3xl--line-height: 1.15;
+    --text-4xl: 32px;
+    --text-4xl--line-height: 1.15;
+    --text-5xl: 32px;
+    --text-5xl--line-height: 1.15;
+
+    /* ---- Radii ------------------------------------------------------------
+       "Een vaste set van vier — kies nooit een waarde ertussenin." Elke
+       Tailwind-stap valt daarom op één van de vier design-systeemwaarden. --- */
+    --radius-xs: 9px;
+    --radius-sm: 9px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 16px;
+    --radius-2xl: 16px;
+    --radius-3xl: 16px;
+    --radius-4xl: 16px;
+
+    /* ---- Inkoophuis: de begeleide route ----------------------------------
+       Bron: "Inkoophuis design planning/design_handoff_begeleide_route/README.md",
+       sectie Design tokens, plus de prototypes in dezelfde map.
+
+       Een eigen set naast de Adjust-tokens hierboven, en niet erop afgebeeld.
+       De begeleide route is een warme, beige werkomgeving met een donkere
+       routebalk; de rest van het dashboard is de koele Adjust-huisstijl. Die
+       twee door elkaar halen zou van beide een half resultaat maken. Wat
+       hetzelfde is, blijft ook hier hetzelfde: het rood en het inkt/navy komen
+       op dezelfde waarde uit als adjust-rood-500 en adjust-inkt-900.
+
+       De merkregels blijven onverkort gelden binnen deze set: hoogstens een
+       rode knop per scherm, lopende tekst is nooit rood, en er is een thema.
+       ---------------------------------------------------------------------- */
+    --color-inkoophuis-rood: #CF2D28;
+    --color-inkoophuis-rood-hover: #A8221E;
+    --color-inkoophuis-navy: #13222C;
+    --color-inkoophuis-groen: #10B981;
+
+    /* vlakken, van de pagina naar binnen toe steeds lichter */
+    --color-inkoophuis-pagina: #F3F1EC;
+    --color-inkoophuis-vlak: #F6F4EF; /* "Zo pak je het aan", infokaarten */
+    --color-inkoophuis-vlak-zacht: #FAF8F4; /* kaartvoet */
+    --color-inkoophuis-veld: #FDFCFA; /* invoervelden */
+
+    /* lijnen */
+    --color-inkoophuis-lijn: #E2DED6;
+    --color-inkoophuis-lijn-zacht: #EEE9E0;
+    --color-inkoophuis-lijn-zachtst: #F2EEE6;
+
+    /* tekst */
+    --color-inkoophuis-tekst: #374151; /* lopende tekst */
+    --color-inkoophuis-tekst-stil: #6B7280; /* secundair */
+    --color-inkoophuis-tekst-stiller: #9CA3AF; /* microlabels, placeholders */
+    --color-inkoophuis-tekst-beige: #8A8478; /* tekst op beige */
+    --color-inkoophuis-tekst-tip: #7A2622; /* tekst in het Tip-blok */
+}
+
+/* ---------------------------------------------------------------------------
+   Nuxt UI-semantiek → Adjust-tokens.
+   Nuxt UI leidt deze normaal af uit de neutral-ramp, maar het Adjust-palet is
+   bewust tweeledig: tekst is blauwgrijs (inkt/staal), vlakken en lijnen zijn
+   warm (zand). Daarom worden de vlak- en lijntokens hier expliciet gezet.
+
+   Buiten elke @layer geschreven: zo winnen ze van de definities die Nuxt UI in
+   `@layer theme` zet, inclusief het `.dark`-blok — de applicatie kent maar één
+   thema, precies zoals het design system.
+   --------------------------------------------------------------------------- */
+:root,
+:host,
+.light,
+.dark {
+    /* tekst */
+    --ui-text-dimmed: var(--color-adjust-inkt-400); /* Stil — placeholders & microlabels */
+    --ui-text-muted: var(--color-adjust-inkt-500); /* Gedempt — secundaire tekst */
+    --ui-text-toned: var(--color-adjust-inkt-600);
+    --ui-text: var(--color-adjust-inkt-700); /* Staal — lopende tekst */
+    --ui-text-highlighted: var(--color-adjust-inkt-900); /* Inkt — koppen */
+    --ui-text-inverted: #ffffff;
+
+    /* vlakken */
+    --ui-bg: #ffffff; /* Kaart */
+    --ui-bg-muted: var(--color-adjust-zand-50); /* Veld — invoervelden */
+    --ui-bg-elevated: var(--color-adjust-zand-100); /* Warm licht — tabelkop, code */
+    --ui-bg-accented: var(--color-adjust-zand-200); /* Zand licht — subtiele vlakken */
+    --ui-bg-inverted: var(--color-adjust-inkt-900); /* Inkt — navigatie */
+
+    /* randen — "vlakken scheiden met randen, niet met schaduwen" */
+    --ui-border: var(--color-adjust-zand-400); /* Lijn */
+    --ui-border-muted: var(--color-adjust-zand-300); /* Lijn zacht */
+    --ui-border-accented: var(--color-adjust-zand-500); /* Lijn sterk */
+    --ui-border-inverted: var(--color-adjust-inkt-900);
+
+    --ui-radius: 8px;
+    --ui-header-height: 4rem;
+
+    /* eigen aliassen voor plekken waar geen Nuxt UI-semantiek bestaat */
+    --adj-inkt: var(--color-adjust-inkt-900);
+    --adj-staal: var(--color-adjust-inkt-700);
+    --adj-rood: var(--color-adjust-rood-500);
+    --adj-rood-hover: var(--color-adjust-rood-600);
+    --adj-bg-pagina: #f1f1f1; /* Lichtgrijs — pagina-achtergrond */
+    --adj-sidebar-breedte: 232px;
+}
+
+@layer base {
+    /* Pagina-achtergrond is Lichtgrijs, niet wit: wit is voorbehouden aan
+       kaarten en panelen. Overschrijft `bg-default` dat Nuxt UI op body zet. */
+    body {
+        background-color: var(--adj-bg-pagina);
+        color: var(--ui-text);
+        font-family: var(--font-sans);
+        font-size: var(--text-base);
+        line-height: var(--text-base--line-height);
+    }
+
+    /* Merkregel: lopende tekst en links zijn nooit rood. Links gebruiken
+       Staal, met het rood alleen als onderstreping. */
+    a {
+        color: var(--adj-staal);
+        text-decoration-color: var(--adj-rood);
+        text-underline-offset: 3px;
+    }
+
+    a:hover {
+        color: var(--adj-inkt);
+    }
+
+    /* Getallen in tabellen en cijferblokken lijnen uit. */
+    table,
+    dd {
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+/* Eén focus-ring in de hele applicatie: 2px inkt op 2px afstand.
+   Bewust buiten @layer, zodat hij wint van de per-component outline-utilities
+   van Nuxt UI en er nergens een tweede focusstijl kan ontstaan. */
+*:focus-visible {
+    outline: 2px solid var(--adj-inkt);
+    outline-offset: 2px;
+}
+
+@layer components {
+    /* De typografieschaal als rollen. Gebruik deze klassen voor koppen en
+       lopende tekst; dan staat de maat op één plek in plaats van per scherm. */
+    .adj-page-title {
+        font-size: var(--text-3xl);
+        line-height: var(--text-3xl--line-height);
+        font-weight: 600;
+        letter-spacing: -0.015em;
+        color: var(--ui-text-highlighted);
+    }
+
+    .adj-section-title {
+        font-size: var(--text-2xl);
+        line-height: var(--text-2xl--line-height);
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        color: var(--ui-text-highlighted);
+    }
+
+    .adj-card-title {
+        font-size: var(--text-xl);
+        line-height: var(--text-xl--line-height);
+        font-weight: 600;
+        color: var(--ui-text-highlighted);
+    }
+
+    .adj-subhead {
+        font-size: var(--text-lg);
+        line-height: var(--text-lg--line-height);
+        font-weight: 600;
+        color: var(--ui-text-highlighted);
+    }
+
+    .adj-lead {
+        font-size: 14.5px;
+        line-height: 1.65;
+        color: var(--ui-text);
+    }
+
+    /* Microlabel: 11 · 700 · uppercase · +15% spatiëring. Samen met knoppen,
+       badges en foutmeldingen de enige plek waar rood in tekst mag staan. */
+    .adj-microlabel {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: var(--adj-rood);
+    }
+
+    .adj-microlabel-stil {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--ui-text-dimmed);
+    }
+
+    /* Tekstlink: Staal met rode onderstreping. De enige linkstijl die er is. */
+    .adj-link {
+        font-weight: 600;
+        color: var(--ui-text-toned);
+        text-decoration-line: underline;
+        text-decoration-color: var(--adj-rood);
+        text-underline-offset: 3px;
+    }
+
+    .adj-link:hover {
+        color: var(--ui-text-highlighted);
+    }
+
+    .adj-num {
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+/* ===========================================================================
+   Inkoophuis: bouwstenen van de begeleide route.
+
+   De vormen die in het designprototype telkens terugkomen, hier een keer
+   vastgelegd. Zonder deze klassen zou elk scherm zijn eigen 18px, zijn eigen
+   pill-knop en zijn eigen beige blok krijgen, en dan is de volgende bouwsteen
+   niet meer dezelfde route.
+
+   Nuxt UI wordt hier bewust niet gebruikt voor knop en kaart: het design vraagt
+   een 2px navy rand, pill-knoppen met schaduw en een beige kaartvoet, en dat
+   via `ui`-overrides afdwingen levert meer opgelegde uitzonderingen op dan
+   gewoon de vorm opschrijven. Iconen komen wel van `UIcon`.
+   =========================================================================== */
+
+@layer components {
+    /* ---- Kickers: 10 tot 11px, bold, uppercase, ruime spatiëring ---------- */
+    .ih-kicker {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: var(--color-inkoophuis-rood);
+    }
+
+    .ih-kicker-stil {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: var(--color-inkoophuis-tekst-stiller);
+    }
+
+    .ih-kicker-groen {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: var(--color-inkoophuis-groen);
+    }
+
+    /* ---- De taakkaart: wit, 2px navy, 18px ------------------------------- */
+    .ih-kaart {
+        background-color: #ffffff;
+        border: 2px solid var(--color-inkoophuis-navy);
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(19, 34, 44, 0.06);
+    }
+
+    /* Zachtere kaart voor het welkomscherm en het instructiepaneel. */
+    .ih-paneel {
+        background-color: #ffffff;
+        border: 1px solid var(--color-inkoophuis-lijn);
+        border-radius: 16px;
+    }
+
+    /* ---- Knoppen: altijd pill ------------------------------------------- */
+    .ih-knop-primair {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        border: none;
+        border-radius: 999px;
+        background-color: var(--color-inkoophuis-rood);
+        padding: 9px 22px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #ffffff;
+        cursor: pointer;
+        box-shadow: 0 2px 6px rgba(207, 45, 40, 0.3);
+        transition: background-color 150ms ease;
+    }
+
+    .ih-knop-primair:hover {
+        background-color: var(--color-inkoophuis-rood-hover);
+    }
+
+    /* De grote variant op het welkomscherm. */
+    .ih-knop-start {
+        padding: 13px 30px;
+        font-size: 14.5px;
+        box-shadow: 0 2px 8px rgba(207, 45, 40, 0.35);
+    }
+
+    .ih-knop-secundair {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        border: 1px solid var(--color-inkoophuis-lijn);
+        border-radius: 999px;
+        background-color: #ffffff;
+        padding: 8px 18px;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--color-inkoophuis-navy);
+        cursor: pointer;
+        transition: background-color 150ms ease;
+    }
+
+    .ih-knop-secundair:hover:not(:disabled) {
+        background-color: var(--color-inkoophuis-vlak);
+    }
+
+    .ih-knop-secundair:disabled {
+        color: var(--color-inkoophuis-tekst-stiller);
+        cursor: not-allowed;
+    }
+
+    /* ---- Blokken binnen de taakkaart ------------------------------------ */
+    /* "Zo pak je het aan": de aanpak-regel die bij dit werkscherm hoort. */
+    .ih-blok-aanpak {
+        border-radius: 12px;
+        background-color: var(--color-inkoophuis-vlak);
+        padding: 12px 15px;
+    }
+
+    /* "Tip": het aandachtspunt. Rood getint, maar de tekst zelf is niet rood. */
+    .ih-blok-tip {
+        border-radius: 12px;
+        background-color: rgba(207, 45, 40, 0.05);
+        border: 1px solid rgba(207, 45, 40, 0.18);
+        padding: 11px 14px;
+    }
+
+    /* ---- Invoervelden ---------------------------------------------------- */
+    .ih-veld {
+        width: 100%;
+        box-sizing: border-box;
+        border: 1px solid var(--color-inkoophuis-lijn);
+        border-radius: 12px;
+        background-color: var(--color-inkoophuis-veld);
+        padding: 13px 15px;
+        font-size: 13px;
+        line-height: 1.6;
+        color: var(--color-inkoophuis-navy);
+        resize: vertical;
+    }
+
+    .ih-veld::placeholder {
+        color: var(--color-inkoophuis-tekst-stiller);
+    }
+
+    .ih-veld-kort {
+        padding: 9px 13px;
+        resize: none;
+    }
+
+    /* ---- De donkere routebalk links ------------------------------------- */
+    .ih-reisbalk {
+        background-color: var(--color-inkoophuis-navy);
+        color: #ffffff;
+    }
+}
+
+/*
+ * Geen sluitanimatie op keuzelijsten en menu's (USelect, UDropdownMenu, enz.).
+ * Zolang die animatie loopt, blijft de lijst in de pagina staan en houdt reka `pointer-events:
+ * none` op <body> vast: de eerste klik na een keuze (op een knop, of in een bedragveld) ging
+ * daardoor verloren. Tekent de browser het tabblad trager of niet, dan duurt dat tot seconden.
+ * Met `animation: none` ruimt reka de lijst direct op. Bewust gewone CSS met !important en niet
+ * via app.config: daar haalde tailwind-merge de override weer weg tegen de sluitanimatie van
+ * Nuxt UI, waardoor de vorige fix in de build niet aankwam.
+ */
+[data-reka-popper-content-wrapper] > :is([role='listbox'], [role='menu'])[data-state='closed'] {
+    animation: none !important;
+}

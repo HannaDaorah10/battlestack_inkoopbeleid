@@ -31,6 +31,16 @@ export type AuditAction
         | 'ai.model-config.updated'
         | 'file.uploaded'
         | 'file.deleted'
+        // Inkoopbeleid. A procurement policy is a governance document, so the events that
+        // change its state (who moved it forward, who adopted it, who recorded a justified
+        // deviation) are exactly the ones an auditor asks about later.
+        | 'inkoopbeleid.policy.created'
+        | 'inkoopbeleid.policy.status.changed'
+        | 'inkoopbeleid.chapter.updated'
+        | 'inkoopbeleid.chapter.drafted'
+        | 'inkoopbeleid.document.ingested'
+        | 'inkoopbeleid.review.created'
+        | 'inkoopbeleid.deviation.recorded'
 
 /** Best-effort audit insert; logs to console on failure. */
 export async function logAuditEvent(

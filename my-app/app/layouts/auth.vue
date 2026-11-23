@@ -1,26 +1,38 @@
 <template>
-    <div
-        class="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-default via-elevated to-accented dark:from-gray-950 dark:via-gray-900 dark:to-gray-800"
-    >
+    <div class="flex min-h-screen items-center justify-center px-4 py-10">
+        <!-- Geen achtergrondkleur op de wrapper: de pagina is Lichtgrijs (op body),
+             wit is voorbehouden aan de kaart erin. -->
         <div class="w-full max-w-4xl">
-            <UCard
-                class="overflow-hidden shadow-xl ring-1 ring-default"
-                :ui="{ body: 'p-0 sm:p-0' }"
-            >
-                <div class="grid grid-cols-1 md:grid-cols-2">
-                    <div class="flex flex-col justify-center p-6 sm:p-10">
-                        <slot />
-                    </div>
-                    <div class="hidden md:block">
+            <div class="grid grid-cols-1 overflow-hidden rounded-lg bg-default ring ring-default md:grid-cols-2">
+                <div class="flex flex-col justify-center p-6 sm:p-10">
+                    <slot />
+                </div>
+
+                <!-- Inkt-vlak met het diapositieve logo: donkere vlakken zijn er voor
+                     oriëntatie, niet voor content — precies wat dit paneel doet. -->
+                <div class="relative hidden bg-inverted md:block">
+                    <img
+                        src="/img/auth-cover.svg"
+                        alt=""
+                        class="h-full w-full object-cover"
+                        aria-hidden="true"
+                    />
+                    <div class="absolute inset-0 flex flex-col justify-between p-10">
                         <img
-                            src="/img/auth-cover.svg"
-                            alt=""
-                            class="h-full w-full object-cover"
-                            aria-hidden="true"
+                            src="/img/adjust-logo-diap.png"
+                            alt="Adjust"
+                            class="w-[104px]"
                         />
+                        <p class="max-w-[16rem] text-lg font-semibold text-white">
+                            {{ t('auth.cover.tagline') }}
+                        </p>
                     </div>
                 </div>
-            </UCard>
+            </div>
         </div>
     </div>
 </template>
+
+<script setup lang="ts">
+const { t } = useI18n()
+</script>

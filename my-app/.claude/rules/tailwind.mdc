@@ -13,37 +13,75 @@ This project uses **Tailwind CSS v4**, NOT v3. Key differences:
 - **No `@apply` in components**: use utility classes directly in templates
 - **CSS imports:** `@import "tailwindcss"` + `@import "@nuxt/ui"` in `app/assets/css/main.css`
 
-## Design Tokens (`@theme` in main.css)
+## Design Tokens (`@theme static` in main.css)
+
+This app follows the **Adjust design system** (v0.3, based on the Adjust Brand
+Guidelines 2024). Every brand value lives in `app/assets/css/main.css` — colour
+ramps, the type scale, the radii and the font. Never add a new hex, size or
+radius to a component; add it there, or reuse what is already defined.
 
 ```css
-@theme {
-    --font-sans: 'Inter', system-ui, sans-serif;
-    --radius-sm: 0.25rem;
-    --radius-md: 0.375rem;
-    --radius-lg: 0.5rem;
-    --radius-xl: 0.75rem;
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+@theme static {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+
+    /* type scale — the design system's roles, one per Tailwind step */
+    --text-xs: 11.5px;   /* bijschriften        */
+    --text-sm: 12.5px;   /* secundaire tekst    */
+    --text-base: 13px;   /* lopende tekst       */
+    --text-lg: 15px;     /* subkop & paneltitel */
+    --text-xl: 20px;     /* kaart- en modaltitel */
+    --text-2xl: 24px;    /* sectietitel         */
+    --text-3xl: 32px;    /* paginatitel         */
+
+    /* radii — a fixed set of four, never a value in between */
+    --radius-sm: 9px;    /* rijen & kleine vlakken */
+    --radius-md: 12px;   /* velden & infoblokken   */
+    --radius-lg: 16px;   /* kaarten & panelen      */
+    /* pill = rounded-full, for buttons and badges  */
 }
 ```
 
-These tokens are used globally by `rounded-md`, `shadow-md`, `font-sans` etc. and by Nuxt UI components.
+**No shadows on cards.** Surfaces are separated by borders; shadow is reserved
+for layers that float (modal, side panel, toast).
 
 ## Colors
 
-Colors are configured in `app/app.config.ts` via Nuxt UI:
+Colour aliases are configured in `app/app.config.ts` via Nuxt UI and point at
+the Adjust ramps defined in `main.css`:
 
 ```ts
 ui: {
     colors: {
-        primary: 'blue',      // buttons, links, focus rings
-        secondary: 'purple',  // alternative actions
-        neutral: 'zinc',      // text, borders, backgrounds
+        primary: 'adjust-rood',          // #CF2C28 — primary action & emphasis
+        secondary: 'adjust-inkt',        // ink/steel family
+        success: 'adjust-succes',        // #1B7F4D
+        info: 'adjust-info',             // #2B4155 (Staal)
+        warning: 'adjust-waarschuwing',  // #9A6200
+        error: 'adjust-rood',            // errors use the same red as the accent
+        neutral: 'adjust-inkt',          // text, borders, backgrounds
     },
 }
 ```
 
-**Never hardcode color values**; use semantic color classes: `text-primary`, `bg-neutral-100`, `border-secondary`.
+**Never hardcode color values**; use the semantic classes: `bg-default`,
+`bg-muted`, `bg-elevated`, `bg-accented`, `text-default`, `text-muted`,
+`text-dimmed`, `text-highlighted`, `border-default`, `text-primary`.
+
+### Brand rules that override "whatever looks nice"
+
+- **Max one red button per screen.** The rest is secondary or a text link.
+- **Text is never red.** Links use Staal with a red underline (`.adj-link`);
+  only error messages and microlabels may be red.
+- **Dark surfaces (Inkt) are for navigation and orientation, never content.**
+- **Green only confirms something that succeeded** — never decoration.
+- There is **one theme**. `colorMode` is locked to light in `nuxt.config.ts`;
+  do not add a dark variant, it does not exist in the brand.
+
+### Typography roles
+
+Use the `.adj-*` classes from `main.css` for headings and lead text rather than
+composing sizes per screen: `.adj-page-title` (one per page), `.adj-section-title`,
+`.adj-card-title`, `.adj-subhead`, `.adj-lead`, `.adj-microlabel`, `.adj-link`.
 
 ## Responsive Design (Mobile-First)
 

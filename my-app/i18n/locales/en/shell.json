@@ -15,6 +15,18 @@
         "security": "Security",
         "signOut": "Sign out",
         "accountMenu": "Account menu",
-        "dashboard": "Dashboard"
+        "dashboard": "Dashboard",
+        "inkoopbeleid": "Procurement policy",
+        "inkoopbeleidHint": "Draft the policy, query documents, and check a purchase",
+        "mainNavigation": "Main navigation",
+        "openMenu": "Open menu",
+        "closeMenu": "Close menu",
+        "inkoopbeleidNav": {
+            "documents": "Documents",
+            "advisor": "Advisor",
+            "check": "Check a purchase",
+            "deviations": "Deviations",
+            "rules": "Thresholds and mandates"
+        }
     }
 }

@@ -4,16 +4,22 @@
         "subtitle": "Bewerk AI-agent systeemprompts zonder opnieuw te deployen. Herstel wanneer je wilt terug naar standaard.",
         "loading": "Laden…",
         "version": "v{n}",
-        "edit": "Bewerken",
-        "reset": "Herstellen",
-        "cancel": "Annuleren",
-        "save": "Opslaan",
-        "resetConfirm": "{key} herstellen naar standaard? Kan niet ongedaan worden gemaakt.",
+        "edit": "Bewerk prompt",
+        "reset": "Herstel standaard",
+        "cancel": "Annuleer",
+        "save": "Bewaar prompt",
+        "resetConfirm": "Je zet \"{key}\" terug naar de standaardtekst. Je eigen versie gaat verloren en dit kan niet ongedaan worden gemaakt.",
         "savedTitle": "{name} opgeslagen",
         "resetTitle": "{name} hersteld naar standaard",
         "saveFailed": "Opslaan mislukt",
         "saveFailedTitle": "Opslaan mislukt",
         "resetFailed": "Herstellen mislukt",
-        "resetFailedTitle": "Herstellen mislukt"
+        "resetFailedTitle": "Herstellen mislukt",
+        "resetTitleModal": "Prompt herstellen naar standaard?",
+        "resetConfirmAction": "Herstel de standaardprompt",
+        "empty": {
+            "title": "Nog geen prompts",
+            "description": "Zodra de AI-agents draaien, verschijnen hun systeemprompts hier."
+        }
     }
 }

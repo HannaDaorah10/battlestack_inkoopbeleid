@@ -20,8 +20,8 @@
             "name": "Naam",
             "password": "Wachtwoord",
             "role": "Rol",
-            "cancel": "Annuleren",
-            "submit": "Aanmaken",
+            "cancel": "Annuleer",
+            "submit": "Maak gebruiker aan",
             "failed": "Aanmaken mislukt",
             "successTitle": "Gebruiker aangemaakt",
             "failedTitle": "Aanmaken mislukt"
@@ -32,20 +32,26 @@
         },
         "edit": {
             "title": "Gebruiker bewerken",
-            "back": "Terug",
+            "back": "Terug naar gebruikers",
             "passwordPlaceholder": "Nieuw wachtwoord (laat leeg om te behouden)",
-            "delete": "Verwijderen",
-            "save": "Opslaan",
+            "delete": "Verwijder gebruiker",
+            "save": "Bewaar gebruiker",
             "savedTitle": "Gebruiker opgeslagen",
             "saveFailedTitle": "Opslaan mislukt",
             "saveFailed": "Opslaan mislukt",
-            "deleteTitle": "Gebruiker verwijderen",
+            "deleteTitle": "Gebruiker verwijderen?",
             "deleteConfirm": "Dit verwijdert {email} permanent. Kan niet ongedaan worden gemaakt.",
             "deletedTitle": "Gebruiker verwijderd",
             "deleteFailedTitle": "Verwijderen mislukt",
             "deleteFailed": "Verwijderen mislukt",
-            "deleteConfirmAction": "Verwijderen",
-            "cancel": "Annuleren"
+            "deleteConfirmAction": "Verwijder gebruiker",
+            "cancel": "Annuleer"
+        },
+        "empty": {
+            "title": "Nog geen gebruikers",
+            "description": "Maak de eerste gebruiker aan; die kan daarna zelf inloggen.",
+            "noResults": "Niets gevonden voor \"{query}\"",
+            "clearSearch": "Wis de zoekopdracht"
         }
     }
 }

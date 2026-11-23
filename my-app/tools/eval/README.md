@@ -1,0 +1,385 @@
+# AI-evaluatie: configuraties testen zoals een batch-job
+
+Deze map draait veel AI-configuraties achter elkaar tegen dezelfde vragen en documenten, en levert
+de uitkomst op in vormen die je kunt lezen, vergelijken en doorsturen. **De harness meet en
+presenteert; hij oordeelt niet.** Wat "goed" is bepaal jij, samen met je collega's.
+
+De harness gebruikt geen database en geen Docker. Je hebt alleen een AI-sleutel nodig.
+
+---
+
+## In het kort
+
+```bash
+# eenmalig
+cp tools/eval/config/sweep.example.json tools/eval/config/sweep.json
+# zet je PDF's in tools/eval/corpus/<organisatie>/ en pas sweep.json aan
+
+pnpm eval:models                          # welke modellen heeft je gateway?
+pnpm eval:retrieval -- --dry-run          # hoeveel werk wordt dit?
+pnpm eval:retrieval                       # fase 1: welk zoekprofiel vindt de juiste passage?
+pnpm eval:generate -- --retrieval r_ab12cd34   # fase 2: welk model/prompt antwoordt het best?
+pnpm eval:aggregate                       # beoordelingen van collega's -> ranglijst
+```
+
+---
+
+## Waarom twee fasen
+
+De AI-keten heeft twee schakels die je los kunt afstellen:
+
+| Fase | Wat je varieert | Hoe je beoordeelt | Kosten |
+|---|---|---|---|
+| 1. Retrieval | embeddingmodel, chunkgrootte, overlap, topK, zoekmodus (dense/hybrid) | objectief: staat het juiste bedrag in een opgehaald fragment? | alleen embeddings |
+| 2. Generatie | model, temperature, topP, maxOutputTokens, system prompt | jouw oordeel + objectieve signalen | een aanroep per cel |
+
+Tegelijk sweepen vermenigvuldigt ze. Met 24 retrieval-configuraties, 30 generatie-configuraties en
+30 vragen is dat 21.600 aanroepen. Na elkaar: fase 1 kost nul chat-aanroepen en fase 2 kost er 900.
+
+Belangrijker dan de kosten: **fase 1 bepaalt het plafond van fase 2.** Wordt de passage met het
+antwoord nooit opgehaald, dan kan geen enkel model hem gebruiken — het kan alleen overtuigend
+gokken. Zet retrieval dus eerst vast.
+
+---
+
+## Modellen op deze gateway
+
+Drie dingen die je een mislukte run besparen. Alledrie zijn gemeten tegen sluis.ai, niet uit een
+handleiding overgenomen.
+
+**Geen `openai/...`-modellen.** Deze tenant heeft een EU-residentiebeleid. Een OpenAI-model wordt
+geweigerd met:
+
+```
+provider `openai` (jurisdiction `US`) is not permitted by the tenant's residency policy
+```
+
+Beschikbaar zijn: `bedrock/`, `mistral/`, `scaleway/`, `vertex/` en `sluis/`. Draai
+`pnpm eval:models` voor de lijst van jouw tenant — **die verandert echt**. Op 19-9-2026 bleek de
+provider `nebius` verdwenen, inclusief `nebius/Qwen/Qwen3-Embedding-8B` die tot dan in deze sweep
+stond; diezelfde embedder staat er nu als `scaleway/qwen3-embedding-8b`. Controleer de lijst dus
+voordat je een sweep start, niet nadat de helft van je configuraties met `fouten` terugkomt.
+
+**Geen rerank-model.** Een cross-encoder die de top 30 herordent naar een betere top 5 is de
+gebruikelijke volgende stap na hybride zoeken, maar deze tenant biedt er geen: geen enkel model
+in de lijst van 108 is een reranker, en `/v1/rerank`, `/v2/rerank` en `/rerank` geven alledrie
+404. Zodra sluis.ai er wel een aanbiedt, is dit de logische volgende as in fase 1.
+
+**Anthropic weigert `temperature` en `top_p` samen**, met een kale `Bad Request` die niet zegt wat
+er mis is. Eén van de twee werkt prima. De harness stuurt `topP` daarom niet mee zolang hij op 1
+staat (bij 1 doet hij toch niets), zodat de Claude-modellen in een standaardsweep gewoon werken.
+Zet je `topP` bewust op iets anders, dan mislukken de Claude-cellen — die verschijnen dan met hun
+foutmelding in het rapport, de rest van de run gaat door.
+
+**`pnpm eval:models` toont een model dat de gateway zelf niet kan aanroepen.**
+`vertex/text-multilingual-embedding-002` staat in de modellenlijst, maar een echte aanroep krijgt
+terug:
+
+```
+Publisher model `projects/<project>/locations/eu/publishers/google/models/text-multilingual-embedding-002`
+was not found or your project does not have access to it.
+```
+
+De gateway adverteert het model; het GCP-project achter sluis.ai heeft er kennelijk geen toegang
+toe in `locations/eu`. Dat is bij sluis.ai op te lossen, niet in deze repo. Laat het model dus uit
+je sweep totdat sluis.ai bevestigt dat de toegang klopt.
+
+Een embeddingmodel dat zo faalt, laat de rest van de sweep intact: fase 1 schrijft voor elke
+configuratie met dat model een foutregel (zichtbaar als `fouten` in `samenvatting.md` en
+`resultaten.csv`) en gaat door met de configuraties die wel werken — net als fase 2 met een
+mislukte Claude-cel doet.
+
+Embeddingmodellen geven vectoren van verschillende lengte. Gemeten:
+
+| Model | Dimensies |
+|---|---|
+| `bedrock/eu.cohere.embed-v4:0` | 1536 |
+| `vertex/text-multilingual-embedding-002` | 768 (in de lijst, maar zie hierboven — momenteel niet bruikbaar) |
+| `scaleway/qwen3-embedding-8b` | 4096 (dezelfde embedder die hier eerder als `nebius/Qwen/Qwen3-Embedding-8B` stond) |
+
+Voor de harness maakt dat niets uit — elke configuratie krijgt zijn eigen index. Voor de **app**
+wel: `NUXT_RAG_EMBEDDING_DIMENSIONS` moet exact gelijk zijn aan wat het gekozen model teruggeeft,
+en die waarde ligt vast zodra de pgvector-index is aangemaakt. Nu staat hij op 1536, wat overeenkomt
+met cohere embed-v4. Kies je iets anders, dan moet je `DROP TABLE rag_vectors;` doen en opnieuw
+indexeren.
+
+---
+
+## Stap voor stap
+
+### 1. Documenten klaarzetten
+
+Zet de beleidsdocumenten in `tools/eval/corpus/<organisatie>/`, één map per organisatie, bijvoorbeeld
+`tools/eval/corpus/ons-huis/` en `tools/eval/corpus/welbions/`. Die map staat in `.gitignore`, dus
+ze komen niet in GitHub terecht. PDF, DOCX, TXT, MD en CSV worden gelezen met dezelfde
+extractie-code als de app (`server/utils/inkoopbeleid/extract.ts`).
+
+De bestandsnaam zelf maakt niet uit: `sweep.json` wijst naar de map, niet naar een specifiek
+bestand, en de harness leest alles wat er ondersteund in staat. Meerdere bestanden in dezelfde map
+tellen als afzonderlijke documenten van diezelfde organisatie.
+
+Een gescande PDF zonder tekstlaag werkt niet — de harness stopt met die melding in plaats van
+overal nul te scoren. Die moet eerst door OCR.
+
+### 2. sweep.json invullen
+
+Kopieer `config/sweep.example.json` naar `config/sweep.json`. Het commentaar in dat bestand legt
+elk veld uit. Twee dingen om op te letten:
+
+- **`organisatie` per document is niet optioneel.** De app houdt organisaties gescheiden bij het
+  zoeken. Zoekt de sweep in beide beleidsstukken tegelijk, dan meet je iets makkelijkers dan wat de
+  app doet: het juiste antwoord is dan vaak bereikbaar via het document van de ándere corporatie.
+- **Elke waarde is een lijst.** `"temperature": [0, 0.3, 0.7]` levert drie configuraties op. Alle
+  lijsten worden met elkaar gecombineerd, precies zoals een array-job op een cluster.
+
+### 3. Vragen aanvullen
+
+`cases/vragen.jsonl`, één vraag per regel:
+
+```json
+{"id": "q01", "vraag": "Hoeveel offertes bij EUR 30.000 diensten?", "organisatie": "ons-huis",
+ "verwachteTrefwoorden": ["25.000", "50.000"], "tags": ["drempel"]}
+```
+
+`verwachteTrefwoorden` is wat er in het **opgehaalde fragment** moet staan, niet wat in het antwoord
+moet staan. Neem daarom de grensbedragen van de juiste drempelregel, niet het antwoord zelf.
+
+Vermijd losse kleine getallen als trefwoord: `"2"` komt in vrijwel elk fragment voor. Bedragen en
+procedurenamen (`"meervoudig onderhands"`, `"categoriemanagement"`) zijn veel bruikbaarder.
+
+Vragen zonder trefwoorden tellen niet mee in de score van fase 1, maar kunnen wél in het
+beoordelingsrapport van fase 2 staan. Gebruik dat bewust: de startset bevat twee **controlevragen** waar
+het beleid niets over zegt. Een goed antwoord daarop is "dat staat niet in de documenten" — daarmee
+zie je welke configuratie eerlijk is en welke iets verzint.
+
+**Welke vragen gaan naar de beoordelaars?** Alleen de vragen met `"beoordelen": true`. Fase 1 gebruikt
+altijd alle vragen (dat kost niemand tijd); in fase 2 is elke vraag een antwoord extra per
+configuratie dat iemand moet lezen. De startset markeert er 8 van de 16: bij 6 configuraties is dat
+48 antwoorden, ongeveer 25 minuten werk. Gekozen is één vraag per soort (drempel diensten, drempel
+werken, hoogste drempel, mandaat, principe, integriteit, Welbions, controlevraag), met voorkeur
+voor vragen waarbij fase 1 de juiste passage vond — dan zit het verschil tussen de antwoorden in
+het model, niet in het zoeken. q05 (mandaat) is een bewuste uitzondering: daar vindt het zoeken de
+passage níet, en dat toont of een model dan zelf een tekenbevoegdheid verzint. Markeert het bestand
+geen enkele vraag, dan gaan ze allemaal mee.
+
+De meegeleverde trefwoorden komen uit `server/database/seeds/005-inkoopbeleid.ts`, dat de echte
+drempelbedragen en mandaten van Ons Huis bevat. Controleer ze wel tegen jouw PDF: staat een bedrag
+daar anders geschreven, dan telt een vraag onterecht als gemist.
+
+### 4. Fase 1 draaien
+
+```bash
+pnpm eval:retrieval -- --dry-run   # toont het aantal configuraties, roept niets aan
+pnpm eval:retrieval
+```
+
+Levert in `runs/<naam>/retrieval/`:
+
+- `samenvatting.md` — ranglijst met uitleg van elke kolom, winnaar bovenaan
+- `resultaten.csv` — één regel per configuratie
+- `runs.jsonl` — welke fragmenten per vraag zijn opgehaald, met scores
+
+Kijk of het verschil tussen nummer 1 en 2 groot genoeg is om iets te betekenen. Bij zestien vragen
+scheelt één vraag al ruim zes procent — dat is ruis, geen resultaat.
+
+Faalt een embeddingmodel (verkeerde naam, geen toegang, tenant-probleem), dan krijgen alleen de
+configuraties die dat model gebruiken een `fouten`-telling en verschijnen ze onderaan de ranglijst;
+de rest van de run gaat gewoon door. Een `fouten`-configuratie heeft altijd recall@k 0 — dat
+betekent hier "nooit gemeten", niet "niets gevonden". Zie `runs.jsonl` voor de foutmelding zelf.
+
+### 5. Fase 2 draaien
+
+```bash
+pnpm eval:generate -- --retrieval r_ab12cd34 --dry-run
+pnpm eval:generate -- --retrieval r_ab12cd34
+```
+
+Zonder `--retrieval` pakt hij de winnaar van fase 1 en zegt dat hij dat doet.
+
+**Niet elke configuratie gaat naar `beoordeling.html`.** Elke configuratie wordt wel aangeroepen —
+je kunt een configuratie pas op haar antwoorden beoordelen als die antwoorden bestaan — maar alleen
+de `--top` configuraties met de minste fouten en de minste vlaggen uit `checks.ts` (zie
+"Objectieve signalen" hierboven) komen in de pagina voor je collega's terecht. De rest blijft
+gewoon zichtbaar in `samenvatting.md` (kolom "beoordeeld") en in `resultaten.csv`/`runs.jsonl`.
+Standaard `--top 3`; zet hem hoger om meer configuraties te laten beoordelen:
+
+```bash
+pnpm eval:generate -- --retrieval r_ab12cd34 --top 5
+```
+
+Levert in `runs/<naam>/generatie/<retrievalConfigId>/` — elke retrieval-configuratie krijgt zijn
+eigen submap, dus `pnpm eval:generate -- --retrieval r_A` en daarna `--retrieval r_B` op dezelfde
+sweep botsen niet: het is niet één gedeeld `runs.jsonl`, dus de tweede aanroep denkt niet dat alles
+al gedaan is en de rapporten van de een overschrijven nooit die van de ander:
+
+| Bestand | Voor wie |
+|---|---|
+| `beoordeling.html` | je collega's — dit is wat je doorstuurt |
+| `sleutel.csv` / `sleutel.json` | alleen jij: welke letter is welke configuratie |
+| `samenvatting.md` | jij: objectieve signalen, tokens, duur per configuratie |
+| `resultaten.csv` | jij: één regel per antwoord, voor Excel |
+| `runs.jsonl` | jij: ruwe antwoorden |
+
+Wil je meerdere retrieval-configuraties naast elkaar door fase 2 halen om te zien of de winnaar van
+fase 1 ook echt de beste antwoorden geeft? Draai `eval:generate` gewoon opnieuw met een ander
+`--retrieval r_...` — dat schrijft in zijn eigen submap, niets van de vorige run raakt kwijt.
+
+### 6. Laten beoordelen
+
+Stuur `beoordeling.html` naar je collega's. Het is één bestand, werkt offline, vraagt geen inlog en
+verstuurt niets. Voorbeeldtekst voor de mail:
+
+> Hoi,
+>
+> In de bijlage staan een aantal vragen over ons inkoopbeleid, met steeds meerdere antwoorden van
+> een AI-adviseur die we aan het uitproberen zijn. Welke instelling welk antwoord gaf staat er
+> expres niet bij — het gaat om het antwoord, niet om de naam van het model.
+>
+> Open het bestand in je browser en geef elk antwoord een cijfer van 1 tot 10, zoals een
+> schoolcijfer. Meerdere antwoorden mogen hetzelfde cijfer krijgen. Staat er iets in dat niet
+> klopt (vooral bedragen, aantal offertes, wie tekent), vink dan "Bevat een feitelijke fout" aan.
+> Het kost ongeveer 25 minuten.
+>
+> Je hoeft het niet in één keer af te maken; je antwoorden blijven bewaard in je browser. Klik aan
+> het eind op "Download mijn beoordeling" en stuur me dat bestandje terug.
+
+Waarom een cijfer én een vinkje? Met alleen goed/twijfel/fout (de eerste versie van deze pagina)
+werd "twijfel" gebruikt voor "goed, maar minder goed dan het antwoord ernaast", waardoor je niet kon
+zien welk van meerdere goede antwoorden het beste was. Het cijfer lost dat op. Het vinkje staat er
+los naast, zodat een fout bedrag niet verdwijnt achter een verder nette 6.
+
+De pagina print netjes: Ctrl+P geeft een PDF met één vraag per pagina.
+
+Genereer je de pagina opnieuw, dan worden `beoordeling.html` en `sleutel.*` overschreven en krijgen
+de configuraties mogelijk andere letters. Heb je de vorige versie al verstuurd, bewaar die bestanden
+dan eerst in een eigen submap; de sleutel hoort bij de pagina die je beoordelaar heeft.
+
+### 7. Beoordelingen samenvoegen
+
+Zet de teruggestuurde CSV's in `runs/<naam>/generatie/<retrievalConfigId>/beoordelingen/` en draai:
+
+```bash
+pnpm eval:aggregate
+pnpm eval:aggregate -- --retrieval r_ab12cd34   # voor een andere run dan de fase-1-winnaar
+```
+
+Zonder `--retrieval` pakt hij, net als `eval:generate`, de winnaar van fase 1 — dezelfde
+configuratie dus, tenzij je bewust een andere hebt gedraaid.
+
+Levert `ranglijst.csv` en `ranglijst.md`, met de modelnaam er eindelijk bij. Per configuratie:
+
+- het **gemiddelde cijfer**, en een **gecorrigeerd** gemiddelde dat rekening houdt met hoe streng
+  elke beoordelaar gemiddeld is (bij één beoordelaar zijn die gelijk);
+- het aantal **onvoldoendes** (5 of lager) en het aantal antwoorden met een **feitelijke fout**.
+
+De ranglijst sorteert eerst op het kleinste aandeel feitelijke fouten en dan op het gecorrigeerde
+cijfer: een stellig fout drempelbedrag weegt zwaarder dan een minder mooi antwoord. Daaronder een
+lijst met de antwoorden waarover beoordelaars het **oneens** waren (3 punten of meer verschil, of
+oneens over de feitelijke fout) — vaak het interessantste deel van het rapport.
+
+Een CSV van de oude goed/twijfel/fout-pagina wordt met een waarschuwing overgeslagen: die oordelen
+zijn niet om te rekenen naar cijfers zonder getallen te verzinnen.
+
+---
+
+## Kosten en veiligheid
+
+- `--dry-run` vouwt het raster uit en telt de aanroepen zonder er één te doen. Doe dit altijd eerst.
+- `--limit 3` gebruikt alleen de eerste drie vragen, voor een rooktest.
+- `--top` (fase 2, standaard 3) bepaalt hoeveel configuraties naar `beoordeling.html` gaan, niet
+  hoeveel er worden aangeroepen — dat blijven er evenveel als het raster in `sweep.json` telt.
+- `maxCalls` in `sweep.json` is een harde bovengrens; de run stopt daar en meldt dat.
+- **Hervatten werkt.** Resultaten worden per antwoord weggeschreven. Breek je af met Ctrl+C en start
+  je opnieuw, dan worden gedane cellen overgeslagen — je betaalt ze niet twee keer.
+- Embeddings worden gecachet in `runs/<naam>/cache/`. Fase 2 hergebruikt de index die fase 1 al
+  betaald heeft. Wijzig je een document, dan vervalt de cache automatisch.
+
+---
+
+## Hoe het aansluit op de app
+
+De harness hergebruikt de echte code, zodat een meting zegt wat de app doet:
+
+| Wat | Waar |
+|---|---|
+| PDF/DOCX lezen | `server/utils/inkoopbeleid/extract.ts` |
+| In stukken knippen | `server/utils/rag-chunk.ts` (gedeeld met `ingestText`) |
+| Fragmenten opmaken + prompt bouwen | `server/utils/inkoopbeleid/advice-prompt.ts` (gedeeld met `/api/inkoopbeleid/advies`) |
+| Ranglijsten samenvoegen (RRF) | `server/utils/rag-fusion.ts` (gedeeld met `queryText`) |
+| Gateway, auth, headers | `server/mastra/gateways/openai-compat.ts` |
+| Standaard system prompt | `prompts/adviseur-a-standaard.md`, kopie van `agent.inkoopbeleid.system` |
+
+Drie dingen doet de harness bewust anders:
+
+1. **Geen pgvector, maar een vectorlijst in het geheugen.** Elke configuratie heeft zijn eigen
+   index nodig, op zijn eigen breedte. In Postgres betekent dat tabellen aanmaken en weggooien per
+   cel, met het risico dat je in de live `rag_vectors` schrijft. Bij een paar honderd chunks is alles
+   doorrekenen exact én sneller dan een index. Wat je meet — chunking en embeddings — is identiek.
+2. **Niet via `mastra.getAgent()`.** Een agent haalt model én prompt uit de database, wat één
+   globale instelling is, en biedt geen `temperature` of `topP`. Precies de knoppen die een sweep
+   wil verdraaien. De harness bouwt daarom zijn eigen aanroep, met dezelfde prompt en dezelfde
+   gateway.
+3. **Het zoeken-op-woorden van `hybrid` is een benadering.** De app laat Postgres dat werk doen
+   (`to_tsvector('dutch', …)`: Nederlandse stamherkenning, een echte stopwoordenlijst,
+   `ts_rank_cd`). Dat kan de harness niet nadoen zonder database, en zonder database draaien is
+   precies wat de harness bruikbaar maakt voor een collega met alleen een sleutel. De harness
+   telt daarom hoeveel verschillende woorden uit de vraag in een fragment voorkomen, zonder
+   stamherkenning — zie `keyword-store.ts` voor de volledige lijst verschillen. Het **samenvoegen**
+   van de twee ranglijsten is wél gedeelde code. Lees een hybrid-uitslag dus als richting, niet
+   als exact cijfer.
+
+---
+
+## Wat de sweep tot nu toe heeft opgeleverd
+
+Gemeten op 19-9-2026, 48 configuraties x 48 vragen, corpus Ons Huis + Welbions.
+
+**Het corpus is kleiner dan de topK.** Dit is de belangrijkste uitkomst, en het zet de rest in
+perspectief. Per organisatie levert chunkgrootte 1000 maar **8 tot 10 fragmenten** op. Met
+`topK: 8` haalt de winnende configuratie dus zo goed als het **hele document** op. Dat betekent
+dat de volgorde nauwelijks uitmaakt voor recall: er is geen diep weggezakt fragment om te redden,
+alleen het risico dat je een goed fragment verdringt. Bij twee beleidsdocumenten is "beter
+zoeken" grotendeels een opgelost probleem — het plafond ligt bij wat er in de documenten staat.
+
+**Hybride zoeken helpt hier niet.** Van de 24 paren (zelfde model, chunk, overlap, topK; alleen de
+modus verschilt) is `hybrid` er **20 slechter**, 3 gelijk en 1 beter. Gemiddelde recall@k: dense
+0,797 tegen hybrid 0,756. De verklaring sluit aan op het bovenstaande: RRF weegt beide paden even
+zwaar, dus een woordzoekactie die vooral veelvoorkomende beleidstermen oplevert (`aanbesteding`
+komt in de Inkoopwijzer overal voor) duwt goede treffers uit een toch al bijna volledige lijst.
+Vraag q22 is het duidelijkste geval: die verliest in 18 van de 24 paren. `NUXT_RAG_RETRIEVAL`
+staat daarom op `dense`; de hybride code blijft staan voor als het corpus ooit groeit.
+
+**De beste configuratie mist alleen wat de vragenlijst zelf niet waar kan maken.** De winnaar
+(`bedrock/eu.cohere.embed-v4:0`, chunk 1000, overlap 200, topK 8, dense) haalt recall@k 0,892: 33
+van de 37 te scoren vragen. Alle vier de missers zijn artefacten van de vragenlijst, niet van het
+zoeken:
+
+| Vraag | Waarom hij niet gevonden kán worden |
+|---|---|
+| q05, q06 | Mandaat/tekenbevoegdheid staat **niet in de PDF** — die trefwoorden komen uit de seed-data |
+| q08 | "verduurzaming" en "betaalbaarheid" staan in **geen enkel fragment samen** bij chunk 1000; `containsAllKeywords` eist dat wel |
+| q09 | Trefwoord is `adviseur inkoop`, het document schrijft **`Inkoopadviseur`** (één woord) |
+
+Let op bij q08: met topK 8 en 8 fragmenten krijgt het model in werkelijkheid **beide** doelen te
+zien. De vraag telt als gemist, het antwoord zou gewoon kloppen. recall@k onderschat hier dus wat
+de adviseur werkelijk voorgeschoteld krijgt — opnieuw een gevolg van een corpus dat kleiner is
+dan de topK.
+
+**Vergelijk 0,692 en 0,892 niet.** De eerdere sweep draaide op 16 vragen, deze op 48. Dat zijn
+verschillende metingen, geen verbetering.
+
+## Buiten scope
+
+- De **redacteur** (hoofdstukken schrijven). Werkt in principe met een tweede vragenlijst, maar
+  lange teksten vragen een andere weergave in het rapport.
+- De **toets-functie** (`/api/inkoopbeleid/toets`). Die rekent op databasetabellen, zonder taalmodel.
+- **Automatisch laten scoren door een model.** Bewust niet: jij bepaalt wat goed is.
+- **Herordenen met een rerank-model.** Deze sluis-tenant biedt er geen (zie "Modellen op deze
+  gateway"). Zodra dat verandert is het een derde waarde voor de `retrieval`-as.
+
+## Onderhoud
+
+```bash
+pnpm eval:typecheck   # typecheck van deze map (valt buiten `nuxi typecheck`)
+pnpm test             # unit tests van expand, vector-store en checks
+```

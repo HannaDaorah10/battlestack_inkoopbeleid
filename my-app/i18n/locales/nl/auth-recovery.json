@@ -3,7 +3,7 @@
         "forgot": {
             "title": "Wachtwoord vergeten",
             "email": "E-mailadres",
-            "submit": "Herstellink versturen",
+            "submit": "Stuur de herstellink",
             "backToSignIn": "Terug naar inloggen",
             "validation": {
                 "email": "Voer een geldig e-mailadres in"
@@ -21,7 +21,7 @@
             "newPassword": "Nieuw wachtwoord",
             "confirmPassword": "Bevestig wachtwoord",
             "hint": "Minimaal 12 tekens. Gebruik een wachtwoordzin of een mix van tekens.",
-            "submit": "Herstellen",
+            "submit": "Bewaar je nieuwe wachtwoord",
             "showPassword": "Wachtwoord tonen",
             "hidePassword": "Wachtwoord verbergen",
             "validation": {

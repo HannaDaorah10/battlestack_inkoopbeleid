@@ -49,3 +49,21 @@ export function requireRouterParam(event: H3Event, name: string): string {
     }
     return value
 }
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+/**
+ * Read a router param that addresses a `uuid` column, rejecting anything that is not one.
+ *
+ * Without the shape check the raw string reaches `eq(table.id, value)`, and Postgres answers a
+ * malformed uuid with `invalid input syntax for type uuid` — which escapes as a **500**. A
+ * client asking for a row that cannot exist deserves a 400, not an error that looks like the
+ * server broke, and a route that 500s on garbage input is noise in every alert channel.
+ */
+export function requireUuidRouterParam(event: H3Event, name: string): string {
+    const value = requireRouterParam(event, name)
+    if (!UUID_RE.test(value)) {
+        throw createError({ statusCode: 400, statusMessage: `Invalid ${name}` })
+    }
+    return value
+}

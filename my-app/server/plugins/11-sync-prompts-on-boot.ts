@@ -21,7 +21,11 @@ export default defineNitroPlugin(async () => {
             await tx.execute(sql`SELECT pg_advisory_xact_lock(${SYNC_ADVISORY_LOCK_KEY})`)
             for (const p of getDefaultPrompts()) {
                 const [existing] = await tx
-                    .select({ id: prompts.id, defaultContent: prompts.defaultContent })
+                    .select({
+                        id: prompts.id,
+                        content: prompts.content,
+                        defaultContent: prompts.defaultContent,
+                    })
                     .from(prompts)
                     .where(eq(prompts.key, p.key))
                     .limit(1)
@@ -40,10 +44,18 @@ export default defineNitroPlugin(async () => {
 
                 // Keep the reset baseline current without touching admin edits.
                 if (existing.defaultContent !== p.defaultContent) {
+                    // A prompt nobody edited (content still equals the old default) follows the
+                    // new default. Without this a fix to a shipped prompt never reached any
+                    // environment that already had the row, only freshly seeded ones.
+                    const unedited = existing.content === existing.defaultContent
                     await tx
                         .update(prompts)
-                        .set({ defaultContent: p.defaultContent })
+                        .set({
+                            defaultContent: p.defaultContent,
+                            ...(unedited ? { content: p.defaultContent } : {}),
+                        })
                         .where(eq(prompts.key, p.key))
+
                     console.log(`[sync-prompts-on-boot] prompt defaultContent refreshed: ${p.key}`)
                 }
             }

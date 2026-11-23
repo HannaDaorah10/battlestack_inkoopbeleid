@@ -1,8 +1,11 @@
-import { MDocument } from '@mastra/rag'
 import { PgVector } from '@mastra/pg'
 import { embedMany } from 'ai'
+import { createError } from 'h3'
 import { gatewayEmbedding } from '#server/mastra/gateways/openai-compat'
 import { getActiveEmbeddingModelId } from '#server/mastra/utils/ai-model'
+import { chunkDocument } from '#server/utils/rag-chunk'
+import { DEFAULT_RRF_K, candidateDepth, fuseRrf } from '#server/utils/rag-fusion'
+import { ensureKeywordIndex, keywordSearch } from '#server/utils/rag-keyword'
 
 export const INDEX_NAME = 'rag_vectors'
 
@@ -18,7 +21,24 @@ interface RagConfig {
     embeddingDimensions: number
     embeddingModel: string
     databaseUrl: string
+    retrieval: RetrievalMode
+    rrfK: number
 }
+
+/**
+ * `dense` searches vectors only; `hybrid` also runs Postgres full-text search and fuses the two
+ * rankings (see `rag-fusion.ts`). Switchable per environment via `NUXT_RAG_RETRIEVAL` because
+ * which one wins is a measured question, not an assumed one - `tools/eval` sweeps both.
+ */
+export type RetrievalMode = 'dense' | 'hybrid'
+
+/**
+ * Metadata equality filter passed straight to pgvector, e.g. `{ organisationId: '…' }`.
+ * One index (`rag_vectors`) is shared by every document in the app, so a caller that owns a
+ * tenant boundary MUST filter on it: without one, organisation A's question retrieves
+ * organisation B's excerpts. Keys must match what the corresponding `ingestText` wrote.
+ */
+export type RagFilter = Record<string, string | number | boolean>
 
 function readConfig(): RagConfig {
     const config = useRuntimeConfig() as unknown as {
@@ -30,16 +50,26 @@ function readConfig(): RagConfig {
             topK?: unknown
             embeddingDimensions?: unknown
             embeddingModel?: unknown
+            retrieval?: unknown
+            rrfK?: unknown
         }
     }
     const rag = config.rag ?? {}
+    // These `??` fallbacks only matter if `runtimeConfig.rag` itself were ever undefined, which it
+    // never is: nuxt.config.ts always declares the full shape. Kept in sync with those values
+    // anyway (700/100/5/1536, bedrock/eu.cohere.embed-v4:0) so the two defaults can't silently
+    // disagree with each other.
     return {
-        maxChunkSize: Number(rag.maxChunkSize ?? 512),
-        chunkOverlap: Number(rag.chunkOverlap ?? 50),
+        maxChunkSize: Number(rag.maxChunkSize ?? 700),
+        chunkOverlap: Number(rag.chunkOverlap ?? 100),
         topK: Number(rag.topK ?? 5),
         embeddingDimensions: Number(rag.embeddingDimensions ?? 1536),
-        embeddingModel: String(rag.embeddingModel ?? 'openai/text-embedding-3-small'),
+        embeddingModel: String(rag.embeddingModel ?? 'bedrock/eu.cohere.embed-v4:0'),
         databaseUrl: String(config.databaseUrl ?? ''),
+        // Anything other than the two known modes falls back to `dense` rather than throwing: a
+        // typo in an env var should degrade retrieval quality, not take the advisor offline.
+        retrieval: String(rag.retrieval ?? 'dense').toLowerCase() === 'hybrid' ? 'hybrid' : 'dense',
+        rrfK: Number(rag.rrfK ?? DEFAULT_RRF_K),
     }
 }
 
@@ -61,14 +91,98 @@ async function getModel(cfg: RagConfig): Promise<ReturnType<typeof gatewayEmbedd
     return _embeddingModel
 }
 
+/**
+ * Create the index once per process, then READ ITS REAL WIDTH BACK and refuse to continue on a mismatch.
+ *
+ * The read-back is the whole point. `PgVector.createIndex` issues
+ * `CREATE TABLE IF NOT EXISTS … embedding vector(<dimension>)`, so against a table that already
+ * exists at a DIFFERENT width the statement is a silent no-op: nothing throws here, and the
+ * mismatch only resurfaces later as an opaque upsert failure far from its cause. Comparing the
+ * stored width against the configured one turns that into a one-line, actionable diagnosis.
+ */
 function ensureIndex(cfg: RagConfig): Promise<void> {
     if (_initPromise) return _initPromise
-    _initPromise = getStore(cfg)
-        .createIndex({ indexName: INDEX_NAME, dimension: cfg.embeddingDimensions })
-        .catch(() => {
-            // Index already exists, ignore
-        })
+    _initPromise = initIndex(cfg).catch((err: unknown) => {
+        // Clear the memo so a later call retries instead of replaying a rejected promise forever
+        // (an operator who fixes the config and reingests should not have to restart the process).
+        _initPromise = null
+        throw err
+    })
     return _initPromise
+}
+
+async function initIndex(cfg: RagConfig): Promise<void> {
+    const store = getStore(cfg)
+    let createError_: unknown = null
+    try {
+        await store.createIndex({ indexName: INDEX_NAME, dimension: cfg.embeddingDimensions })
+    } catch (err) {
+        // Hold, don't throw: a concurrent replica creating the same index races here, and
+        // describeIndex below is the authority on whether the index is actually usable.
+        createError_ = err
+    }
+
+    let dimension: number
+    try {
+        ;({ dimension } = await store.describeIndex({ indexName: INDEX_NAME }))
+    } catch (err) {
+        throw createError_ ?? err
+    }
+
+    if (dimension !== cfg.embeddingDimensions) {
+        const message
+            = `RAG vector index "${INDEX_NAME}" stores ${dimension}-dimension vectors but `
+                + `NUXT_RAG_EMBEDDING_DIMENSIONS is ${cfg.embeddingDimensions}. `
+                + `Set the env var to ${dimension}, or drop the index `
+                + `(DROP TABLE ${INDEX_NAME};) and restart to rebuild it at ${cfg.embeddingDimensions}. `
+                + 'The dimension must equal what the active embedding model returns '
+                + '(bedrock/eu.cohere.embed-v4:0 returns 1536).'
+        console.error(`[rag] ${message}`)
+        throw createError({ statusCode: 500, statusMessage: message })
+    }
+
+    // Unconditional, not gated on `cfg.retrieval`: the table is only reachable here (PgVector
+    // creates it lazily, so no migration can), and having the column already present is what lets
+    // `NUXT_RAG_RETRIEVAL=hybrid` take effect on a restart instead of needing a backfill first.
+    await ensureKeywordIndex(INDEX_NAME)
+}
+
+/**
+ * Refuse an embedding whose width does not match the index, with a message an admin can act on.
+ *
+ * Without this, a model switch at `/dashboard/settings/ai` (say to a 4096-dimension model while
+ * the index stores 1536) only surfaced as pgvector's "expects 1536 dimensions but got 4096" from
+ * deep inside the upsert, shown to an end user who uploaded a Word file and cannot fix it.
+ */
+function assertEmbeddingWidth(embedding: readonly number[] | undefined, cfg: RagConfig, modelId: string): void {
+    const got = embedding?.length ?? 0
+    if (got === cfg.embeddingDimensions) return
+    const message
+        = `Het embeddingmodel "${modelId}" levert vectoren van ${got} dimensies, maar de zoekindex `
+            + `verwacht er ${cfg.embeddingDimensions}. Kies bij Instellingen > AI een embeddingmodel met `
+            + `${cfg.embeddingDimensions} dimensies (bijvoorbeeld bedrock/eu.cohere.embed-v4:0), of bouw de `
+            + 'index opnieuw op voor het nieuwe model.'
+    console.error(`[rag] ${message}`)
+    throw createError({
+        statusCode: 409,
+        statusMessage: message,
+        data: { code: 'embedding-dimension-mismatch', expected: cfg.embeddingDimensions, got, model: modelId },
+    })
+}
+
+/**
+ * Embed one probe string with `modelId` and report whether its width fits the index.
+ *
+ * Used by the admin model picker so switching to an incompatible embedding model is refused at
+ * the moment of switching, instead of breaking every later upload and search.
+ */
+export async function probeEmbeddingModel(modelId: string): Promise<{ dimensions: number, expected: number }> {
+    const cfg = readConfig()
+    const { embeddings } = await embedMany({
+        model: gatewayEmbedding(modelId),
+        values: ['inkoopbeleid'],
+    })
+    return { dimensions: embeddings[0]?.length ?? 0, expected: cfg.embeddingDimensions }
 }
 
 export async function ingestText(opts: {
@@ -79,14 +193,13 @@ export async function ingestText(opts: {
 }): Promise<{ chunks: number }> {
     const cfg = readConfig()
     await ensureIndex(cfg)
-    const doc = MDocument.fromText(opts.text, {
+    // Shared with the evaluation harness (tools/eval), which sweeps maxSize/overlap: both sides
+    // must chunk identically or the sweep tunes a pipeline the app does not run.
+    const chunks = await chunkDocument({
+        text: opts.text,
         title: opts.title,
         source: opts.source,
-        ...opts.metadata,
-    })
-
-    const chunks = await doc.chunk({
-        strategy: 'recursive',
+        metadata: opts.metadata,
         maxSize: cfg.maxChunkSize,
         overlap: cfg.chunkOverlap,
     })
@@ -95,6 +208,7 @@ export async function ingestText(opts: {
         model: await getModel(cfg),
         values: chunks.map((c) => c.text),
     })
+    assertEmbeddingWidth(embeddings[0], cfg, _embeddingModelId ?? cfg.embeddingModel)
 
     await getStore(cfg).upsert({
         indexName: INDEX_NAME,
@@ -111,26 +225,86 @@ export async function ingestText(opts: {
     return { chunks: chunks.length }
 }
 
-export async function queryText(query: string): Promise<{
-    results: Array<{ score: number, metadata: Record<string, unknown> }>
-}> {
+export interface RagHit {
+    score: number
+    metadata: Record<string, unknown>
+    /** `vector_id` of the chunk. Stable across both retrieval paths, so it identifies a hit. */
+    id: string
+    /**
+     * 1-based rank per path, or null when that path did not return this chunk. Only meaningful in
+     * hybrid mode; dense mode reports the one path it ran.
+     */
+    ranks: Record<string, number | null>
+}
+
+/**
+ * Search the shared index, dense-only or hybrid depending on `NUXT_RAG_RETRIEVAL`.
+ *
+ * `opts.filter` narrows by chunk metadata before scoring, which is how a multi-tenant caller
+ * keeps organisations apart (see {@link RagFilter}). Omitting it searches everything ingested
+ * by every feature, which is correct for the generic `/dashboard/rag` page and wrong anywhere
+ * a tenant boundary exists. In hybrid mode the same filter is applied to the keyword path too -
+ * a boundary that only half the query respects is not a boundary.
+ *
+ * CAUTION on `score`: dense mode returns a cosine similarity (roughly 0.3-0.6 here), hybrid mode
+ * returns the RRF score that actually ordered the list (roughly 0.01-0.03). They are different
+ * scales, and anything rendering the number to a user should say which mode produced it rather
+ * than treat the two as comparable.
+ */
+export async function queryText(
+    query: string,
+    opts: { filter?: RagFilter, topK?: number } = {},
+): Promise<{ results: RagHit[] }> {
     const cfg = readConfig()
     await ensureIndex(cfg)
+    const topK = opts.topK ?? cfg.topK
+    // Undefined rather than `{}`: an empty object is a filter with no conditions, which the
+    // pg translator still compiles into a WHERE clause.
+    const filter = opts.filter && Object.keys(opts.filter).length > 0 ? opts.filter : undefined
+
     const { embeddings } = await embedMany({
         model: await getModel(cfg),
         values: [query],
     })
+    assertEmbeddingWidth(embeddings[0], cfg, _embeddingModelId ?? cfg.embeddingModel)
 
-    const raw = await getStore(cfg).query({
+    const depth = cfg.retrieval === 'hybrid' ? candidateDepth(topK) : topK
+    const densePromise = getStore(cfg).query({
         indexName: INDEX_NAME,
         queryVector: embeddings[0]!,
-        topK: cfg.topK,
+        topK: depth,
+        filter,
     })
 
-    const results = raw.map((r) => ({
-        score: r.score,
-        metadata: r.metadata ?? {},
-    }))
+    if (cfg.retrieval !== 'hybrid') {
+        const raw = await densePromise
+        return {
+            results: raw.map((r, i) => ({
+                id: String(r.id ?? ''),
+                score: r.score,
+                metadata: r.metadata ?? {},
+                ranks: { dense: i + 1 },
+            })),
+        }
+    }
 
-    return { results }
+    // Both paths hit the same Postgres and neither depends on the other, so they run together.
+    const [dense, keyword] = await Promise.all([
+        densePromise,
+        keywordSearch({ table: INDEX_NAME, query, filter, limit: depth }),
+    ])
+
+    const fused = fuseRrf({
+        dense: dense.map((r) => ({ id: String(r.id ?? ''), metadata: r.metadata ?? {} })),
+        keyword,
+    }, { k: cfg.rrfK, topK })
+
+    return {
+        results: fused.map((hit) => ({
+            id: hit.id,
+            score: hit.score,
+            metadata: hit.metadata,
+            ranks: hit.ranks,
+        })),
+    }
 }

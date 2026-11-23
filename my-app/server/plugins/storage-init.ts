@@ -10,11 +10,12 @@ export default defineNitroPlugin(async () => {
 
     if (!endpoint || !bucketName || !accessKeyId || !secretAccessKey) return
 
-    const isLocal = /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)(:|\/|$)/.test(endpoint)
+    const needsPathStyle = /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)(:|\/|$)/.test(endpoint)
+        || endpoint.includes('.railway.internal')
     const client = new S3Client({
         region: String(cfg.s3Region ?? 'us-east-1'),
         endpoint,
-        forcePathStyle: isLocal,
+        forcePathStyle: needsPathStyle,
         credentials: { accessKeyId, secretAccessKey },
     })
 

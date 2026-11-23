@@ -17,6 +17,14 @@ export default defineNuxtConfig({
 
     css: ['~/assets/css/main.css'],
 
+    // Het Adjust design system kent één thema. Donkere vlakken zijn er alleen
+    // voor navigatie en oriëntatie, niet voor content — een dark mode zou dus
+    // kleuren vragen die het merk niet heeft.
+    colorMode: {
+        preference: 'light',
+        fallback: 'light',
+    },
+
     runtimeConfig: {
         health: {
             failOnDegraded: true,
@@ -24,7 +32,7 @@ export default defineNuxtConfig({
         },
 
         public: {
-            appName: 'my-app',
+            appName: 'Digitaal Inkoophuis',
             auditLog: true,
             appUrl: '',
             allowRegistration: false,
@@ -36,6 +44,7 @@ export default defineNuxtConfig({
             promptMgmt: true,
             chat: true,
             rag: true,
+            inkoopbeleid: true,
         },
 
         databaseUrl: '',
@@ -61,11 +70,20 @@ export default defineNuxtConfig({
         aiGatewayKey: '',
 
         rag: {
-            embeddingDimensions: 2048,
+            embeddingDimensions: 1536,
             maxChunkSize: 700,
             chunkOverlap: 100,
             topK: 5,
-            embeddingModel: '',
+            // See the matching comment in server/mastra/utils/env-defaults.ts: this tenant's
+            // residency policy rejects openai/* models outright, so that can't be the fallback here
+            // either. bedrock/eu.cohere.embed-v4:0 returns 1536 dimensions, matching the value above.
+            embeddingModel: 'bedrock/eu.cohere.embed-v4:0',
+            // 'dense' (vectors only) or 'hybrid' (vectors + Postgres full-text, fused with RRF).
+            // Default stays dense until the sweep in tools/eval says hybrid is actually better on
+            // this corpus; the full-text column is created either way, so flipping this needs a
+            // restart and nothing else.
+            retrieval: 'dense',
+            rrfK: 60,
         },
     },
 
@@ -125,6 +143,18 @@ export default defineNuxtConfig({
         },
     },
 
+    // Instrument Sans is het merkfont van Adjust en het enige font in
+    // applicaties. @nuxt/fonts host het zelf onder /_fonts, zodat de CSP
+    // (font-src 'self') geen uitzondering voor Google nodig heeft.
+    fonts: {
+        families: [{
+            name: 'Instrument Sans',
+            provider: 'google',
+            weights: [400, 500, 600, 700],
+            styles: ['normal', 'italic'],
+        }],
+    },
+
     i18n: {
         defaultLocale: 'nl',
         strategy: 'no_prefix',
@@ -149,10 +179,10 @@ export default defineNuxtConfig({
         registerType: 'autoUpdate',
 
         manifest: {
-            name: 'my-app',
-            short_name: 'my-app',
-            theme_color: '#3b82f6',
-            background_color: '#ffffff',
+            name: 'Digitaal Inkoophuis',
+            short_name: 'Inkoophuis',
+            theme_color: '#CF2C28',
+            background_color: '#F1F1F1',
             display: 'standalone',
 
             icons: [{

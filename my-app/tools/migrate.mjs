@@ -25,6 +25,10 @@ try {
     // another process is about to invalidate. Other migrators block here until release.
     await sql`SELECT pg_advisory_lock(${MIGRATE_ADVISORY_LOCK_KEY})`
     locked = true
+    // Required before any `vector(N)` column can exist (rag_vectors, created lazily by
+    // @mastra/pg outside the drizzle schema). See the matching comment in
+    // server/plugins/00-db-migrate-on-boot.ts, which runs this same statement on every boot.
+    await sql`CREATE EXTENSION IF NOT EXISTS vector`
     await ensureMigrationsTable(sql)
     const applied = await loadApplied(sql)
     const journal = await loadJournal(migrationsDir)
